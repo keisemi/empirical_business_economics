@@ -1,0 +1,907 @@
+---
+title: "第６章 シングルエージェント動学モデル　その１"
+author: "上武康亮・遠山祐太・若森直樹・渡辺安虎"
+date: '最終更新: `r Sys.Date()`'
+output:
+  html_document: 
+    code_folding: show
+    number_sections: yes
+    toc: yes
+    toc_depth: 4
+    toc_float: yes
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# はじめに
+
+第６章「シングルエージェント動学モデル　その１」に付随するRコードの紹介になります。
+
+## 留意事項
+
+本連載の内容、およびサンプルコード等の資料は、情報の提供のみを目的としていますので、運用につきましては十分にご確認をいただき、お客様ご自身の責任とご判断によって行ってください。これらの情報の運用結果により損害等が生じた場合でも、日本評論社および著者はいかなる責任を負うことはできませんので、ご留意ください。
+
+## 謝辞
+今回のプログラムの作成に際して、島本幸典さん・牧野圭吾さん・山田雅広さん(東京大学大学院経済学研究科)にご尽力頂きました。この場を借りて御礼申し上げます。
+
+## 全体の流れ
+
+1.  下準備：パッケージの導入、パラメータの設定、データの生成
+2.  記述統計の作成
+3.  遷移行列の推定
+4.  Nested Fixed Point Algorithmによるパラメータの推定
+
+# 下準備：パッケージの導入、パラメータの設定、データの生成
+
+## Rに関する下準備
+今回は`evd`,`numDeriv`,`plot3D`を新たに利用する。
+なお、以下の`require`で読み込んでいるパッケージについてまだインストールしていない場合には、最初にインストールすること。
+
+```{r message=FALSE}
+# ワークスペースを初期化
+rm(list = ls())
+
+# パッケージを読み込む
+require(tidyverse)
+require(skimr)
+# install.packages('numDeriv')
+require(evd)
+# install.packages('evd')
+require(numDeriv)
+# install.packages('plot3D')
+library('plot3D')
+```
+
+## データの生成
+今回は現実のデータではなく、仮想データを使用する。そこで真のパラメータや遷移行列を設定し、データを生成していく。
+
+### パラメータの設定
+
+```{r}
+## パラメータの設定
+
+# 走行距離にかかるtheta_cと車の価格にかかるtheta_p
+theta_true <- c(theta_c = 15, theta_p = 6)
+
+# 時間割引率
+beta <- 0.95
+
+# オイラー定数
+Euler_const <- - digamma(1)
+
+# 消費者は車を購入するかどうか決めるため選択肢の数は2つ
+num_choice <- 2
+```
+
+#### 状態変数の作成
+
+```{r}
+## Stateの作成
+
+# 価格の状態変数
+price_states <- seq(2, 2.5, by = 0.1)
+
+
+# 走行距離の状態変数
+mileage_states <- seq(0, 0.1, by = 0.005)
+
+# 価格の状態変数の数
+num_price_states <- length(price_states)
+
+# 走行距離の状態変数の数
+num_mileage_states <- length(mileage_states)
+
+# 状態変数は価格と走行距離の状態変数のペア
+# 従って状態変数の数は価格の状態変数の数と走行距離の状態変数の数の積となる
+num_states <- num_price_states * num_mileage_states
+
+# 価格、走行距離の状態変数の組み合わせ(p,m)を1つのデータフレームで表す
+state_df <- 
+  dplyr::tibble(
+    # stateにidを番号付ける
+    state_id = 1:num_states,
+    # 順番は (p,m) = (2000,0), (2100,0), ...,(2500,0), (2000,5), (2100,5), ...
+    price_id = rep(1:num_price_states, times = num_mileage_states),
+    mileage_id = rep(1:num_mileage_states, each = num_price_states),
+    price = rep(price_states, times = num_mileage_states),
+    mileage = rep(mileage_states, each = num_price_states)
+  )
+
+# 下3行を表示
+state_df %>% tail(3)
+```
+#### 遷移行列の作成
+今回、走行距離と価格が遷移確率によって変化していく。そこでそれぞれの遷移確率から遷移行列を作成する。
+
+走行距離の遷移行列を作成する関数
+
+```{r}
+# パラメタを所与として走行距離の遷移行列を出力する関数を作成
+gen_mileage_trans <- function(kappa) {
+  # 走行距離が1,2段階上がる確率をパラメタとする
+  kappa_1 <- kappa[1]
+  kappa_2 <- kappa[2]
+  # 購買しなかった場合の遷移行列を作成
+  mileage_trans_mat_hat_not_buy <-
+    matrix(0, ncol = num_mileage_states, nrow = num_mileage_states)
+  for (i in 1:num_mileage_states) {
+    for (j in 1:num_mileage_states) {
+      if (i == j){
+        mileage_trans_mat_hat_not_buy[i,j] <- 1 - kappa_1 - kappa_2
+      } else if (i == j - 1) {
+        mileage_trans_mat_hat_not_buy[i,j] <- kappa_1
+      } else if (i == j - 2){
+        mileage_trans_mat_hat_not_buy[i,j] <- kappa_2
+      }
+    }
+  }
+  mileage_trans_mat_hat_not_buy[num_mileage_states - 1, num_mileage_states] <- 
+    kappa_1 + kappa_2
+  mileage_trans_mat_hat_not_buy[num_mileage_states, num_mileage_states] <- 1
+  # 購買した場合の遷移行列を作成
+  # 購入した期では m=0 となるため次の期のmileageはそこから決まることに注意
+  mileage_trans_mat_hat_buy <-
+    matrix(1, nrow = num_mileage_states, ncol = 1) %*%
+    mileage_trans_mat_hat_not_buy[1,]
+  # 3次元のarrayとして出力
+  return(array(c(mileage_trans_mat_hat_not_buy, 
+                 mileage_trans_mat_hat_buy),
+               dim = c(num_mileage_states, num_mileage_states, num_choice)))
+}
+```
+
+価格の遷移行列を作成する関数
+
+```{r}
+# パラメタを所与として価格の遷移行列を出力する関数を作成
+gen_price_trans <- function(lambda){
+  lambda_11 <- 1 - lambda[1] - lambda[2] - lambda[3] - lambda[4] - lambda[5]
+  lambda_22 <- 1 - lambda[6] - lambda[7] - lambda[8] - lambda[9] - lambda[10]
+  lambda_33 <- 1 - lambda[11] - lambda[12] - lambda[13] - lambda[14] - lambda[15]
+  lambda_44 <- 1 - lambda[16] - lambda[17] - lambda[18] - lambda[19] - lambda[20]
+  lambda_55 <- 1 - lambda[21] - lambda[22] - lambda[23] - lambda[24] - lambda[25]
+  lambda_66 <- 1 - lambda[26] - lambda[27] - lambda[28] - lambda[29] - lambda[30]
+  price_trans_mat_hat <- 
+    c(lambda_11, lambda[1], lambda[2], lambda[3], lambda[4], lambda[5],
+      lambda[6], lambda_22, lambda[7], lambda[8], lambda[9], lambda[10],
+      lambda[11], lambda[12], lambda_33, lambda[13], lambda[14], lambda[15],
+      lambda[16], lambda[17], lambda[18], lambda_44, lambda[19], lambda[20],
+      lambda[21], lambda[22], lambda[23], lambda[24], lambda_55, lambda[25],
+      lambda[26], lambda[27], lambda[28], lambda[29], lambda[30], lambda_66) %>% 
+    matrix(ncol = num_price_states, nrow = num_price_states, byrow=T)
+  return(price_trans_mat_hat)
+}
+```
+
+走行距離の遷移行列を作成
+
+```{r}
+# 走行距離の遷移行列のパラメタを設定し、遷移行列を作成する
+kappa_true <- c(0.4, 0.1)
+
+mileage_trans_mat_true <- gen_mileage_trans(kappa_true)
+
+# 走行距離の遷移行列の4行4列までを表示
+mileage_trans_mat_true[1:4, 1:4, 1]
+```
+
+価格の遷移行列を作成
+
+```{r}
+# 価格の遷移行列のパラメタを設定し、遷移行列を作成する
+lambda_true <- c(0.1, 0.2, 0.2, 0.2, 0.2,
+                 0.1, 0.2, 0.2, 0.2, 0.2,
+                 0.1, 0.1, 0.2, 0.2, 0.1,
+                 0.1, 0.1, 0.2, 0.2, 0.1,
+                 0.05, 0.05, 0.1, 0.1, 0.2,
+                 0.05, 0.05, 0.1, 0.1, 0.2)
+
+price_trans_mat_true <- gen_price_trans(lambda_true)
+
+# 価格の遷移行列を表示
+price_trans_mat_true
+```
+
+
+```{r}
+# コントロール変数毎の遷移行列を作成
+trans_mat_true <- list()
+
+# 車を購入しない場合の遷移行列
+trans_mat_true$not_buy <- 
+  mileage_trans_mat_true[,,1] %x% price_trans_mat_true
+
+# 車を購入する場合の遷移行列
+trans_mat_true$buy <- 
+  mileage_trans_mat_true[,,2] %x% price_trans_mat_true
+```
+
+```{r}
+# 定常状態での価格の分布を計算
+# 以下を満たすような price_dist_steady を求める
+# price_dist_steady %*% price_trans_mat == price_dist_steady
+
+# 固有値/固有ベクトルを求める
+# 固有値が1となる固有ベクトルは1つだけ（1つめ）
+price_trans_eigen <- eigen(t(price_trans_mat_true))
+
+# 価格の定常分布を求める
+price_dist_steady <-
+  price_trans_eigen$vectors[, 1] / sum(price_trans_eigen$vectors[, 1])
+
+price_dist_steady
+```
+
+#### 効用関数の定義
+
+効用関数は以下の式で定義される。
+$$
+u(x_t, i_t; \theta) = 
+\begin{cases}
+    - \theta_{c} m_t & \text{if} \quad  i_t = 0 \\
+    - \theta_p p_t & \text{if} \quad  i_t = 1
+\end{cases}
+$$
+
+```{r}
+# 状態変数、コントロール変数毎の今期の効用を返す関数
+flow_utility <- function(theta, state_df){
+  theta_c <- theta[1]
+  theta_p <- theta[2]
+  
+  U <- 
+    cbind(
+      # その期における車を購入しない場合の効用
+      U_not_buy = - theta_c * state_df$mileage, 
+      # その期における車を購入する場合の効用
+      U_buy = - theta_p * state_df$price
+      ) 
+  return(U)
+}
+```
+
+#### 価値関数反復法
+
+```{r}
+contraction <- 
+  function(theta, beta, trans_mat, state_df) {
+    # 価値関数の初期値
+    num_states <- nrow(state_df)
+    V_old <- matrix(0, nrow = num_states, ncol = 1)
+    
+    # パラメタより今期の効用を計算
+    U <- flow_utility(theta, state_df)
+
+    # 価値関数の差の初期値
+    diff <- 1000
+    
+    # 縮小写像の誤差範囲
+    tol_level <- 1.0e-12
+    
+    while (diff > tol_level) {
+      # 価値関数を計算
+      V_new <- log(rowSums(exp(U + beta * cbind(trans_mat$not_buy %*% V_old,
+                                                trans_mat$buy %*% V_old)))) + Euler_const
+      # 価値関数の更新による差を評価
+      diff <- max(abs(V_new - V_old))
+      # 価値関数を次のループに渡す(価値関数の更新)
+      V_old <- V_new
+    }
+    # 得られた事前の価値関数を出力
+    return(V_old)
+  }
+```
+
+```{r}
+# Vを求める
+start_time <- proc.time()
+V_true <- contraction(theta_true, beta, trans_mat_true, state_df)
+end_time <- proc.time()
+cat('Runtime:\n')
+print((end_time - start_time)[[3]])
+
+# 選択毎の価値関数を定義する
+U_true <- flow_utility(theta_true, state_df)
+V_CS_true <- U_true + beta * cbind(trans_mat_true$not_buy %*% V_true,
+                                   trans_mat_true$buy %*% V_true)
+colnames(V_CS_true) <- c('V_not_buy', 'V_buy')
+```
+
+```{r}
+# state(p,m)ごとに、logitで計算される理論上の条件付き購入確率を計算
+prob_buy_true_mat <- matrix(exp(V_CS_true[, 'V_buy']) / rowSums(exp(V_CS_true)), 
+                            nrow = num_price_states, ncol = num_mileage_states)
+prob_buy_true_mat
+```
+
+### シミュレーション
+今回は1000人の消費者が50年にわたって車を購入するか、しないかの意思決定をしてきたことを想定したデータを作成する。ただし、私たちが観測できるのは最後の10年とする。
+
+```{r}
+## サンプルサイズを決める
+
+# 1000人の消費者が存在
+num_consumer <- 1000
+
+# 50年分の年次データを生成した後、最後の10年のみが観察できるとする
+num_period <- 50
+num_period_obs <- 10
+
+# 総観察数
+num_obs <- num_consumer * num_period
+
+# 累積分布確率を持つように遷移行列を変換（行方向に足し上げる）
+trans_mat_cum <- list()
+trans_mat_cum$not_buy <- t(apply(trans_mat_true$not_buy, 1, cumsum))
+trans_mat_cum$buy <- t(apply(trans_mat_true$buy, 1, cumsum))
+```
+
+```{r}
+# 乱数を固定
+set.seed(1)
+
+# 生成するデータの元となるdata.frameを作成
+data_gen <- 
+  dplyr::tibble(
+    consumer = rep(1:num_consumer, each = num_period),
+    period = rep(1:num_period, times = num_consumer),
+    eps_type1_not_buy = evd::rgev(num_obs),
+    eps_type1_buy = evd::rgev(num_obs),
+    eps_unif = runif(num_obs),
+    eps_price_state_unif = runif(num_obs),
+    state_id = 0,
+    action = 0
+  )
+```
+
+```{r}
+# 各消費者についてデータを生成する関数を作成
+generate_data <- function(df, V_CS, state_df, price_dist_steady) {
+  
+  # Step 1: 各消費者について、初期のstate_idを決める
+  # 価格は定常分布に従うとし、走行距離は0とする
+  
+  # 価格の定常分布の累積値を計算
+  price_dist_steady_cumsum <- cumsum(price_dist_steady)
+  
+  # 一様分布から生成した乱数が、定常分布の累積値を
+  # 初めて下回ったところを1期の状態変数とする
+  price_id_consumer <- 0
+  exceed_trans_prob_price <- TRUE
+  while(exceed_trans_prob_price) {
+      price_id_consumer <- price_id_consumer + 1
+      exceed_trans_prob_price <- 
+        (df$eps_price_state_unif[1] >
+           price_dist_steady_cumsum[price_id_consumer])
+  }
+  
+  # state_idに変換し、各消費者の初期のstate_idを決める
+  df$state_id[1] <-  state_df %>% 
+    # mileageは0とする
+    dplyr::filter(mileage_id == 1) %>% 
+    dplyr::filter(price_id == price_id_consumer) %>% 
+    dplyr::select(state_id) %>% 
+    as.numeric()
+  
+  # Step 2: 各消費者について、状態変数、コントロール変数を逐次的に生成
+  for (t in 1:(num_period - 1)) {
+    # t期のstateを取得
+    state_id_today <- df$state_id[t]
+    
+    # 価値関数に基づいて、購入するかどうかを決める
+    if (V_CS[, 'V_not_buy'][state_id_today] + df$eps_type1_not_buy[t] > 
+        V_CS[, 'V_buy'][state_id_today] + df$eps_type1_buy[t]){
+      
+      # 購入しない
+      df$action[t] <- 0
+      
+      # 直面する遷移行列を定義
+      trans_mat_cum_today <- trans_mat_cum$not_buy
+      
+    } else {
+      # 購入する
+      df$action[t] <- 1
+      
+      # 直面する遷移行列を定義
+      trans_mat_cum_today <- trans_mat_cum$buy
+      
+    }
+    
+    # t+1期のstateを決める
+    state_id_tomorrow <- 0
+    exceed_trans_prob <- TRUE
+    # 一様分布から生成した乱数が、遷移確率の累積分布の値を
+    # 初めて下回ったところをt+1期の状態変数とする
+    while (exceed_trans_prob) {
+      state_id_tomorrow <- state_id_tomorrow + 1
+      trans_prob <- trans_mat_cum_today[state_id_today, state_id_tomorrow]
+      exceed_trans_prob <- (df$eps_unif[t] > trans_prob)
+    }
+    df$state_id[t + 1] <- state_id_tomorrow
+  }
+  return(df)
+}
+```
+
+```{r}
+data_gen <- 
+  data_gen %>%
+  # 消費者ごとにデータを分割
+  dplyr::group_split(consumer) %>%
+  # 上記の関数で定義したデータの生成過程をすべての消費者に対して行う
+  purrr::map_dfr(generate_data,
+                 V_CS = V_CS_true,
+                 state_df = state_df, 
+                 price_dist_steady = price_dist_steady) %>% 
+  # 最後の10年のみが観察できるとする
+  dplyr::filter(period > (num_period - num_period_obs)) %>% 
+  # 状態変数を表した列を追加
+  dplyr::left_join(state_df, by = 'state_id')
+
+data_gen %>% tail(3)
+
+data_gen %>% write.csv("intermediate/Chap6_data.csv")  # 擬似データの出力・保存
+```
+
+
+```{r}
+# 不要なオブジェクトの削除
+rm(V_CS_true, trans_mat_cum)
+```
+
+# 記述統計
+
+生成したデータの記述統計を確認する。
+ここでは要約統計に加えて、それぞれの走行距離における購入割合、それぞれの価格における購入割合を確認することで走行距離、価格と購入パターンとの関連を見る。
+
+```{r}
+# 生成したデータの要約統計
+data_gen %>% 
+  dplyr::select(price, mileage, action) %>%
+  skimr::skim() %>% 
+  skimr::yank('numeric') %>% 
+  dplyr::select(skim_variable, mean, sd, p0, p100) %>%
+  xtable::xtable(digits = rep(4, ncol(.) + 1)) %>%
+  print(file = 'output/tbl_descr.tex')
+```
+
+走行距離と価格の分布を確認する
+
+```{r}
+# 走行距離の分布
+data_gen %>%
+  ggplot2::ggplot(aes(x = mileage)) + 
+  ggplot2::geom_histogram(bins = 21) +
+  ggplot2::theme_bw() +
+  ggplot2::theme(
+    axis.title.y = element_text(angle = 0, vjust = 0.5),
+    text = element_text(family = 'HiraKakuPro-W3'),
+    legend.position = 'none',
+    panel.grid.major.y = element_line(color = 'grey', 
+                                      linewidth = 0.3, linetype = 'dotted'),
+    panel.grid.minor = element_blank(),
+    panel.grid.major.x = element_blank(),
+    panel.border = element_blank(),
+    axis.line = element_line(colour = 'black', linewidth = 0.2)
+    ) +
+  ggplot2::labs(y = str_wrap('頻 度', width = 1), x = '走行距離（百万km）')
+ggsave('output/dist_mile.pdf', device = cairo_pdf)
+
+# 価格の分布
+data_gen %>%
+  ggplot2::ggplot(aes(x = price)) + 
+  ggplot2::geom_histogram(bins = 6)+
+  ggplot2::theme_bw() +
+  ggplot2::theme(
+    axis.title.y = element_text(angle = 0, vjust = 0.5),
+    text = element_text(family = 'HiraKakuPro-W3'),
+    legend.position = 'none',
+    panel.grid.major.y = element_line(color = 'grey',
+                                      linewidth = 0.3, linetype = 'dotted'),
+    panel.grid.minor = element_blank(),
+    panel.grid.major.x = element_blank(),
+    panel.border = element_blank(),
+    axis.line = element_line(colour = 'black', linewidth = 0.2)
+    ) +
+  ggplot2::labs(y = str_wrap('頻 度', width = 1), x = '価格（百万円）')+
+  scale_x_continuous(breaks = seq(2.0, 2.5, by = 0.1))
+
+ggsave('output/dist_price.pdf', device = cairo_pdf)
+```
+
+走行距離と購入パターンの関連
+
+```{r}
+# それぞれの走行距離において購入した割合を観察
+data_gen %>% 
+  dplyr::group_by(mileage) %>% 
+  dplyr::summarize(num_state = n(),
+                   sum_action = sum(action),
+                   .groups = 'drop') %>% 
+  dplyr::mutate(prob_buy = sum_action / num_state) %>% 
+  ggplot2::ggplot(aes(x = mileage, y = prob_buy)) + 
+  ggplot2::geom_bar(stat = 'identity') +
+  ggplot2::theme_bw() +
+  ggplot2::theme(
+    axis.title.y = element_text(angle = 0, vjust = 0.5),
+    text = element_text(family = 'HiraKakuPro-W3'),
+    legend.position = 'none',
+    panel.grid.major.y = element_line(color = 'grey',
+                                      linewidth = 0.3, linetype = 'dotted'),
+    panel.grid.minor = element_blank(),
+    panel.grid.major.x = element_blank(),
+    panel.border = element_blank(),
+    axis.line = element_line(colour = 'black', linewidth = 0.2)
+    ) +
+  ggplot2::labs(y = str_wrap('購 入 確 率', width = 1), x = '走行距離（百万km）')
+ggsave('output/CCP_mile.pdf', device = cairo_pdf)
+```
+
+価格と購入パターンの関連
+
+```{r}
+# それぞれの価格において購入した割合を観察
+data_gen %>% 
+  dplyr::group_by(price) %>% 
+  dplyr::summarize(num_state = n(),
+                   sum_action = sum(action),
+                   .groups = 'drop') %>% 
+  dplyr::mutate(prob_buy = sum_action / num_state) %>% 
+  ggplot2::ggplot(aes(x = price, y = prob_buy)) + 
+  ggplot2::geom_bar(stat = 'identity') +
+  ggplot2::theme_bw() +
+  ggplot2::theme(
+    axis.title.y = element_text(angle = 0, vjust = 0.5),
+    text = element_text(family = 'HiraKakuPro-W3'),
+    legend.position = 'none',
+    panel.grid.major.y = element_line(color = 'grey',
+                                      linewidth = 0.3, linetype = 'dotted'),
+    panel.grid.minor = element_blank(),
+    panel.grid.major.x = element_blank(),
+    panel.border = element_blank(),
+    axis.line = element_line(colour = 'black', linewidth = 0.2)
+    ) +
+  ggplot2::labs(y=str_wrap('購 入 確 率', width = 1), x = '価格（百万円）')
+ggsave('output/CCP_price.pdf', device = cairo_pdf)
+```
+
+観測された条件付き購入確率
+
+```{r}
+# state(p,m)ごとに、観測された条件付き購入確率を計算
+prob_buy_obs_mat <- 
+  data_gen %>%
+  dplyr::group_by(mileage,price) %>%
+  dplyr::summarize(num_state = n(),
+                   sum_action = sum(action),
+                   .groups = 'drop') %>%
+  dplyr::mutate(prob_buy = sum_action / num_state) %>% 
+  dplyr::select(prob_buy) %>% 
+  as.matrix() %>% 
+  matrix(nrow = num_price_states, ncol = num_mileage_states)
+prob_buy_obs_mat
+
+cairo_pdf('output/CCP_3D.pdf')
+par(family = 'HiraKakuProN-W3')
+hist3D(x = mileage_states, y = price_states, z = t(prob_buy_obs_mat),
+       zlim = c(0, 0.8),
+       bty = 'g', phi = 10,  theta = -60, axes = TRUE, label = TRUE,
+       xlab = '走行距離（百万km）', ylab = '価格（百万円）', zlab = '購入確率',
+       col = 'grey', border = 'black', shade = 0.4,
+       ticktype = 'detailed', space = 0.05, d = 2, cex.axis = 0.8)
+dev.off()
+```
+
+# 遷移行列の推定
+
+ここでは遷移行列をデータから推定する
+
+## 走行距離の遷移行列の推定
+
+```{r}
+# 遷移行列の推定で使うため、ラグ変数を追加
+data_gen <- 
+  data_gen %>% 
+  dplyr::group_by(consumer) %>% 
+  dplyr::mutate(lag_price_id = lag(price_id),
+                lag_mileage_id = lag(mileage_id),
+                lag_action = lag(action)) %>% 
+  dplyr::ungroup() 
+```
+
+```{r}
+# それぞれの確率が実現した観察の数を数える
+num_cond_obs_mileage <- 
+  data_gen %>% 
+  # 1期目は推定に使えないため落とす
+  dplyr::filter(period != (num_period - num_period_obs + 1)) %>% 
+  # t期の走行距離、t+1期の走行距離、t期の購買ごとにグループ化して、観察数を数える
+  dplyr::group_by(lag_mileage_id, mileage_id, lag_action) %>% 
+  dplyr::summarise(num_cond_obs = n(),
+                   .groups = 'drop') %>% 
+  # 確率ごとに名前を割り当てる
+  dplyr::mutate(
+    cond_obs_mileage = case_when(
+      # 1 - kappa_1 - kappa_2 の場合
+      (
+        (lag_action == 0 &
+           between(lag_mileage_id, 1, 20) &
+           (lag_mileage_id == mileage_id)) |
+          (lag_action == 1 & 
+             mileage_id == 1)
+        ) ~ 'cond_obs_mileage1',
+      # kappa_1 の場合
+      (
+        (lag_action == 0 &
+           between(lag_mileage_id, 1, 19) &
+           (lag_mileage_id == mileage_id - 1)) |
+          (lag_action == 1 & 
+             mileage_id == 2)
+        ) ~ 'cond_obs_mileage2',
+      # kappa_2 の場合
+      (
+        (lag_action == 0 &
+           between(lag_mileage_id, 1, 19) &
+           (lag_mileage_id == mileage_id - 2)) |
+          (lag_action == 1 & 
+             mileage_id == 3)
+        ) ~ 'cond_obs_mileage3',
+      # kappa_1 + kappa_2 の場合
+      (
+        lag_action == 0 &
+          lag_mileage_id == 20 &
+          mileage_id == 21
+      ) ~ 'cond_obs_mileage4',
+      TRUE ~ 'other'
+    )) %>% 
+  # 'other' は推定には使わないため落とす
+  dplyr::filter(cond_obs_mileage != 'other') %>% 
+  # 確率ごとにグループ化し、再度、観察の数を数える
+  dplyr::group_by(cond_obs_mileage) %>% 
+  dplyr::summarise(num_cond_obs = as.numeric(sum(num_cond_obs)),
+                   .groups = 'drop') %>% 
+  dplyr::select(num_cond_obs) %>% 
+  as.matrix() 
+```
+
+```{r}
+# 最尤法の解析解により推定値を求める
+kappa_est <- c()
+kappa_est[1] <- 
+  (num_cond_obs_mileage[2] * 
+      (num_cond_obs_mileage[2] + num_cond_obs_mileage[3] + num_cond_obs_mileage[4])) /
+    ((num_cond_obs_mileage[2] + num_cond_obs_mileage[3]) * 
+       (num_cond_obs_mileage[1] + num_cond_obs_mileage[2] + 
+          num_cond_obs_mileage[3] + num_cond_obs_mileage[4]))
+kappa_est[2] <- 
+  (num_cond_obs_mileage[3] * 
+      (num_cond_obs_mileage[2] + num_cond_obs_mileage[3] + num_cond_obs_mileage[4])) /
+    ((num_cond_obs_mileage[2] + num_cond_obs_mileage[3]) * 
+       (num_cond_obs_mileage[1] + num_cond_obs_mileage[2] + 
+          num_cond_obs_mileage[3] + num_cond_obs_mileage[4]))
+```
+
+
+```{r}
+# 最尤法の解析解により標準誤差を求める
+Infomat_mileage_est <- matrix(0, nrow = 2, ncol = 2)
+
+# 最尤法のフィッシャー情報量を求める
+Infomat_mileage_est[1,1] <- 
+  (num_cond_obs_mileage[1] / (1 - kappa_est[1] - kappa_est[2])^2) +
+    (num_cond_obs_mileage[2] / kappa_est[1]^2) +
+    (num_cond_obs_mileage[4] / (kappa_est[1]+kappa_est[2])^2)
+Infomat_mileage_est[1,2] <- 
+  (num_cond_obs_mileage[1] / (1 - kappa_est[1] - kappa_est[2])^2) +
+    (num_cond_obs_mileage[4] / (kappa_est[1]+kappa_est[2])^2)
+Infomat_mileage_est[2,1] <- Infomat_mileage_est[1,2]
+Infomat_mileage_est[2,2] <- 
+  (num_cond_obs_mileage[1] / (1 - kappa_est[1] - kappa_est[2])^2) +
+    (num_cond_obs_mileage[3] / kappa_est[2]^2) +
+    (num_cond_obs_mileage[4] / (kappa_est[1]+kappa_est[2])^2)
+
+# 逆行列の対角要素の平方根が標準誤差になる
+kappa_se <- sqrt(diag(solve(Infomat_mileage_est)))
+```
+
+```{r}
+dplyr::tibble(kappa_est, kappa_se) %>%
+  xtable::xtable(digits = rep(6, ncol(.) + 1)) %>%
+  print(file = 'output/tbl_kappa_est.tex')
+```
+
+## 価格の遷移行列の推定
+
+```{r}
+# それぞれの確率が実現した観察の数を数える
+num_cond_obs_price <- 
+  data_gen %>% 
+  # 1期目は推定に使えないため落とす
+  dplyr::filter(period != (num_period - num_period_obs + 1)) %>% 
+  # t期の価格、t+1期の価格ごとにグループ化して、観察数を数える
+  dplyr::group_by(lag_price_id, price_id) %>% 
+  dplyr::summarise(num_cond_obs = n(),
+                   .groups = 'drop') %>% 
+  # 観察数を行列（num_price_states行の正方行列）に変換
+  # price_id (t+1期の価格) を横に広げる
+  tidyr::pivot_wider(names_from = 'price_id',
+                     values_from = 'num_cond_obs') %>%
+  dplyr::select(!lag_price_id) %>% 
+  as.matrix()
+```
+
+```{r}
+# 最尤法の解析解により推定値を求める
+lambda_est_mat <- 
+  num_cond_obs_price / rowSums(num_cond_obs_price)
+lambda_est_mat
+```
+
+```{r}
+# 最尤法の解析解により標準誤差を求める
+lambda_se <- c()
+for (i in 1:num_price_states) {
+  # 最尤法のフィッシャー情報量を求める
+  Infomat_price_est <- 
+    diag(num_cond_obs_price[i,],
+         num_price_states)[-i, -i] / 
+    (lambda_est_mat[-i, -i]^2) + 
+    (num_cond_obs_price[i, i] / 
+       lambda_est_mat[i, i]^2) *
+    matrix(1, num_price_states, num_price_states)[-i, -i]
+  lambda_se <- c(
+    lambda_se,
+    # 逆行列の対角要素の平方根が標準誤差になる
+    sqrt(diag(solve(Infomat_price_est)))
+  )
+}
+```
+
+
+```{r}
+lambda_se_mat <- 
+    c(0, lambda_se[1], lambda_se[2], lambda_se[3], lambda_se[4], lambda_se[5],
+      lambda_se[6], 0, lambda_se[7], lambda_se[8], lambda_se[9], lambda_se[10],
+      lambda_se[11], lambda_se[12], 0, lambda_se[13], lambda_se[14], lambda_se[15],
+      lambda_se[16], lambda_se[17], lambda_se[18], 0, lambda_se[19], lambda_se[20],
+      lambda_se[21], lambda_se[22], lambda_se[23], lambda_se[24], 0, lambda_se[25],
+      lambda_se[26], lambda_se[27], lambda_se[28], lambda_se[29], lambda_se[30], 0) %>% 
+    matrix(ncol = num_price_states, nrow = num_price_states, byrow = T)
+lambda_se_mat
+```
+
+
+```{r}
+lambda_est <- as.vector(t(lambda_est_mat))[c(-1, -8, -15, -22, -29, -36)]
+dplyr::tibble(lambda_est, lambda_se) %>% 
+  xtable::xtable(digits = rep(4, ncol(.) + 1)) %>%
+  print(file = 'output/tbl_lambda_est.tex')
+```
+
+# パラメータの推定
+
+## 静学的なロジットによる推定
+ここでは消費者が動学的にではなく静学的に意思決定を行っていると仮定し、単純なロジットモデルを用いて$\theta_c$と$\theta_p$を推定する。
+
+行列の操作に必要な関数を準備する。
+
+```{r}
+# 行列の(i,j)要素を出力する関数
+mat_ij <- Vectorize(
+  function(i, j, mat) {mat[i, j]},
+  vectorize.args = c('i', 'j'))
+```
+
+
+推定に用いる目的関数を用意する。
+
+```{r}
+# 対数尤度関数を定義
+logLH_stat <- function(theta, state_df, df) {
+  
+  # 選択毎の効用関数を求める
+  U <- flow_utility(theta, state_df)
+  # 選択確率を計算
+  prob_C_stat <- exp(U) / rowSums(exp(U))
+  # 対数尤度を計算
+  sum(log(mat_ij(df$state_id, df$action + 1, prob_C_stat)))
+}
+```
+
+
+パラメータ$\theta_c$と$\theta_p$を推定する
+
+```{r}
+start_time <- proc.time()
+
+# 最適化
+logit_stat_opt <- optim(theta_true, logLH_stat,
+                  state_df = state_df, df = data_gen, 
+                  control = list(fnscale = -1), 
+                  method = 'Nelder-Mead')
+
+end_time <- proc.time()
+cat('Runtime:\n')
+print((end_time - start_time)[[3]])
+theta_est_stat <- logit_stat_opt$par
+theta_est_stat
+```
+
+標準誤差を推定する
+
+```{r}
+hessian_stat <- numDeriv::hessian(func = logLH_stat, x = theta_est_stat, 
+                             state_df = state_df, df = data_gen)
+theta_se_stat <- sqrt(diag(solve(-hessian_stat)))
+dplyr::tibble(theta_est_stat, theta_se_stat) %>%
+  xtable::xtable(digits = rep(6, ncol(.) + 1)) %>%
+  print(file = 'output/tbl_theta_est_static.tex')
+```
+
+
+## 不動点アルゴリズムによる推定
+ここでは不動点アルゴリズムを用いて$\theta_c$と$\theta_p$を推定する。
+
+```{r}
+# 推定された遷移行列を取得
+trans_mat_hat <- list()
+trans_mat_hat$not_buy <- 
+  gen_mileage_trans(kappa_est)[,, 1] %x% gen_price_trans(lambda_est)
+trans_mat_hat$buy <- 
+  gen_mileage_trans(kappa_est)[,, 2] %x% gen_price_trans(lambda_est)
+```
+
+
+推定に用いる目的関数を定義する
+
+```{r}
+# 対数尤度関数を定義
+logLH <- function(theta, beta, trans_mat, state_df, df){
+  # パラメタより今期の効用を計算
+  U <- flow_utility(theta, state_df)
+  # 縮小写像アルゴリズムで得られた事前の価値関数をVとする
+  V <- contraction(theta, beta, trans_mat, state_df)
+  # 選択肢ごとの価値関数を計算
+  V_CS <- U + beta * cbind(trans_mat$not_buy %*% V,
+                           trans_mat$buy %*% V)
+  # 選択確率を計算
+  prob_C <- exp(V_CS) / rowSums(exp(V_CS))
+  # 対数尤度を計算
+  sum(log(mat_ij(df$state_id, df$action + 1, prob_C)))
+}
+```
+
+パラメータ$\theta_c$と$\theta_p$を推定する
+
+```{r}
+start_time <- proc.time()
+
+# 最適化
+NFXP_opt <- optim(theta_true, logLH,
+                  beta = beta, trans_mat = trans_mat_hat,
+                  state_df = state_df, df = data_gen, 
+                  control = list(fnscale = -1), 
+                  method = 'Nelder-Mead')
+end_time <- proc.time()
+cat('Runtime:\n')
+print((end_time - start_time)[[3]])
+theta_est <- NFXP_opt$par
+theta_est
+```
+
+標準誤差を推定する
+
+```{r}
+hessian <- numDeriv::hessian(func = logLH, x = theta_est, 
+                             beta = beta,　trans_mat = trans_mat_hat,
+                             state_df = state_df, df = data_gen)
+theta_se <- sqrt(diag(solve(-hessian)))
+dplyr::tibble(theta_est, theta_se) %>%
+  xtable::xtable(digits = rep(6, ncol(.) + 1)) %>%
+  print(file = 'output/tbl_theta_est_nfxp_ch6.tex')
+```
+
+
+
