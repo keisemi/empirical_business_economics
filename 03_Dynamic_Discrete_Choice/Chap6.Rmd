@@ -952,5 +952,18 @@ dplyr::tibble(theta_est, theta_se) %>%
   print(file = 'output/tbl_theta_est_nfxp_ch6.tex')
 ```
 
+## 推定結果の比較
+
+```{r}
+dplyr::tibble(
+  algorithm = c('Static', 'NFXP', 'True'),
+  theta_c = c(theta_est_stat[1], theta_est[1], theta_true[1]),
+  theta_se_c = c(theta_se_stat[1], theta_se[1], NA),
+  theta_p = c(theta_est_stat[2], theta_est[2], theta_true[2]),
+  theta_se_p = c(theta_se_stat[2], theta_se[2], NA)
+) %>%
+  xtable::xtable(digits = rep(3, ncol(.) + 1)) %>%
+  print(file = 'output/tbl_ch6_compare_est.tex')
+```
 
 
