@@ -518,7 +518,7 @@ data_gen %>%
 ```{r}
 # 走行距離の分布
 data_gen %>%
-  ggplot2::ggplot(aes(x = mileage)) + 
+  ggplot2::ggplot(aes(x = mileage * 100)) + 
   ggplot2::geom_histogram(bins = 21) +
   ggplot2::theme_bw() +
   ggplot2::theme(
