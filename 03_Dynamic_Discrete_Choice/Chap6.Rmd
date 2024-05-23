@@ -486,13 +486,14 @@ data_gen %>%
     panel.border = element_blank(),
     axis.line = element_line(colour = 'black', linewidth = 0.2)
     ) +
-  ggplot2::labs(y = str_wrap('頻 度', width = 1), x = '走行距離（百万km）')
+  scale_x_continuous(breaks = seq(0, 10, 2)) + 
+  ggplot2::labs(y = str_wrap('頻 度', width = 1), x = '走行距離（万km）')
 ggsave('output/dist_mile.pdf', device = cairo_pdf)
 
 # 価格の分布
 data_gen %>%
-  ggplot2::ggplot(aes(x = price)) + 
-  ggplot2::geom_histogram(bins = 6)+
+  ggplot2::ggplot(aes(x = price * 100)) + 
+  ggplot2::geom_histogram(bins = 6) +
   ggplot2::theme_bw() +
   ggplot2::theme(
     axis.title.y = element_text(angle = 0, vjust = 0.5),
@@ -505,8 +506,8 @@ data_gen %>%
     panel.border = element_blank(),
     axis.line = element_line(colour = 'black', linewidth = 0.2)
     ) +
-  ggplot2::labs(y = str_wrap('頻 度', width = 1), x = '価格（百万円）')+
-  scale_x_continuous(breaks = seq(2.0, 2.5, by = 0.1))
+  scale_x_continuous(breaks = seq(200, 250, by = 10)) +
+  ggplot2::labs(y = str_wrap('頻 度', width = 1), x = '価格（万円）')
 
 ggsave('output/dist_price.pdf', device = cairo_pdf)
 ```
@@ -521,7 +522,7 @@ data_gen %>%
                    sum_action = sum(action),
                    .groups = 'drop') %>% 
   dplyr::mutate(prob_buy = sum_action / num_state) %>% 
-  ggplot2::ggplot(aes(x = mileage, y = prob_buy)) + 
+  ggplot2::ggplot(aes(x = mileage * 100, y = prob_buy)) + 
   ggplot2::geom_bar(stat = 'identity') +
   ggplot2::theme_bw() +
   ggplot2::theme(
@@ -534,8 +535,9 @@ data_gen %>%
     panel.grid.major.x = element_blank(),
     panel.border = element_blank(),
     axis.line = element_line(colour = 'black', linewidth = 0.2)
-    ) +
-  ggplot2::labs(y = str_wrap('購 入 確 率', width = 1), x = '走行距離（百万km）')
+  ) +
+  scale_x_continuous(breaks = seq(0, 10, 2)) + 
+  ggplot2::labs(y = str_wrap('購 入 確 率', width = 1), x = '走行距離（万km）')
 ggsave('output/CCP_mile.pdf', device = cairo_pdf)
 ```
 
@@ -549,7 +551,7 @@ data_gen %>%
                    sum_action = sum(action),
                    .groups = 'drop') %>% 
   dplyr::mutate(prob_buy = sum_action / num_state) %>% 
-  ggplot2::ggplot(aes(x = price, y = prob_buy)) + 
+  ggplot2::ggplot(aes(x = price * 100, y = prob_buy)) + 
   ggplot2::geom_bar(stat = 'identity') +
   ggplot2::theme_bw() +
   ggplot2::theme(
@@ -563,7 +565,8 @@ data_gen %>%
     panel.border = element_blank(),
     axis.line = element_line(colour = 'black', linewidth = 0.2)
     ) +
-  ggplot2::labs(y=str_wrap('購 入 確 率', width = 1), x = '価格（百万円）')
+  scale_x_continuous(breaks = seq(200, 250, by = 10)) +
+  ggplot2::labs(y=str_wrap('購 入 確 率', width = 1), x = '価格（万円）')
 ggsave('output/CCP_price.pdf', device = cairo_pdf)
 ```
 
@@ -585,10 +588,10 @@ prob_buy_obs_mat
 
 cairo_pdf('output/CCP_3D.pdf')
 par(family = 'HiraKakuProN-W3')
-hist3D(x = mileage_states, y = price_states, z = t(prob_buy_obs_mat),
+hist3D(x = mileage_states * 100, y = price_states * 100, z = t(prob_buy_obs_mat),
        zlim = c(0, 0.8),
        bty = 'g', phi = 10,  theta = -60, axes = TRUE, label = TRUE,
-       xlab = '走行距離（百万km）', ylab = '価格（百万円）', zlab = '購入確率',
+       xlab = '走行距離（万km）', ylab = '価格（万円）', zlab = '購入確率',
        col = 'grey', border = 'black', shade = 0.4,
        ticktype = 'detailed', space = 0.05, d = 2, cex.axis = 0.8)
 dev.off()
