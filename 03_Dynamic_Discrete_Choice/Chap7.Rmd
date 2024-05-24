@@ -653,7 +653,7 @@ for (fixed_price in price_states) {
     dplyr::arrange(mileage_id)
   
   # 遷移行列と状態変数を示すデータフレームが変わっていることに注意してCCPを計算
-  CCP_list[[stringr::str_c('edlp', fixed_price)]] <- 
+  CCP_list[[stringr::str_c('edlp', fixed_price * 100)]] <- 
     policy_operator_nfxp(theta = theta_nfxp, beta = beta, 
                          G = G_fixed_price, state_df = state_df_fixed_price)
 }
@@ -661,7 +661,7 @@ for (fixed_price in price_states) {
 
 ```{r}
 # 200万円に価格を固定した場合の購買確率を計算
-prob_buy_edlp2 <- 
+prob_buy_edlp200 <- 
   data_gen %>% 
   # データよりそれぞれの状態変数が観察された数を数える
   dplyr::group_by(mileage_id, mileage) %>% 
@@ -669,7 +669,7 @@ prob_buy_edlp2 <-
                    .groups = 'drop') %>% 
   dplyr::arrange(mileage_id) %>% 
   # 価格が固定された場合のCCPを新たな列に加える
-  dplyr::mutate(prob_buy = CCP_list[['edlp2']][, 2]) %>% 
+  dplyr::mutate(prob_buy = CCP_list[['edlp200']][, 2]) %>% 
   # 走行距離について、購買確率の加重平均を取る（走行距離の頻度について積分する）
   dplyr::summarize(prob_buy = weighted.mean(prob_buy, num_obs)) %>% 
   as.matrix()
@@ -679,17 +679,17 @@ prob_buy_edlp2 <-
 ```{r}
 # 価格ごとの購買確率を図示する
 result_df_edlp %>% 
-  ggplot2::ggplot(aes(x = price, y = prob_buy_baseline)) + 
+  ggplot2::ggplot(aes(x = price * 100, y = prob_buy_baseline)) + 
   ggplot2::geom_bar(stat = 'identity') +
-  ggplot2::geom_hline(yintercept = prob_buy_edlp2,
+  ggplot2::geom_hline(yintercept = prob_buy_edlp200,
                       color = 'black', linewidth = 1.0,
                       linetype = 'dashed') +
   ggplot2::annotate('text', 
-                    x = 2.5, y = prob_buy_edlp2 + 0.002, 
+                    x = 250, y = prob_buy_edlp200 + 0.005, 
                     color= 'black', 
-                    label = str_c('EDLP: ', round(prob_buy_edlp2, 5))) +
+                    label = str_c('EDLP: ', round(prob_buy_edlp200, 5))) +
   ggplot2::scale_x_continuous(labels = scales::label_number(scale = 1),
-                     breaks = seq(2, 2.5, 0.1)) +
+                     breaks = seq(200, 250, 10)) +
   ggplot2::scale_y_continuous(expand = expansion(mult = c(0, 0.05)))+
   ggplot2::theme_bw() +
   ggplot2::theme(
@@ -705,7 +705,7 @@ result_df_edlp %>%
     panel.border = element_blank(),
     axis.line = element_line(colour = 'black', linewidth = 0.3)
     ) +
-  ggplot2::labs(y = str_wrap('購 買 確 率', width = 1), x = '価格（百万円）')
+  ggplot2::labs(y = str_wrap('購 買 確 率', width = 1), x = '価格（万円）')
 ggsave('output/Counter1_EDLP.pdf', device = cairo_pdf)
 ```
 
@@ -727,7 +727,7 @@ ggsave('output/Counter1_EDLP.pdf', device = cairo_pdf)
 
 ```{r}
 # シナリオ2) 10万円の永続的な値下げ
-# priceを100下げた、state_dfを用意し、CCPを再計算する
+# priceを0.1 (10万円)下げた、state_dfを用意し、CCPを再計算する
 state_df_discount <- 
   state_df %>% 
   dplyr::mutate(price = price - 0.1)
@@ -762,7 +762,7 @@ state_df %>%
                 ProbPermanent, ProbTemporary) %>% 
   tidyr::pivot_longer(cols = - mileage) %>% 
   dplyr::rename(scenario = name, prob_buy = value) %>% 
-  ggplot2::ggplot(aes(x = mileage, y = prob_buy, color = scenario)) +
+  ggplot2::ggplot(aes(x = mileage * 100, y = prob_buy, color = scenario)) +
   ggplot2::geom_line() +
   ggplot2::geom_point() +
   ggplot2::theme_minimal()+
@@ -782,7 +782,8 @@ state_df %>%
     panel.border = element_blank(),
     axis.line = element_line(colour = 'black', linewidth = 0.2)
     ) +
-  ggplot2::labs(y = str_wrap('購 買 確 率', width = 1), x = '走行距離（百万km）') +
+  scale_x_continuous(breaks = seq(0, 10, by = 2)) +
+  ggplot2::labs(y = str_wrap('購 買 確 率', width = 1), x = '走行距離（万km）') +
   ggplot2::scale_color_grey(name = 'シナリオ', 
                             labels = c('ベースライン','永続的', '一時的'))
 ggsave('output/Counter2_CCP_mile.pdf', device = cairo_pdf)
@@ -802,7 +803,7 @@ consumer_dist_obs <-
   dplyr::group_by(state_id, price_id, mileage_id) %>% 
   dplyr::summarise(num_obs = n(),
                    .groups = 'drop') %>% 
-  dplyr::mutate(consumer_dist_obs = num_obs/sum(num_obs)) %>% 
+  dplyr::mutate(consumer_dist_obs = num_obs / sum(num_obs)) %>% 
   dplyr::arrange(state_id) %>% 
   dplyr::select(consumer_dist_obs) %>% 
   as.matrix() %>% 
@@ -824,7 +825,7 @@ for (scenario in discount_scenerio_vec) {
 }
 
 # 需要と収入の計算に使うため、EDLPを行ったときの購買を考慮した遷移行列も作成
-for (scenario in stringr::str_c('edlp', price_states)) {
+for (scenario in stringr::str_c('edlp', price_states * 100)) {
   G_CCP_list[[scenario]] <- 
     (CCP_list[[scenario]][,1] %*% matrix(1, 1, nrow(G_fixed_price[,,1]))) * G_fixed_price[,,1] +
     (CCP_list[[scenario]][,2] %*% matrix(1, 1, nrow(G_fixed_price[,,1]))) * G_fixed_price[,,2]
@@ -834,7 +835,7 @@ for (scenario in stringr::str_c('edlp', price_states)) {
 ```{r}
 # シミュレーションする消費者数と期間を定義
 num_consumer_sim <- 1000
-num_period_sim <- 20
+num_period_sim <- 10
 ```
 
 
@@ -952,6 +953,7 @@ discount_sim_df %>%
     panel.border = element_blank(),
     axis.line = element_line(colour = 'black', linewidth = 0.2)
     ) +
+  scale_x_continuous(breaks = seq(0, 10, by = 2)) +
   ggplot2::labs(y = str_wrap('購 買 確 率', width = 1), x = '期') +
   ggplot2::scale_color_grey(name = 'シナリオ', labels = c('永続的', '一時的'))
 ggsave('output/Counter2_sim_choice_change.pdf', device = cairo_pdf)
@@ -987,7 +989,7 @@ edlp_sim_df <-
 
 # すべての価格についてシミュレーションを行う
 for (fixed_price in price_states) {
-  scenario_edlp <- stringr::str_c('edlp', fixed_price)
+  scenario_edlp <- stringr::str_c('edlp', fixed_price * 100)
   
   # 消費者の分布の推移を表す行列を前もって作成
   consumer_dist_sim <- matrix(0, num_period_sim, length(consumer_dist_obs_edlp))
@@ -1049,8 +1051,9 @@ sim_df <-
 ### EDLPの需要と収入の推移
 
 ```{r}
+# 需要の推移を図示
 sim_df %>% 
-  dplyr::select(period, stringr::str_c('demand_edlp', price_states)) %>% 
+  dplyr::select(period, stringr::str_c('demand_edlp', price_states * 100)) %>% 
   tidyr::pivot_longer(cols = - period) %>% 
   dplyr::rename(scenario = name, demand = value) %>% 
   ggplot2::ggplot(aes(x = period, y = demand, color = scenario)) +
@@ -1069,6 +1072,7 @@ sim_df %>%
     panel.border = element_blank(),
     axis.line = element_line(colour = 'black', linewidth = 0.2)
     ) +
+  scale_x_continuous(breaks = seq(0, 10, by = 2)) +
   ggplot2::labs(y = str_wrap('需 要 量', width = 1), x = '期') +
   ggplot2::scale_color_grey(name = 'シナリオ',
                             labels = c('EDLP200万円', 'EDLP210万円',
@@ -1078,11 +1082,12 @@ ggsave('output/Counter2_sim_demand_EDLP.pdf', device = cairo_pdf)
 ```
 
 ```{r}
+# 収入(万円)の推移
 sim_df %>% 
-  dplyr::select(period, stringr::str_c('revenue_edlp', price_states)) %>% 
+  dplyr::select(period, stringr::str_c('revenue_edlp', price_states * 100)) %>% 
   tidyr::pivot_longer(cols = - period) %>% 
   dplyr::rename(scenario = name, revenue = value) %>% 
-  ggplot2::ggplot(aes(x = period, y = revenue, color = scenario)) +
+  ggplot2::ggplot(aes(x = period, y = revenue * 100, color = scenario)) +
   ggplot2::geom_line() +
   ggplot2::geom_point() +
   ggplot2::theme_minimal() +
@@ -1098,6 +1103,7 @@ sim_df %>%
     panel.border = element_blank(),
     axis.line = element_line(colour = 'black', linewidth = 0.2)
     ) +
+  scale_x_continuous(breaks = seq(0, 10, by = 2)) +
   ggplot2::labs(y = str_wrap('収 入', width = 1), x = '期') +
   ggplot2::scale_color_grey(name = 'シナリオ',
                             labels = c('EDLP200万円', 'EDLP210万円',
@@ -1130,6 +1136,7 @@ sim_df %>%
     panel.border = element_blank(),
     axis.line = element_line(colour = 'black', linewidth = 0.2)
     ) +
+  scale_x_continuous(breaks = seq(0, 10, by = 2)) +
   ggplot2::labs(y = str_wrap('需 要 量', width = 1), x = '期') +
   ggplot2::scale_color_grey(name = 'シナリオ', 
                             labels = c('ベースライン', '永続的', '一時的'))
@@ -1139,7 +1146,7 @@ ggsave('output/Counter2_sim_demand_down.pdf', device = cairo_pdf)
 ```{r}
 # 需要の累積和を図示
 sim_df %>% 
-  dplyr::filter(period <= 20) %>% 
+  dplyr::filter(period <= 10) %>% 
   dplyr::select(period, stringr::str_c('demand_', discount_scenerio_vec)) %>% 
   dplyr::mutate(across(starts_with('demand'), cumsum)) %>% 
   tidyr::pivot_longer(cols = - period) %>% 
@@ -1160,6 +1167,7 @@ sim_df %>%
     panel.border = element_blank(),
     axis.line = element_line(colour = 'black', linewidth = 0.2)
     ) +
+  scale_x_continuous(breaks = seq(0, 10, by = 2)) +
   ggplot2::labs(y = str_wrap('累 積 需 要 量', width = 1), x = '期') +
   ggplot2::scale_color_grey(name = 'シナリオ', 
                             labels = c('ベースライン', '永続的', '一時的'))
@@ -1169,7 +1177,7 @@ ggsave('output/Counter2_sim_cumdemand_down.pdf', device = cairo_pdf)
 ```{r}
 # ベースラインを100とした時の、需要の累積和を図示
 sim_df %>% 
-  dplyr::filter(period <= 20) %>% 
+  dplyr::filter(period <= 10) %>% 
   dplyr::select(period, stringr::str_c('demand_', discount_scenerio_vec)) %>% 
   dplyr::mutate(across(starts_with('demand'), cumsum)) %>% 
   dplyr::mutate(Permanent = demand_Permanent / demand_Baseline * 100,
@@ -1193,6 +1201,7 @@ sim_df %>%
     panel.border = element_blank(),
     axis.line = element_line(colour = 'black', linewidth = 0.2)
     ) +
+  scale_x_continuous(breaks = seq(0, 10, by = 2)) +
   ggplot2::labs(y = str_wrap('累 積 需 要 量', width = 1), x = '期') +
   ggplot2::scale_color_grey(name = 'シナリオ', 
                             labels = c('永続的', '一時的'))
@@ -1200,11 +1209,12 @@ ggsave('output/Counter2_sim_cumdemand_down_100.pdf', device = cairo_pdf)
 ```
 
 ```{r}
+# 収入(万円)の推移を図示
 sim_df %>% 
   dplyr::select(period, stringr::str_c('revenue_', discount_scenerio_vec)) %>% 
   tidyr::pivot_longer(cols = - period) %>% 
   dplyr::rename(scenario = name, revenue = value) %>% 
-  ggplot2::ggplot(aes(x = period, y = revenue, color = scenario)) +
+  ggplot2::ggplot(aes(x = period, y = revenue * 100, color = scenario)) +
   ggplot2::geom_line() +
   ggplot2::geom_point() +
   ggplot2::theme_minimal() +
@@ -1220,6 +1230,7 @@ sim_df %>%
     panel.border = element_blank(),
     axis.line = element_line(colour = 'black', linewidth = 0.2)
     ) +
+  scale_x_continuous(breaks = seq(0, 10, by = 2)) +
   ggplot2::labs(y=str_wrap('収 入', width = 1), x = '期') +
   ggplot2::scale_color_grey(name = 'シナリオ', 
                             labels = c('ベースライン', '永続的', '一時的'))
@@ -1246,9 +1257,10 @@ revenue_df <-
   dplyr::rename(scenario = name, revenue = value)
 
 demand_df %>% 
-  dplyr::left_join(revenue_df, by = 'scenario')%>% 
-  dplyr::mutate(per_rev = revenue / demand / 10) %>% 
-  xtable::xtable(digits = rep(6, ncol(.) + 1)) %>%
+  dplyr::left_join(revenue_df, by = 'scenario') %>% 
+  dplyr::mutate(revenue = revenue / 100) %>%  # 単位は億円
+  dplyr::mutate(per_rev = revenue / demand * 10000) %>%  # 単位は万円
+  xtable::xtable(digits = rep(2, ncol(.) + 1)) %>%
   print(file = 'output/tbl_compare_scenario.tex')
 ```
 
