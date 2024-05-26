@@ -8,7 +8,7 @@ output:
     df_print: paged
     code_folding: hide
     number_section: true
-date: "2024-05-12"
+date: "2024-05-26"
 ---
 　このファイルは、2024年度のきのこの山・たけのこの里アンケートについての分析用のコード及びその結果をまとめたものである。
 ```{r setup, include=FALSE}
@@ -20,19 +20,135 @@ library("tidyverse")
 library("knitr")
 library("magrittr")
 library("mlogit") # ロジットモデル推定のためのパッケージ
-library("stargazer") # 推定結果の表作成
+library("stargazer")# 推定結果の表作成
+library(kableExtra)
 KT_2024 <- read_csv("KinokoTakenokoSurvey_raw.csv")
 
 new_col_name <- c("ID","experience", "Q1", "Q2", "Q3", "Q4", "Q5", "age", "gender", "region", "familyhouse") # 列名変更用
 
-data_for_estimation <- KT_2024 %>%
+KT_2024 <- KT_2024 %>%
   mutate(ID = row_number()) %>%　# 適当にIDを定義
   select(ID, c(8:17)) %>% # 必要な変数のみ選択
   set_colnames(new_col_name) %>% #列名を変更
   filter(experience != "4 : 食べたことがない" & gender != "3 : 回答したくない") %>% # 分析上扱いにくいデータを除外
   drop_na() # NA(未回答？)の行を除外
+```
+以下は提示された価格の組み合わせに対してきのこの山とたけのこの里のどちらを選択したか、あるいはどちらも選択しなかったかの比率を表したものである。比較的たけのこの里のほうが買われやすいことや、価格が高いと購入しない確率が高くなることなどが見て取れる。
+```{r}
+N <- length(KT_2024$ID)
 
-data_for_estimation %>% 
+# 回答数の比率を表にするためのデータ整形
+KT_2024 %>%
+  select(ID, Q1, Q2, Q3, Q4, Q5)  %>% # IDと回答のみ抽出
+  gather(key = Q, value  = choice, Q1, Q2, Q3, Q4, Q5) -> datafig
+
+datafig %>% 
+    mutate( Q = ifelse(Q == "Q1", "Q1: (200円, 200円)" ,Q),  
+            Q = ifelse(Q == "Q2", "Q2: (180円, 200円)" ,Q),  
+            Q = ifelse(Q == "Q3", "Q3: (200円, 170円)" ,Q),  
+            Q = ifelse(Q == "Q4", "Q4: (220円, 200円)" ,Q),  
+            Q = ifelse(Q == "Q5", "Q5: (190円, 210円)" ,Q) ) -> datafig # 対応する選択肢に置き換える
+
+datafig %>% 
+    group_by(Q, choice) %>% 
+    tally() %>% 
+    mutate( n = n/N) %>% 
+    pivot_wider( id_cols = "Q", names_from = "choice", values_from = "n") %>%
+    knitr::kable( digits = 2) -> tab_choice # 表作成
+
+tab_choice
+
+datafig %>% 
+    group_by(Q, choice) %>% 
+    tally() %>% 
+    mutate( n = n/N) %>% 
+    pivot_wider( id_cols = "Q", names_from = "choice", values_from = "n") %>%
+    knitr::kable( digits = 2, "latex") %>%
+    save_kable("output/choice_table.tex") # tex形式で保存
+```
+
+
+以下は回答者の属性の比率である。
+```{r}
+
+# 回答者の属性の比率を表にするためのデータ整形
+data_atr <- KT_2024 %>%
+  mutate(gender =　case_when(gender == "1 : 男性" ~ "男性", 
+                             gender == "2 : 女性" ~ "女性" ),
+          exp    =  case_when(experience == "1 : 過去半年以内" ~ "過去半年以内", 
+                              experience == "2 : 過去半年から１年以内" ~ "過去半年から１年以内", 
+                              experience == "3 : １年以上前" ~ "１年以上前"),
+          adult = if_else(age>=20, "成人", "未成年"),
+    region =  case_when(region == "1 : 北海道地方" ~ "関東", 
+                              region == "2 : 東北地方" ~ "関東", 
+                              region == "3 : 関東地方" ~ "関東" ,
+                              region == "4 : 中部地方" ~ "関東",
+                              region == "5 : 近畿地方" ~ "関西",
+                              region == "6 : 中国地方" ~ "関西",
+                              region == "7 : 四国地方" ~ "関西",
+                              region == "8 : 九州地方(沖縄含む)" ~ "関西",
+                              region == "9 : 海外" ~ "海外"),
+    familyhouse = if_else(familyhouse==1,"実家暮らし","実家暮らしでない"))
+
+
+data_atr %>%
+  group_by(region) %>%
+  tally() %>%
+  mutate(割合 = n/N) %>% 
+  select (-n) %>%
+  mutate(変数 = c("出身地方","","")) %>%
+  rename(属性 = region) %>%
+  select(変数, everything()) ->region_fig
+
+
+
+# data_atr %>%
+#   group_by(exp) %>%
+#   tally() %>%
+#   mutate( "割合" = n/N) %>% 
+#   pivot_wider(  names_from = "exp", values_from = "n") %>% 
+#   mutate("食事経験" = " ") %>%
+#   select("食事経験", everything()) ->exp_fig
+
+data_atr %>%
+  group_by(gender) %>%
+  tally() %>%
+  mutate( 割合 = n/N) %>% 
+  select(-n) %>%
+  mutate(変数 = c("性別","")) %>%
+  rename(属性 = gender) %>%
+  select(変数, everything()) ->gender_fig
+data_atr %>%
+  group_by(familyhouse) %>%
+  tally() %>%
+  mutate( "割合" = n/N) %>% 
+  select(-n) %>%
+  mutate("変数" = c("実家暮らしかどうか","")) %>%
+  rename(属性 = familyhouse) %>%
+  select(変数, everything(),) ->　fam_fig
+
+data_atr %>%
+  group_by(adult) %>%
+  tally() %>%
+  mutate( 割合 = n/N) %>% 
+  select(-n) %>%
+  mutate(変数 = c("成人かどうか","")) %>%
+  rename(属性 = adult) %>%
+  select(変数, everything()) ->adult_fig
+
+rbind(gender_fig,adult_fig, fam_fig, region_fig)  %>%
+  knitr::kable( digits = 2) -> tab_atr
+
+tab_atr
+
+rbind(gender_fig,adult_fig, fam_fig, region_fig)  %>%
+  knitr::kable( digits = 2, "latex",linesep = c("", "\\addlinespace","", "\\addlinespace","","\\addlinespace","","","\\addlinespace"),
+                booktabs = TRUE) %>%
+  save_kable("output/characteristics_table.tex")
+```
+```{r}
+# 分析用のデータ整形
+KT_2024 %>% 
   gather(key = "occasion", value = choice, starts_with("Q")) -> data_for_estimation
 
 pricedata <- 
@@ -97,7 +213,7 @@ ml <- mlogit(formula = no_atr,
 rcdc <- mlogit(formula = no_atr, 
                data = datalogit, 
                panel = TRUE, 
-               rpar = c(price = "ln", Kinoko = "n", Takenoko = "n") , 
+               rpar = c(price = "n", Kinoko = "n", Takenoko = "n") , 
                R = 2000, 
                correlation = FALSE)
 ml_consumer_atr <- mlogit(formula = with_atr, 
@@ -105,18 +221,20 @@ ml_consumer_atr <- mlogit(formula = with_atr,
 rcdc_consumer_atr <- mlogit(formula = with_atr, 
                             data = datalogit, 
                             panel = TRUE, 
-                            rpar = c(price = "ln", Kinoko = "n", Takenoko = "n") , 
+                            rpar = c(price = "n", Kinoko = "n", Takenoko = "n") , 
                             R = 2000, 
                             correlation = FALSE) 
 
 ```
 　以下に、(1):消費者属性を入れない多項ロジット、(2):消費者属性を入れないランダム係数ロジット、(3):消費者属性を入れた多項ロジット、(4):消費者属性を入れたランダム係数ロジットのそれぞれの分析結果を並べた表を示す。
+
+
 ```{r, results = "asis"}
 # 表
 stargazer::stargazer(ml,rcdc,ml_consumer_atr,rcdc_consumer_atr,column.labels=c("mlogit","rcdc","mlogit","rcdc"),single.row=TRUE,type="html",align = TRUE)
 
 ```
-　成人であると価格に反応しやすく、購入確率が低い傾向にあることが示唆される。また、女性である場合は価格に反応しにくく、購入確率が高い傾向にあることもわかる。
+　20歳以上であると19歳に比べて価格に反応しやすいことや、購入確率が低い傾向にあることが示唆される。また、女性である場合は男性に比べて価格に反応しにくいことや、購入確率が高い傾向にあることもわかる。
 
 
 
