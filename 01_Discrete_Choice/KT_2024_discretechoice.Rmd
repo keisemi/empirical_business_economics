@@ -276,85 +276,89 @@ dist_Kinoko <- rpar(rcdc_consumer_atr,'Kinoko')
 dist_Takenoko <- rpar(rcdc_consumer_atr,'Takenoko')
 dist_price <- rpar(rcdc_consumer_atr,'price')
 # 各個人の属性のパラメタを計算して平均する→その値と選好パラメタ(消費者属性を考慮していない)の平均との和を取る
-param_Takenoko_atr <- data_for_param$gender*rcdc_consumer_atr$coefficients[5]+data_for_param$familyhouse*rcdc_consumer_atr$coefficients[8]+data_for_param$adult*rcdc_consumer_atr$coefficients[11]+data_for_param$kansai*rcdc_consumer_atr$coefficients[15]+data_for_param$oversea*rcdc_consumer_atr$coefficients[16]
-alpha_Takenoko_mean <- dist_Takenoko$mean + mean(param_Takenoko_atr)
-
-param_Kinoko_atr <- data_for_param$gender*rcdc_consumer_atr$coefficients[6]+data_for_param$familyhouse*rcdc_consumer_atr$coefficients[9]+data_for_param$adult*rcdc_consumer_atr$coefficients[12]+data_for_param$kansai*rcdc_consumer_atr$coefficients[17]+data_for_param$oversea*rcdc_consumer_atr$coefficients[18]
-alpha_Kinoko_mean <- dist_Kinoko$mean + mean(param_Kinoko_atr)
+param_Takenoko <- dist_Takenoko$mean +data_for_param$gender*rcdc_consumer_atr$coefficients[5]+data_for_param$familyhouse*rcdc_consumer_atr$coefficients[8]+data_for_param$adult*rcdc_consumer_atr$coefficients[11]+data_for_param$kansai*rcdc_consumer_atr$coefficients[15]+data_for_param$oversea*rcdc_consumer_atr$coefficients[16]
 
 
-param_price_atr <- data_for_param$gender*rcdc_consumer_atr$coefficients[4]+data_for_param$familyhouse*rcdc_consumer_atr$coefficients[7]+data_for_param$adult*rcdc_consumer_atr$coefficients[10]+data_for_param$kansai*rcdc_consumer_atr$coefficients[13]+data_for_param$oversea*rcdc_consumer_atr$coefficients[14]
-beta_price_mean <- dist_price$mean + mean(param_price_atr)
+param_Kinoko <- dist_Kinoko$mean+ data_for_param$gender*rcdc_consumer_atr$coefficients[6]+data_for_param$familyhouse*rcdc_consumer_atr$coefficients[9]+data_for_param$adult*rcdc_consumer_atr$coefficients[12]+data_for_param$kansai*rcdc_consumer_atr$coefficients[17]+data_for_param$oversea*rcdc_consumer_atr$coefficients[18]
+
+
+
+param_price <- dist_price$mean + data_for_param$gender*rcdc_consumer_atr$coefficients[4]+data_for_param$familyhouse*rcdc_consumer_atr$coefficients[7]+data_for_param$adult*rcdc_consumer_atr$coefficients[10]+data_for_param$kansai*rcdc_consumer_atr$coefficients[13]+data_for_param$oversea*rcdc_consumer_atr$coefficients[14]
+
 ```
-きのこの山とたけのこの里の係数の差の分布は以下のようになる。きのこよりもたけのこがより好まれていることが見て取れる。
 ```{r}
+alpha_Kinoko_for_dist <- NULL
+alpha_Takenoko_for_dist <- NULL
+beta_price_for_dist <- NULL
+for(i in 1:236){
+set.seed(100+i)
 
+alpha_Kinoko_draw = dist_Kinoko$sigma*rnorm(1000, mean = 0, sd = 1)+param_Kinoko[i]
+alpha_Kinoko_for_dist = c(alpha_Kinoko_for_dist, alpha_Kinoko_draw)
+
+alpha_Takenoko_draw = dist_Takenoko$sigma*rnorm(1000, mean = 0, sd = 1)+param_Takenoko[i]
+alpha_Takenoko_for_dist = c(alpha_Takenoko_for_dist, alpha_Takenoko_draw)
+
+beta_price_draw = dist_price$sigma*rnorm(1000, mean = 0, sd = 1)+param_price[i]
+beta_price_for_dist = c(beta_price_for_dist, beta_price_draw)
+}
+```
+
+きのこの山とたけのこの里の係数の差の分布(ヒストグラムと密度)は以下のようになる。きのこよりもたけのこがより好まれていることが見て取れる。
+```{r}
+data_for_distribution =
+  tibble( alpha_Kinoko_for_dist , 
+          alpha_Takenoko_for_dist ,  
+          beta_price_for_dist) 
 # きのことたけのこの係数の差の分布
-KT_dist <- ggplot(data = data.frame(x = c(-25, 25)), aes(x)) +
-  stat_function(fun = dnorm, n = 101, 
-                args = list(mean = alpha_Kinoko_mean -alpha_Takenoko_mean , 
-                            sd = sqrt(dist_Kinoko$sigma^2 + dist_Takenoko$sigma^2) ) ) +
+KT_dist_hist <- ggplot(data = data_for_distribution,aes(x = alpha_Kinoko_for_dist - alpha_Takenoko_for_dist)) +
+  geom_histogram(binwidth = 0.75) +
+  ylab("frequency") + xlab("Kinoko - Takenoko") +
+  ggtitle("Preference Kinoko over Takenoko")
+plot(KT_dist_hist)
+ggsave(filename = "output/fig_hist_preference_KT.pdf", plot = KT_dist_hist, width = 6, height = 6)
+KT_dist_density <- ggplot(data = data_for_distribution,aes(x = alpha_Kinoko_for_dist - alpha_Takenoko_for_dist)) +
+  geom_density() +
   ylab("density") + xlab("Kinoko - Takenoko") +
   ggtitle("Preference Kinoko over Takenoko")
-plot(KT_dist)
-
-ggsave(filename = "output/fig_dist_preference_KT.pdf", plot = KT_dist, width = 6, height = 6)
+plot(KT_dist_density)
+ggsave(filename = "output/fig_dist_preference_KT.pdf", plot = KT_dist_density, width = 6, height = 6)
 ```
-続いて、以下が価格係数の分布である。
+続いて、以下が価格係数の分布(ヒストグラムと密度)である。
 ```{r}
 # 価格係数の分布
-p_coef_dist <- ggplot(data = data.frame(x = c(0.05, 0.30) ), aes(x)) +
-  stat_function(fun = dnorm, n = 101, 
-                args = list(mean = beta_price_mean, sd = abs(dist_price$sigma)), colour = "red" ) + 
-  ylab("density") + xlab("beta") +
-  scale_y_continuous(breaks = NULL) + ggtitle("Beta (price coefficient)")
-plot(p_coef_dist)
-ggsave(filename = "output/fig_dist_price_coef.pdf", plot = p_coef_dist, width = 6, height = 6)
+p_coef_dist_hist <- ggplot(data = data_for_distribution, aes(beta_price_for_dist)) +
+  geom_histogram(binwidth = 0.0075)+
+  ylab("frequency") + xlab("beta") +
+  ggtitle("Beta (price coefficient)")
+plot(p_coef_dist_hist)
+ggsave(filename = "output/fig_hist_price_coef.pdf", plot = p_coef_dist_hist, width = 6, height = 6)
+p_coef_dist_density <- ggplot(data = data_for_distribution, aes(beta_price_for_dist)) +
+  geom_density()+
+  ylab("density") + xlab("beta") + ggtitle("Beta (price coefficient)")
+plot(p_coef_dist_density)
+ggsave(filename = "output/fig_dist_price_coef.pdf", plot = p_coef_dist_density, width = 6, height = 6)
 ```
 
 次に、WTPの分布を作成する。
 ```{r}
 # WTPを求める
 
-# ループ格納用
-alpha_Kinoko_for_WTP <- NULL
-alpha_Takenoko_for_WTP <- NULL
-beta_price_for_WTP <- NULL
-# 各消費者(計236人)ごとにランダムな選好を100回ドローする→上で計算した属性のパラメタの和との和を取る
-for(i in 1:236){
-set.seed(100+i)
-
-alpha_Kinoko_draw = rnorm(100, mean = dist_Kinoko$mean, sd = abs(dist_Kinoko$sigma))+param_Kinoko_atr[i]
-alpha_Kinoko_for_WTP = c(alpha_Kinoko_for_WTP, alpha_Kinoko_draw)
-
-alpha_Takenoko_draw = rnorm(100, mean = dist_Takenoko$mean, sd = abs(dist_Takenoko$sigma))+param_Takenoko_atr[i]
-alpha_Takenoko_for_WTP = c(alpha_Takenoko_for_WTP, alpha_Takenoko_draw)
-
-beta_price_draw = rnorm(100, mean = dist_price$mean, sd = abs(dist_price$sigma))+param_price_atr[i]
-beta_price_for_WTP = c(beta_price_for_WTP, beta_price_draw)
-}
-
-# データフレーム化
-dt_brand = 
-  tibble( alpha_Kinoko_for_WTP , 
-          alpha_Takenoko_for_WTP ,  
-          beta_price_for_WTP)
-
 # 支払い意思額の計算
-dt_brand %>% 
-  mutate( brand_Kinoko = alpha_Kinoko_for_WTP / beta_price_for_WTP, 
-          brand_Takenoko = alpha_Takenoko_for_WTP / beta_price_for_WTP,
-          love_Kinoko = ifelse(alpha_Kinoko_for_WTP > alpha_Takenoko_for_WTP, 1, 0 )) -> dt_brand 
+data_for_distribution %>%
+  mutate( brand_Kinoko = alpha_Kinoko_for_dist / beta_price_for_dist, 
+          brand_Takenoko = alpha_Takenoko_for_dist / beta_price_for_dist,
+          love_Kinoko = ifelse(alpha_Kinoko_for_dist > alpha_Takenoko_for_dist, 1, 0 )) -> data_for_distribution 
 
 
-dt_brand %>% 
+data_for_distribution %>% 
   select( brand_Kinoko, brand_Takenoko) %>% 
   rename( WTP_Kinoko = brand_Kinoko, 
           WTP_Takenoko = brand_Takenoko) %>% 
   pivot_longer( cols = everything(), names_to = "Name", values_to = "WTP") -> dt
 ```
 
-以下がWTPの分布となる。安い場合はきのこのほうが買われやすいことが示唆される。
+以下がWTPの分布となる。相対的に見て安い場合はきのこのほうが買われやすいことが示唆される。
 ```{r}
 # WTPの分布
 dt %>% 
