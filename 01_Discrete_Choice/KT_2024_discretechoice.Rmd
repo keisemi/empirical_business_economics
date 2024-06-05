@@ -275,7 +275,7 @@ data_for_param <- KT_2024 %>%
 dist_Kinoko <- rpar(rcdc_consumer_atr,'Kinoko')
 dist_Takenoko <- rpar(rcdc_consumer_atr,'Takenoko')
 dist_price <- rpar(rcdc_consumer_atr,'price')
-# 各個人の属性のパラメタを計算して平均する→その値と選好パラメタ(消費者属性を考慮していない)の平均との和を取る
+# 各個人の属性のパラメタを計算する→その値と選好パラメタ(消費者属性を考慮していない)の平均との和を取る
 param_Takenoko <- dist_Takenoko$mean +data_for_param$gender*rcdc_consumer_atr$coefficients[5]+data_for_param$familyhouse*rcdc_consumer_atr$coefficients[8]+data_for_param$adult*rcdc_consumer_atr$coefficients[11]+data_for_param$kansai*rcdc_consumer_atr$coefficients[15]+data_for_param$oversea*rcdc_consumer_atr$coefficients[16]
 
 
@@ -287,9 +287,12 @@ param_price <- dist_price$mean + data_for_param$gender*rcdc_consumer_atr$coeffic
 
 ```
 ```{r}
+# 格納用
 alpha_Kinoko_for_dist <- NULL
 alpha_Takenoko_for_dist <- NULL
 beta_price_for_dist <- NULL
+
+# 各個人について1000回ドローして、計236000個の個人選好パラメタのドローを得る
 for(i in 1:236){
 set.seed(100+i)
 
