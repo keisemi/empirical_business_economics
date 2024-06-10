@@ -8,20 +8,27 @@ output:
     df_print: paged
     code_folding: hide
     number_section: true
-date: "2024-06-01"
+date: "2024-06-11"
 ---
+
 　このファイルは、2024年度のきのこの山・たけのこの里アンケートについての分析用のコード及びその結果をまとめたものである。
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
 ```
-```{r}
 
+```{r}
 library("tidyverse")
 library("knitr")
 library("magrittr")
 library("mlogit") # ロジットモデル推定のためのパッケージ
 library("stargazer")# 推定結果の表作成
-library(kableExtra)
+library("kableExtra")
+```
+
+# データの整理
+```{r}
+
+
 KT_2024 <- read_csv("KinokoTakenokoSurvey_raw.csv")
 
 new_col_name <- c("ID","experience", "Q1", "Q2", "Q3", "Q4", "Q5", "age", "gender", "region", "familyhouse") # 列名変更用
@@ -33,7 +40,8 @@ KT_2024 <- KT_2024 %>%
   filter(experience != "4 : 食べたことがない" & gender != "3 : 回答したくない") %>% # 分析上扱いにくいデータを除外
   drop_na() # NA(未回答？)の行を除外
 ```
-以下は提示された価格の組み合わせに対してきのこの山とたけのこの里のどちらを選択したか、あるいはどちらも選択しなかったかの比率を表したものである。比較的たけのこの里のほうが買われやすいことや、価格が高いと購入しない確率が高くなることなどが見て取れる。
+# 記述統計
+　以下は提示された価格の組み合わせに対してきのこの山とたけのこの里のどちらを選択したか、あるいはどちらも選択しなかったかの比率を表したものである。比較的たけのこの里のほうが買われやすいことや、価格が高いと購入しない確率が高くなることなどが見て取れる。
 ```{r}
 N <- length(KT_2024$ID)
 
@@ -67,7 +75,7 @@ datafig %>%
     save_kable("output/choice_table.tex") # tex形式で保存
 ```
 
-
+# 分析
 以下は回答者の属性の比率である。
 ```{r}
 
@@ -228,7 +236,6 @@ rcdc_consumer_atr <- mlogit(formula = with_atr,
 ```
 　以下に、(1):消費者属性を入れない多項ロジット、(2):消費者属性を入れないランダム係数ロジット、(3):消費者属性を入れた多項ロジット、(4):消費者属性を入れたランダム係数ロジットのそれぞれの分析結果を並べた表を示す。
 
-
 ```{r, results = "asis"}
 # 表
 stargazer::stargazer(ml,rcdc,ml_consumer_atr,rcdc_consumer_atr,column.labels=c("mlogit","rcdc","mlogit","rcdc"),single.row=TRUE,type="html",align = TRUE)
@@ -240,8 +247,10 @@ stargazer::stargazer(ml,rcdc,ml_consumer_atr,rcdc_consumer_atr,column.labels=c("
 
 　また、参考までに以下に2023年のデータで同様の分析を実行した際の結果を示しておく。概ね結果は同じであるが、女性ダミーの交差項の係数に関しては結果が異なるので確認されたい。
 ![](2023_KT_table.png){width=75%}
-  
-次に、きのこの山、たけのこの里、価格係数の分布を作成していく。
+
+
+# ランダム係数とWTPの分布
+　次に、きのこの山、たけのこの里、価格係数の分布を作成していく。
 
 
 ```{r}
@@ -275,7 +284,7 @@ data_for_param <- KT_2024 %>%
 dist_Kinoko <- rpar(rcdc_consumer_atr,'Kinoko')
 dist_Takenoko <- rpar(rcdc_consumer_atr,'Takenoko')
 dist_price <- rpar(rcdc_consumer_atr,'price')
-# 各個人の属性のパラメタを計算する→その値と選好パラメタ(消費者属性を考慮していない)の平均との和を取る
+# 各個人の属性のパラメタを計算する→その値と選好パラメタの平均(消費者属性を考慮していない)との和を取り、消費者属性を考慮する。
 param_Takenoko <- dist_Takenoko$mean +data_for_param$gender*rcdc_consumer_atr$coefficients[5]+data_for_param$familyhouse*rcdc_consumer_atr$coefficients[8]+data_for_param$adult*rcdc_consumer_atr$coefficients[11]+data_for_param$kansai*rcdc_consumer_atr$coefficients[15]+data_for_param$oversea*rcdc_consumer_atr$coefficients[16]
 
 
@@ -286,72 +295,79 @@ param_Kinoko <- dist_Kinoko$mean+ data_for_param$gender*rcdc_consumer_atr$coeffi
 param_price <- dist_price$mean + data_for_param$gender*rcdc_consumer_atr$coefficients[4]+data_for_param$familyhouse*rcdc_consumer_atr$coefficients[7]+data_for_param$adult*rcdc_consumer_atr$coefficients[10]+data_for_param$kansai*rcdc_consumer_atr$coefficients[13]+data_for_param$oversea*rcdc_consumer_atr$coefficients[14]
 
 ```
+
+
+
 ```{r}
-# 格納用
-alpha_Kinoko_for_dist <- NULL
-alpha_Takenoko_for_dist <- NULL
-beta_price_for_dist <- NULL
+
 
 # 各個人について1000回ドローして、計236000個の個人選好パラメタのドローを得る
-for(i in 1:236){
-set.seed(100+i)
 
-alpha_Kinoko_draw = dist_Kinoko$sigma*rnorm(1000, mean = 0, sd = 1)+param_Kinoko[i]
-alpha_Kinoko_for_dist = c(alpha_Kinoko_for_dist, alpha_Kinoko_draw)
+# 格納用
+alpha_Kinoko_vec <- numeric(236000)
+alpha_Takenoko_vec <- numeric(236000)
+beta_vec <- numeric(236000)
 
-alpha_Takenoko_draw = dist_Takenoko$sigma*rnorm(1000, mean = 0, sd = 1)+param_Takenoko[i]
-alpha_Takenoko_for_dist = c(alpha_Takenoko_for_dist, alpha_Takenoko_draw)
-
-beta_price_draw = dist_price$sigma*rnorm(1000, mean = 0, sd = 1)+param_price[i]
-beta_price_for_dist = c(beta_price_for_dist, beta_price_draw)
-}
+# ループ(各個人の観察されない異質性を考慮する)
+for(i in 1:length(param_Kinoko)){
+ set.seed(100+i)
+ 
+ alpha_Kinoko_draw = dist_Kinoko$sigma*rnorm(1000, mean = 0, sd = 1)+param_Kinoko[i]
+ alpha_Kinoko_vec[(1000*(i-1)+1) : (1000*i)] = alpha_Kinoko_draw
+ 
+ alpha_Takenoko_draw = dist_Takenoko$sigma*rnorm(1000, mean = 0, sd = 1)+param_Takenoko[i]
+ alpha_Takenoko_vec[(1000*(i-1)+1) : (1000*i)] = alpha_Takenoko_draw
+ 
+ beta_price_draw = dist_price$sigma*rnorm(1000, mean = 0, sd = 1)+param_price[i]
+ beta_vec[(1000*(i-1)+1) : (1000*i)] = beta_price_draw
+ }
 ```
 
-きのこの山とたけのこの里の係数の差の分布(ヒストグラムと密度)は以下のようになる。きのこよりもたけのこがより好まれていることが見て取れる。
+　きのこの山とたけのこの里の係数の差の分布(ヒストグラムと密度)は以下のようになる。きのこよりもたけのこがより好まれていることが見て取れる。
 ```{r}
 data_for_distribution =
-  tibble( alpha_Kinoko_for_dist , 
-          alpha_Takenoko_for_dist ,  
-          beta_price_for_dist) 
+  tibble( alpha_Kinoko_vec , 
+          alpha_Takenoko_vec ,  
+          beta_vec) 
 # きのことたけのこの係数の差の分布
-KT_dist_hist <- ggplot(data = data_for_distribution,aes(x = alpha_Kinoko_for_dist - alpha_Takenoko_for_dist)) +
+KT_dist_hist <- ggplot(data = data_for_distribution,aes(x = alpha_Kinoko_vec - alpha_Takenoko_vec)) +
   geom_histogram(binwidth = 0.75) +
   ylab("frequency") + xlab("Kinoko - Takenoko") +
   ggtitle("Preference Kinoko over Takenoko")
 plot(KT_dist_hist)
 ggsave(filename = "output/fig_hist_preference_KT.pdf", plot = KT_dist_hist, width = 6, height = 6)
-KT_dist_density <- ggplot(data = data_for_distribution,aes(x = alpha_Kinoko_for_dist - alpha_Takenoko_for_dist)) +
+KT_dist_density <- ggplot(data = data_for_distribution,aes(x = alpha_Kinoko_vec - alpha_Takenoko_vec)) +
   geom_density() +
   ylab("density") + xlab("Kinoko - Takenoko") +
   ggtitle("Preference Kinoko over Takenoko")
 plot(KT_dist_density)
 ggsave(filename = "output/fig_dist_preference_KT.pdf", plot = KT_dist_density, width = 6, height = 6)
 ```
-続いて、以下が価格係数の分布(ヒストグラムと密度)である。
+　続いて、以下が価格係数の分布(ヒストグラムと密度)である。
 ```{r}
 # 価格係数の分布
-p_coef_dist_hist <- ggplot(data = data_for_distribution, aes(beta_price_for_dist)) +
+p_coef_dist_hist <- ggplot(data = data_for_distribution, aes(beta_vec)) +
   geom_histogram(binwidth = 0.0075)+
   ylab("frequency") + xlab("beta") +
   ggtitle("Beta (price coefficient)")
 plot(p_coef_dist_hist)
 ggsave(filename = "output/fig_hist_price_coef.pdf", plot = p_coef_dist_hist, width = 6, height = 6)
-p_coef_dist_density <- ggplot(data = data_for_distribution, aes(beta_price_for_dist)) +
+p_coef_dist_density <- ggplot(data = data_for_distribution, aes(beta_vec)) +
   geom_density()+
   ylab("density") + xlab("beta") + ggtitle("Beta (price coefficient)")
 plot(p_coef_dist_density)
 ggsave(filename = "output/fig_dist_price_coef.pdf", plot = p_coef_dist_density, width = 6, height = 6)
 ```
 
-次に、WTPの分布を作成する。
+　次に、WTPの分布を作成する。
 ```{r}
 # WTPを求める
 
 # 支払い意思額の計算
 data_for_distribution %>%
-  mutate( brand_Kinoko = alpha_Kinoko_for_dist / beta_price_for_dist, 
-          brand_Takenoko = alpha_Takenoko_for_dist / beta_price_for_dist,
-          love_Kinoko = ifelse(alpha_Kinoko_for_dist > alpha_Takenoko_for_dist, 1, 0 )) -> data_for_distribution 
+  mutate( brand_Kinoko = alpha_Kinoko_vec / beta_vec, 
+          brand_Takenoko = alpha_Takenoko_vec / beta_vec,
+          love_Kinoko = ifelse(alpha_Kinoko_vec > alpha_Takenoko_vec, 1, 0 )) -> data_for_distribution 
 
 
 data_for_distribution %>% 
@@ -361,7 +377,7 @@ data_for_distribution %>%
   pivot_longer( cols = everything(), names_to = "Name", values_to = "WTP") -> dt
 ```
 
-以下がWTPの分布となる。相対的に見て安い場合はきのこのほうが買われやすいことが示唆される。
+　以下がWTPの分布となる。相対的に見て安い場合はきのこのほうが買われやすいことが示唆される。
 ```{r}
 # WTPの分布
 dt %>% 
@@ -371,5 +387,87 @@ dt %>%
 plot(fig_brand)
 ggsave(filename = "output/brand_value.pdf", plot = fig_brand, width = 12, height = 6)
 
+```
+# 需要曲線と収入曲線を求める
+
+　以下では需要関数の推定を行う。
+```{r}
+# ある個人についての選択確率の算出用の関数
+f_logit_prob <- function(alpha_Kinoko, alpha_Takenoko, beta, price_Kinoko, price_Takenoko){
+# きのこ、たけのこから得られるそれぞれの効用の算出
+  util_Kinoko <- alpha_Kinoko - beta*price_Kinoko
+  util_Takenoko <- alpha_Takenoko - beta*price_Takenoko
+# 選択確率の算出
+  prob_Kinoko <- exp( util_Kinoko ) / ( 1 + exp( util_Kinoko ) + exp( util_Takenoko ))
+  prob_Takenoko <- exp( util_Takenoko ) / ( 1 + exp( util_Kinoko ) + exp( util_Takenoko ))
+  prob_Other <- 1 - (prob_Kinoko + prob_Takenoko)
+
+  return( cbind(prob_Kinoko, prob_Takenoko, prob_Other))
+}
+```
+```{r}
+# 各個人の選択確率を全て計算した後に、足し合わせて需要を得る関数
+f_demand <- function( alpha_Kinoko_vec, alpha_Takenoko_vec, beta_vec, price_Kinoko, price_Takenoko ){
+    
+    R = length(alpha_Kinoko_vec)  # 設定する消費者数(236人のそれぞれの消費者属性を代表として、観察されない異質性を1000回ずつドローして得られた潜在消費者236000人)
+    
+    # 結果を保存するベクトルを事前に準備
+    prob_Kinoko = numeric(R)
+    prob_Takenoko = numeric(R)
+    prob_Other = numeric(R)
+
+    for (r in 1:R){
+      result = f_logit_prob( alpha_Kinoko_vec[r], alpha_Takenoko_vec[r], beta_vec[r], price_Kinoko, price_Takenoko)
+      prob_Kinoko[r] = result[1]
+      prob_Takenoko[r] = result[2]
+      prob_Other[r] = result[3]
+    }
+
+    # 選択確率をすべての消費者について足し合わせて、各オプションの需要を得る。
+    return( c(sum(prob_Kinoko), sum(prob_Takenoko), sum(prob_Other)))
+}
+```
+```{r}
+# たけのこの価格を200円で固定する
+price_Takenoko = 200 
+
+# きのこの価格を100円から250円まで5円ずつ動かす
+price_vec = seq(from = 100, to = 250, by = 5)
+kinoko_vec = numeric(length(price_vec))
+
+# きのこの価格に対応する各オプションの需要を計算する
+for ( i in 1:length(price_vec)){
+    result <- f_demand( alpha_Kinoko_vec, alpha_Takenoko_vec, 
+                        beta_vec, price_vec[i], price_Takenoko = 200 )
+    kinoko_vec[i] <- result[1]
+}
+
+# データフレームに結果を保存
+data_demand_kinoko = tibble( price = price_vec, 
+                             demand = kinoko_vec,
+                             revenue = price_vec*kinoko_vec)
+```
+　需要曲線をプロットする。
+```{r}
+fig_demand <- ggplot(data = data_demand_kinoko, aes(x = demand, y = price) ) +
+  geom_line() + 
+  xlab("Demand of Kinoko") + 
+  ylab("Price of Kinoko in JPY") + 
+  ggtitle("Demand Curve of Kinoko when Takenoko's price = JPY 200")
+```
+```{r}
+plot(fig_demand)
+ggsave(filename = "output/demand_Kinoko.pdf", plot = fig_demand, width = 8, height = 6)
+```
+　収入曲線も以下にプロットする。
+```{r}
+
+fig_rev <- ggplot(data = data_demand_kinoko, aes(x = price, y = revenue/10000) ) +
+ geom_line() + 
+xlab("Price of Kinoko in JPY") + 
+ylab("Revenue of Kinoko in 10000 JPY") + 
+ggtitle("Revenue Curve of Kinoko when Takenoko's price = JPY 200")
+plot(fig_rev)
+ggsave(filename = "output/Revenue_Kinoko.pdf", plot = fig_rev, width = 8, height = 6)
 ```
 
