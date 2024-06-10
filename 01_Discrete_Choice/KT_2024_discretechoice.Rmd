@@ -75,7 +75,7 @@ datafig %>%
     save_kable("output/choice_table.tex") # tex形式で保存
 ```
 
-# 分析
+
 以下は回答者の属性の比率である。
 ```{r}
 
@@ -154,6 +154,7 @@ rbind(gender_fig,adult_fig, fam_fig, region_fig)  %>%
                 booktabs = TRUE) %>%
   save_kable("output/characteristics_table.tex")
 ```
+# 分析
 ```{r}
 # 分析用のデータ整形
 KT_2024 %>% 
@@ -447,7 +448,7 @@ data_demand_kinoko = tibble( price = price_vec,
                              demand = kinoko_vec,
                              revenue = price_vec*kinoko_vec)
 ```
-　需要曲線をプロットする。
+　きのこの山の需要曲線をプロットする。
 ```{r}
 fig_demand <- ggplot(data = data_demand_kinoko, aes(x = demand, y = price) ) +
   geom_line() + 
@@ -455,10 +456,24 @@ fig_demand <- ggplot(data = data_demand_kinoko, aes(x = demand, y = price) ) +
   ylab("Price of Kinoko in JPY") + 
   ggtitle("Demand Curve of Kinoko when Takenoko's price = JPY 200")
 ```
+　
 ```{r}
 plot(fig_demand)
 ggsave(filename = "output/demand_Kinoko.pdf", plot = fig_demand, width = 8, height = 6)
 ```
+また、以下は見やすさのためにx軸をシェアにした図である。
+```{r}
+fig_share <- ggplot(data = data_demand_kinoko, aes(x = demand/236000, y = price) ) +
+  geom_line() + 
+  xlab("Share of Kinoko") + 
+  ylab("Price of Kinoko in JPY") + 
+  ggtitle("Demand Curve(Share) of Kinoko when Takenoko's price = JPY 200")
+```
+```{r}
+plot(fig_share)
+ggsave(filename = "output/share_kinoko.pdf", plot = fig_share, width = 8, height = 6)
+```
+
 　収入曲線も以下にプロットする。
 ```{r}
 
@@ -470,4 +485,4 @@ ggtitle("Revenue Curve of Kinoko when Takenoko's price = JPY 200")
 plot(fig_rev)
 ggsave(filename = "output/Revenue_Kinoko.pdf", plot = fig_rev, width = 8, height = 6)
 ```
-
+　
