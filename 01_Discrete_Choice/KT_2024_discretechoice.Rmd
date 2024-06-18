@@ -23,6 +23,7 @@ library("magrittr")
 library("mlogit") # ロジットモデル推定のためのパッケージ
 library("stargazer")# 推定結果の表作成
 library("kableExtra")
+library("optimx")
 ```
 
 # データの整理
