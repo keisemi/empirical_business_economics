@@ -485,4 +485,247 @@ ggtitle("Revenue Curve of Kinoko when Takenoko's price = JPY 200")
 plot(fig_rev)
 ggsave(filename = "output/Revenue_Kinoko.pdf", plot = fig_rev, width = 8, height = 6)
 ```
+ 以下では、ロジット、消費者属性を考慮したロジット、ランダム係数ロジットモデルを、それぞれスクラッチで推定する。手始めにロジットモデルを推定する。
+```{r}
+# 尤度関数
+
+f_likelihood_logit <- function(param, data){
+
+  alpha_Kinoko <- param[1]
+  alpha_Takenoko <- param[2]
+  beta   <- param[3]
+# 各選択フェーズでの選択確率を予測
+  P1 <- f_logit_prob(alpha_Kinoko, alpha_Takenoko, beta, 200, 200)
+  P2 <- f_logit_prob(alpha_Kinoko, alpha_Takenoko, beta, 180, 200)
+  P3 <- f_logit_prob(alpha_Kinoko, alpha_Takenoko, beta, 200, 170)
+  P4 <- f_logit_prob(alpha_Kinoko, alpha_Takenoko, beta, 220, 200)
+  P5 <- f_logit_prob(alpha_Kinoko, alpha_Takenoko, beta, 190, 210)
+
+  pred <- rbind(P1, P2, P3, P4, P5)
+  pred <- as_tibble(pred)
+  pred$occasion <- c("Q1", "Q2", "Q3", "Q4", "Q5")
+  #　各選択フェーズに対する実際の選択と、予測された選択確率を対応させる
+  data %>%
+    left_join(pred, by = "occasion") %>%
+    mutate( choice_prob = case_when( choice == 0 ~ prob_Other,
+                                     choice == 1 ~ prob_Kinoko,
+                                     choice == 2 ~ prob_Takenoko) ) %>%
+    mutate(log_choice_prob = log(choice_prob)) %>%
+    select(log_choice_prob) -> result
+　# 和を取って対数尤度を計算する
+  likelihood <- sum(result)
+
+  return(likelihood)
+
+}
+```
+```{r}
+# 初期パラメタ
+ini <- c(5,5, -0.01)
+
+# 最適化
+result <- optimx( par = ini, 
+                  fn = f_likelihood_logit, 
+                  method="Nelder-Mead", 
+                  data = data_for_estimation, 
+                  control = list(fnscale=-1), 
+                  hessian = TRUE  )
+
+# 推定値の取得
+est_vec <- as.numeric(result[1,1:3])
+```
+
+```{r}
+#　ヘシアンの計算
+Hessian <- gHgen(par = as.numeric(result[1,1:3]), 
+                 fn = f_likelihood_logit, 
+                 data = data_for_estimation)
+se_vec <- round(sqrt(diag(solve(-Hessian$Hn))), 3)
+```
+以下がスクラッチで求めたロジットモデルの解である。上記のmlogitで求めた値とほとんど同じである。
+```{r}
+print(rbind(est_vec, se_vec))
+```
+　次に、消費者属性を考慮したロジットモデルを推定する。初めに推定したロジットでは消費者間での属性による選択確率の差異がなかったが、今回はそれを許す。
+```{r}
+# ダミー変数に直す
+data_for_estimation_with_atr <- data_for_estimation %>%
+  mutate(gender = case_when(gender == "female"~ 1,
+                           gender == "0" ~ 0),
+         kansai =  case_when(region == "_Kanto" ~ 0,
+                             region == "Oversea" ~ 0,
+                             region == "Kansai" ~ 1),
+         oversea =  case_when(region == "_Kanto" ~ 0,
+                             region == "Oversea" ~ 1,
+                             region == "Kansai" ~ 0))
+```
+　方針:各選択フェーズでの選択確率を予測する際に、通常のロジットでは個人間の属性の差異を考慮しなかったので実質的には単に5設問分の選択確率を算出するだけで済んだが、消費者属性を含める場合は236人×5フェーズぶんを算出する必要がある。まず、f_logit_probの中身を書き換える。
+```{r}
+# ある個人についての選択確率の算出用の関数
+# 上のほうで需要関数推定のときに実施した選択確率の算出時は、alpha_Kinokoなどの効用部分にあらかじめ消費者属性を入れていたことに注意。
+# 関数はこれで合っているか？
+f_logit_prob_with_atr <- function(alpha_Kinoko, alpha_Takenoko, beta, price_Kinoko, price_Takenoko, pi_gender_Kinoko, pi_gender_Takenoko, pi_familyhouse_Kinoko, pi_familyhouse_Takenoko, pi_adult_Kinoko, pi_adult_Takenoko, pi_regionKansai_Kinoko, pi_regionKansai_Takenoko, pi_regionOversea_Kinoko, pi_regionOversea_Takenoko, pi_gender_price, pi_familyhouse_price, pi_adult_price, pi_regionKansai_price, pi_regionOversea_price, gender, familyhouse, adult, kansai, oversea){
+# きのこ、たけのこから得られるそれぞれの効用の算出
+# (pi_「消費者属性」がきのこ、たけのこへの属性ごとの反応の違い、pi_「消費者属性」_priceが価格への属性ごとの反応の違いを捉える)
+  util_Kinoko <- alpha_Kinoko + pi_gender_Kinoko*gender + pi_familyhouse_Kinoko*familyhouse +  pi_adult_Kinoko*adult + pi_regionKansai_Kinoko*kansai + pi_regionOversea_Kinoko*oversea - price_Kinoko*(beta + pi_gender_price*gender + pi_familyhouse_price*familyhouse + pi_adult_price*adult + pi_regionKansai_price*kansai + pi_regionOversea_price*oversea)
+  util_Takenoko <- alpha_Takenoko + pi_gender_Takenoko*gender + pi_familyhouse_Takenoko*familyhouse + pi_adult_Takenoko*adult + pi_regionKansai_Takenoko*kansai + pi_regionOversea_Takenoko*oversea - price_Takenoko*(beta+pi_gender_price*gender + pi_familyhouse_price*familyhouse +  pi_adult_price*adult + pi_regionKansai_price*kansai + pi_regionOversea_price*oversea)
+# 選択確率の算出
+  prob_Kinoko <- exp( util_Kinoko ) / ( 1 + exp( util_Kinoko ) + exp( util_Takenoko ))
+  prob_Takenoko <- exp( util_Takenoko ) / ( 1 + exp( util_Kinoko ) + exp( util_Takenoko ))
+  prob_Other <- 1 - (prob_Kinoko + prob_Takenoko)
+
+  return( cbind(prob_Kinoko, prob_Takenoko, prob_Other))
+}
+```
+
+
+```{r}
+f_likelihood_logit_with_atr <- function(param, data){
+  # 空のデータフレーム
+  pred <- data.frame(matrix(ncol = 3, nrow = 1180))
+  colnames(pred) <- c("prob_Kinoko", "prob_Takenoko","prob_Other")
+  alpha_Kinoko <- param[1]
+  alpha_Takenoko <- param[2]
+  beta   <- param[3]
+  pi_gender_Kinoko <- param[4]
+  pi_gender_Takenoko <- param[5]  
+  pi_familyhouse_Kinoko <- param[6]
+  pi_familyhouse_Takenoko<- param[7]
+  pi_adult_Kinoko <- param[8]
+  pi_adult_Takenoko <- param[9] 
+  pi_regionKansai_Kinoko <- param[10]
+  pi_regionKansai_Takenoko <- param[11]
+  pi_regionOversea_Kinoko <- param[12]
+  pi_regionOversea_Takenoko <- param[13] 
+  pi_gender_price <- param[14]
+  pi_familyhouse_price <- param[15]
+  pi_adult_price <- param[16]
+  pi_regionKansai_price <- param[17]
+  pi_regionOversea_price <- param[18]
+# 各回答者の選択確率を予測する
+  for(i in 1:236){
+    # 消費者属性を取得
+  gender <- data$gender[(5*(i-1)+1)]
+  familyhouse <- data$familyhouse[(5*(i-1)+1)]
+  adult <- data$adult[(5*(i-1)+1)]
+  kansai <- data$kansai[(5*(i-1)+1)]
+  oversea <- data$oversea[(5*(i-1)+1)]
+# 各選択フェーズでの選択確率を予測
+  P1 <- f_logit_prob_with_atr(alpha_Kinoko, alpha_Takenoko, beta, 200, 200, pi_gender_Kinoko, pi_gender_Takenoko, pi_familyhouse_Kinoko, pi_familyhouse_Takenoko, pi_adult_Kinoko, pi_adult_Takenoko, pi_regionKansai_Kinoko, pi_regionKansai_Takenoko, pi_regionOversea_Kinoko, pi_regionOversea_Takenoko, pi_gender_price, pi_familyhouse_price, pi_adult_price, pi_regionKansai_price, pi_regionOversea_price, gender, familyhouse, adult, kansai, oversea)
+  P2 <- f_logit_prob_with_atr(alpha_Kinoko, alpha_Takenoko, beta, 180, 200, pi_gender_Kinoko, pi_gender_Takenoko, pi_familyhouse_Kinoko, pi_familyhouse_Takenoko, pi_adult_Kinoko, pi_adult_Takenoko, pi_regionKansai_Kinoko, pi_regionKansai_Takenoko, pi_regionOversea_Kinoko, pi_regionOversea_Takenoko, pi_gender_price, pi_familyhouse_price, pi_adult_price, pi_regionKansai_price, pi_regionOversea_price, gender, familyhouse, adult, kansai, oversea)
+  P3 <- f_logit_prob_with_atr(alpha_Kinoko, alpha_Takenoko, beta, 200, 170, pi_gender_Kinoko, pi_gender_Takenoko, pi_familyhouse_Kinoko, pi_familyhouse_Takenoko, pi_adult_Kinoko, pi_adult_Takenoko, pi_regionKansai_Kinoko, pi_regionKansai_Takenoko, pi_regionOversea_Kinoko, pi_regionOversea_Takenoko, pi_gender_price, pi_familyhouse_price, pi_adult_price, pi_regionKansai_price, pi_regionOversea_price, gender, familyhouse, adult, kansai, oversea)
+  P4 <- f_logit_prob_with_atr(alpha_Kinoko, alpha_Takenoko, beta, 220, 200, pi_gender_Kinoko, pi_gender_Takenoko, pi_familyhouse_Kinoko, pi_familyhouse_Takenoko, pi_adult_Kinoko, pi_adult_Takenoko, pi_regionKansai_Kinoko, pi_regionKansai_Takenoko, pi_regionOversea_Kinoko, pi_regionOversea_Takenoko, pi_gender_price, pi_familyhouse_price, pi_adult_price, pi_regionKansai_price, pi_regionOversea_price, gender, familyhouse, adult, kansai, oversea)
+  P5 <- f_logit_prob_with_atr(alpha_Kinoko, alpha_Takenoko, beta, 190, 210, pi_gender_Kinoko, pi_gender_Takenoko, pi_familyhouse_Kinoko, pi_familyhouse_Takenoko, pi_adult_Kinoko, pi_adult_Takenoko, pi_regionKansai_Kinoko, pi_regionKansai_Takenoko, pi_regionOversea_Kinoko, pi_regionOversea_Takenoko, pi_gender_price, pi_familyhouse_price, pi_adult_price, pi_regionKansai_price, pi_regionOversea_price, gender, familyhouse, adult, kansai, oversea)
+  # 格納
+  pred[(5*(i-1)+1),] <- P1
+  pred[(5*(i-1)+2),] <- P2
+  pred[(5*(i-1)+3),] <- P3
+  pred[(5*(i-1)+4),] <- P4
+  pred[(5*(i-1)+5),] <- P5
+  }
+  # IDと設問(マージ用)
+  pred$ID<- rep(1:236, each=5)
+  pred$occasion <- rep(c("Q1", "Q2", "Q3", "Q4", "Q5"), 236)
+  
+  # 各選択フェーズに対する実際の選択と、予測された選択確率を対応させる
+  data %>%
+    left_join(pred, by = c("ID","occasion")) %>%
+    mutate( choice_prob = case_when( choice == 0 ~ prob_Other,
+                                     choice == 1 ~ prob_Kinoko,
+                                     choice == 2 ~ prob_Takenoko) ) %>%
+    mutate(log_choice_prob = log(choice_prob)) %>%
+    select(log_choice_prob) -> result
+　# 和を取って対数尤度を計算する
+  likelihood <- sum(result)
+  
+  return(likelihood)
+
+}
+```
+
+
+```{r}
+# 初期パラメタ
+ini <- c(20, 20, 0.1, 3, 3,-0.1,-0.1,-3, -3, 7, 7, 7, 7, 0, 0, 0, 0, 0)
+
+# 最適化
+result_with_atr <- optimx( par = ini, 
+                  fn = f_likelihood_logit_with_atr, 
+                  method="Nelder-Mead", 
+                  data = data_for_estimation_with_atr, 
+                  control = list(fnscale=-1), 
+                  hessian = TRUE  )
+
+# 推定値の取得
+est_vec <- as.numeric(result_with_atr[1,1:17])
+```
+
+
+
+```{r}
+# テスト用関数
+f_likelihood_logit_with_atr_test <- function(param, data){
+  pred <- data.frame(matrix(ncol = 3, nrow = 1180))
+  colnames(pred) <- c("prob_Kinoko", "prob_Takenoko","prob_Other")
+  
+  alpha_Kinoko <- param[1]
+  alpha_Takenoko <- param[2]
+  beta   <- param[3]
+  pi_gender_Kinoko <- param[4]
+  pi_gender_Takenoko <- param[5]  
+  pi_familyhouse_Kinoko <- param[6]
+  pi_familyhouse_Takenoko<- param[7]
+  pi_adult_Kinoko <- param[8]
+  pi_adult_Takenoko <- param[9] 
+  pi_regionKansai_Kinoko <- param[10]
+  pi_regionKansai_Takenoko <- param[11]
+  pi_regionOversea_Kinoko <- param[12]
+  pi_regionOversea_Takenoko <- param[13] 
+  pi_gender_price <- param[14]
+  pi_familyhouse_price <- param[15]
+  pi_adult_price <- param[16]
+  pi_regionKansai_price <- param[17]
+  pi_regionOversea_price <- param[18]
+  
+  for(i in 1:236){
+  gender <- data$gender[(5*(i-1)+1)]
+  familyhouse <- data$familyhouse[(5*(i-1)+1)]
+  adult <- data$adult[(5*(i-1)+1)]
+  kansai <- data$kansai[(5*(i-1)+1)]
+  oversea <- data$oversea[(5*(i-1)+1)]
+# 各選択フェーズでの選択確率を予測
+  P1 <- f_logit_prob_with_atr(alpha_Kinoko, alpha_Takenoko, beta, 200, 200, pi_gender_Kinoko, pi_gender_Takenoko, pi_familyhouse_Kinoko, pi_familyhouse_Takenoko, pi_adult_Kinoko, pi_adult_Takenoko, pi_regionKansai_Kinoko, pi_regionKansai_Takenoko, pi_regionOversea_Kinoko, pi_regionOversea_Takenoko, pi_gender_price, pi_familyhouse_price, pi_adult_price, pi_regionKansai_price, pi_regionOversea_price, gender, familyhouse, adult, kansai, oversea)
+  P2 <- f_logit_prob_with_atr(alpha_Kinoko, alpha_Takenoko, beta, 180, 200, pi_gender_Kinoko, pi_gender_Takenoko, pi_familyhouse_Kinoko, pi_familyhouse_Takenoko, pi_adult_Kinoko, pi_adult_Takenoko, pi_regionKansai_Kinoko, pi_regionKansai_Takenoko, pi_regionOversea_Kinoko, pi_regionOversea_Takenoko, pi_gender_price, pi_familyhouse_price, pi_adult_price, pi_regionKansai_price, pi_regionOversea_price, gender, familyhouse, adult, kansai, oversea)
+  P3 <- f_logit_prob_with_atr(alpha_Kinoko, alpha_Takenoko, beta, 200, 170, pi_gender_Kinoko, pi_gender_Takenoko, pi_familyhouse_Kinoko, pi_familyhouse_Takenoko, pi_adult_Kinoko, pi_adult_Takenoko, pi_regionKansai_Kinoko, pi_regionKansai_Takenoko, pi_regionOversea_Kinoko, pi_regionOversea_Takenoko, pi_gender_price, pi_familyhouse_price, pi_adult_price, pi_regionKansai_price, pi_regionOversea_price, gender, familyhouse, adult, kansai, oversea)
+  P4 <- f_logit_prob_with_atr(alpha_Kinoko, alpha_Takenoko, beta, 220, 200, pi_gender_Kinoko, pi_gender_Takenoko, pi_familyhouse_Kinoko, pi_familyhouse_Takenoko, pi_adult_Kinoko, pi_adult_Takenoko, pi_regionKansai_Kinoko, pi_regionKansai_Takenoko, pi_regionOversea_Kinoko, pi_regionOversea_Takenoko, pi_gender_price, pi_familyhouse_price, pi_adult_price, pi_regionKansai_price, pi_regionOversea_price, gender, familyhouse, adult, kansai, oversea)
+  P5 <- f_logit_prob_with_atr(alpha_Kinoko, alpha_Takenoko, beta, 190, 210, pi_gender_Kinoko, pi_gender_Takenoko, pi_familyhouse_Kinoko, pi_familyhouse_Takenoko, pi_adult_Kinoko, pi_adult_Takenoko, pi_regionKansai_Kinoko, pi_regionKansai_Takenoko, pi_regionOversea_Kinoko, pi_regionOversea_Takenoko, pi_gender_price, pi_familyhouse_price, pi_adult_price, pi_regionKansai_price, pi_regionOversea_price, gender, familyhouse, adult, kansai, oversea)
+  
+  pred[(5*(i-1)+1),] <- P1
+  pred[(5*(i-1)+2),] <- P2
+  pred[(5*(i-1)+3),] <- P3
+  pred[(5*(i-1)+4),] <- P4
+  pred[(5*(i-1)+5),] <- P5
+  }
+  
+  pred$ID<- rep(1:236, each=5)
+  pred$occasion <- rep(c("Q1", "Q2", "Q3", "Q4", "Q5"), 236)
+  
+  #　各選択フェーズに対する実際の選択と、予測された選択確率を対応させる
+  data %>%
+    left_join(pred, by = c("ID","occasion")) %>%
+    mutate( choice_prob = case_when( choice == 0 ~ prob_Other,
+                                     choice == 1 ~ prob_Kinoko,
+                                     choice == 2 ~ prob_Takenoko) ) %>%
+    mutate(log_choice_prob = log(choice_prob)) ->　testdf
+　
+  return(testdf)
+
+}
+```
+
+```{r}
+f_likelihood_logit_with_atr_test(ini, data_for_estimation_with_atr)
+```
+
+
 　
