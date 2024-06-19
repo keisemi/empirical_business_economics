@@ -8,7 +8,7 @@ output:
     df_print: paged
     code_folding: hide
     number_section: true
-date: "2024-06-11"
+date: "2024-06-19"
 ---
 
 　このファイルは、2024年度のきのこの山・たけのこの里アンケートについての分析用のコード及びその結果をまとめたものである。
@@ -23,7 +23,7 @@ library("magrittr")
 library("mlogit") # ロジットモデル推定のためのパッケージ
 library("stargazer")# 推定結果の表作成
 library("kableExtra")
-library("optimx")
+library("optimx") # 最適化
 ```
 
 # データの整理
@@ -585,6 +585,7 @@ f_likelihood_logit_with_atr <- function(param, data){
   # 空のデータフレーム
   pred <- data.frame(matrix(ncol = 3, nrow = 1180))
   colnames(pred) <- c("prob_Kinoko", "prob_Takenoko","prob_Other")
+  ID <- numeric(236)
   alpha_Kinoko <- param[1]
   alpha_Takenoko <- param[2]
   beta   <- param[3]
@@ -623,9 +624,10 @@ f_likelihood_logit_with_atr <- function(param, data){
   pred[(5*(i-1)+3),] <- P3
   pred[(5*(i-1)+4),] <- P4
   pred[(5*(i-1)+5),] <- P5
+  ID[(5*(i-1)+1):(5*(i-1)+5)] <- rep(data$ID[(5*(i-1)+1)], 5)
   }
   # IDと設問(マージ用)
-  pred$ID<- rep(1:236, each=5)
+  pred$ID<- ID
   pred$occasion <- rep(c("Q1", "Q2", "Q3", "Q4", "Q5"), 236)
   
   # 各選択フェーズに対する実際の選択と、予測された選択確率を対応させる
@@ -647,8 +649,11 @@ f_likelihood_logit_with_atr <- function(param, data){
 
 ```{r}
 # 初期パラメタ
-ini <- c(20, 20, 0.1, 3, 3,-0.1,-0.1,-3, -3, 7, 7, 7, 7, 0, 0, 0, 0, 0)
+# おおざっぱに決めた初期値
+ini <- c(5, 5, 0.1, 1, 1,-0.1,-0.1,-1, -1, 1, 1, 1, 1, 0, 0, 0, 0, 0)
 
+# 上でのパッケージでの推定値をかなり参照して決めた初期値
+iini<-c(12,12,0.06,3,3,-0.04 ,-0.4, -3,	-3,3,2, 3,3,0.01, -0.001,-0.013, 0.01,0.01)
 # 最適化
 result_with_atr <- optimx( par = ini, 
                   fn = f_likelihood_logit_with_atr, 
@@ -658,75 +663,64 @@ result_with_atr <- optimx( par = ini,
                   hessian = TRUE  )
 
 # 推定値の取得
-est_vec <- as.numeric(result_with_atr[1,1:17])
+est_vec <- as.numeric(result_with_atr[1,1:18])
+
+result_with_atr_test <- optimx( par = iini, 
+                  fn = f_likelihood_logit_with_atr, 
+                  method="Nelder-Mead", 
+                  data = data_for_estimation_with_atr, 
+                  control = list(fnscale=-1), 
+                  hessian = TRUE  )
+
+est_vec_test <- as.numeric(result_with_atr_test[1,1:18])
+```
+　推定された値は以下であるが、上述のパッケージによる推定値とはかけ離れているように見える。
+```{r}
+# パッケージでの推定値とはかなり違う(ほぼ初期値のまま？)。パラメタの多さのせいかもしれない？
+
+print(est_vec)
+```
+```{r}
+# パッケージでの推定値:
+est_vec_pack <- c(12.521,12.661,0.063,3.363,3.529,-0.046 ,-0.429, -3.324,	-3.664,3.817,2.796, 3.365,3.390,0.013, -0.002,-0.018, 0.016, 0.013)
+print(rbind(est_vec, est_vec_pack))
 ```
 
-
-
+　初期値をむりやり上での推定値と近い初期値にすると近い値にはなるものの、どちらかというと初期値への依存度合いが高いだけであるように見える。他の初期値を選んでも初期値と近い値が出やすい。パラメータが多く局所解にハマりやすくなっている可能性も考えられる。
 ```{r}
-# テスト用関数
-f_likelihood_logit_with_atr_test <- function(param, data){
-  pred <- data.frame(matrix(ncol = 3, nrow = 1180))
-  colnames(pred) <- c("prob_Kinoko", "prob_Takenoko","prob_Other")
-  
-  alpha_Kinoko <- param[1]
-  alpha_Takenoko <- param[2]
-  beta   <- param[3]
-  pi_gender_Kinoko <- param[4]
-  pi_gender_Takenoko <- param[5]  
-  pi_familyhouse_Kinoko <- param[6]
-  pi_familyhouse_Takenoko<- param[7]
-  pi_adult_Kinoko <- param[8]
-  pi_adult_Takenoko <- param[9] 
-  pi_regionKansai_Kinoko <- param[10]
-  pi_regionKansai_Takenoko <- param[11]
-  pi_regionOversea_Kinoko <- param[12]
-  pi_regionOversea_Takenoko <- param[13] 
-  pi_gender_price <- param[14]
-  pi_familyhouse_price <- param[15]
-  pi_adult_price <- param[16]
-  pi_regionKansai_price <- param[17]
-  pi_regionOversea_price <- param[18]
-  
-  for(i in 1:236){
-  gender <- data$gender[(5*(i-1)+1)]
-  familyhouse <- data$familyhouse[(5*(i-1)+1)]
-  adult <- data$adult[(5*(i-1)+1)]
-  kansai <- data$kansai[(5*(i-1)+1)]
-  oversea <- data$oversea[(5*(i-1)+1)]
-# 各選択フェーズでの選択確率を予測
-  P1 <- f_logit_prob_with_atr(alpha_Kinoko, alpha_Takenoko, beta, 200, 200, pi_gender_Kinoko, pi_gender_Takenoko, pi_familyhouse_Kinoko, pi_familyhouse_Takenoko, pi_adult_Kinoko, pi_adult_Takenoko, pi_regionKansai_Kinoko, pi_regionKansai_Takenoko, pi_regionOversea_Kinoko, pi_regionOversea_Takenoko, pi_gender_price, pi_familyhouse_price, pi_adult_price, pi_regionKansai_price, pi_regionOversea_price, gender, familyhouse, adult, kansai, oversea)
-  P2 <- f_logit_prob_with_atr(alpha_Kinoko, alpha_Takenoko, beta, 180, 200, pi_gender_Kinoko, pi_gender_Takenoko, pi_familyhouse_Kinoko, pi_familyhouse_Takenoko, pi_adult_Kinoko, pi_adult_Takenoko, pi_regionKansai_Kinoko, pi_regionKansai_Takenoko, pi_regionOversea_Kinoko, pi_regionOversea_Takenoko, pi_gender_price, pi_familyhouse_price, pi_adult_price, pi_regionKansai_price, pi_regionOversea_price, gender, familyhouse, adult, kansai, oversea)
-  P3 <- f_logit_prob_with_atr(alpha_Kinoko, alpha_Takenoko, beta, 200, 170, pi_gender_Kinoko, pi_gender_Takenoko, pi_familyhouse_Kinoko, pi_familyhouse_Takenoko, pi_adult_Kinoko, pi_adult_Takenoko, pi_regionKansai_Kinoko, pi_regionKansai_Takenoko, pi_regionOversea_Kinoko, pi_regionOversea_Takenoko, pi_gender_price, pi_familyhouse_price, pi_adult_price, pi_regionKansai_price, pi_regionOversea_price, gender, familyhouse, adult, kansai, oversea)
-  P4 <- f_logit_prob_with_atr(alpha_Kinoko, alpha_Takenoko, beta, 220, 200, pi_gender_Kinoko, pi_gender_Takenoko, pi_familyhouse_Kinoko, pi_familyhouse_Takenoko, pi_adult_Kinoko, pi_adult_Takenoko, pi_regionKansai_Kinoko, pi_regionKansai_Takenoko, pi_regionOversea_Kinoko, pi_regionOversea_Takenoko, pi_gender_price, pi_familyhouse_price, pi_adult_price, pi_regionKansai_price, pi_regionOversea_price, gender, familyhouse, adult, kansai, oversea)
-  P5 <- f_logit_prob_with_atr(alpha_Kinoko, alpha_Takenoko, beta, 190, 210, pi_gender_Kinoko, pi_gender_Takenoko, pi_familyhouse_Kinoko, pi_familyhouse_Takenoko, pi_adult_Kinoko, pi_adult_Takenoko, pi_regionKansai_Kinoko, pi_regionKansai_Takenoko, pi_regionOversea_Kinoko, pi_regionOversea_Takenoko, pi_gender_price, pi_familyhouse_price, pi_adult_price, pi_regionKansai_price, pi_regionOversea_price, gender, familyhouse, adult, kansai, oversea)
-  
-  pred[(5*(i-1)+1),] <- P1
-  pred[(5*(i-1)+2),] <- P2
-  pred[(5*(i-1)+3),] <- P3
-  pred[(5*(i-1)+4),] <- P4
-  pred[(5*(i-1)+5),] <- P5
-  }
-  
-  pred$ID<- rep(1:236, each=5)
-  pred$occasion <- rep(c("Q1", "Q2", "Q3", "Q4", "Q5"), 236)
-  
-  #　各選択フェーズに対する実際の選択と、予測された選択確率を対応させる
-  data %>%
-    left_join(pred, by = c("ID","occasion")) %>%
-    mutate( choice_prob = case_when( choice == 0 ~ prob_Other,
-                                     choice == 1 ~ prob_Kinoko,
-                                     choice == 2 ~ prob_Takenoko) ) %>%
-    mutate(log_choice_prob = log(choice_prob)) ->　testdf
-　
-  return(testdf)
+# むりやり推定値と近い初期値にすると多少近い値になるが、かなり初期値に依存していそう？
+print(est_vec_test)
+```
+```{r}
+print(rbind(est_vec_test,est_vec_pack))
+```
 
-}
+　それぞれの初期値での対数尤度は以下のようになっている。少なくとも、おおざっぱに選んだほうの初期値による推定では最適化がうまくいっていないことが見て取れる。
+```{r}
+# 念のため、対数尤度はそれぞれこのようになっている。
+print(result_with_atr[19])
+print(result_with_atr_test[19])
+```
+　一応、標準誤差の計算まで済ませておく。
+```{r}
+#　ヘシアンの計算
+Hessian <- gHgen(par = as.numeric(result_with_atr[1,1:18]), 
+                 fn = f_likelihood_logit_with_atr, 
+                 data = data_for_estimation_with_atr)
+se_vec <- round(sqrt(diag(solve(-Hessian$Hn))), 3)
 ```
 
 ```{r}
-f_likelihood_logit_with_atr_test(ini, data_for_estimation_with_atr)
+print(rbind(est_vec, se_vec))
 ```
+
+
+
+
+
+
+
+
 
 
 　
