@@ -381,7 +381,7 @@ data <-
 本誌で導入した、以下のモデルを推定しよう。
 
 $$
-\log S_{jt} - \log S_{0t} = -\alpha p_{jt} + \beta'\mathbf{X}_{jt} + \lambda_t + \xi_{jt}
+\log s_{jt} - \log s_{0t} = -\alpha p_{jt} + \beta'\mathbf{X}_{jt} + \sigma\ln(s_{jt/g}) + \lambda_t + \xi_{jt}
 $$
 
 推定に際しては、OLS、BLP操作変数による結果、そしてDifferentiation IVによる結果の3通りについて比較する。
