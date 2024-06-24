@@ -1,0 +1,683 @@
+---
+title: "「実証ビジネス・エコノミクス」第３章 <br> 「需要を制する者はプライシングを制す：消費者需要モデルの推定［基礎編1］」"
+author: "上武康亮・遠山祐太・若森直樹・渡辺安虎"
+date: '最終更新: `r Sys.Date()`'
+output:
+  html_document: 
+    code_folding: show
+    number_sections: yes
+    toc: yes
+    toc_depth: 2
+    toc_float: yes
+editor_options: 
+  markdown: 
+    wrap: 72
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# はじめに
+
+「実証ビジネス・エコノミクス」の第３章「需要を制する者はプライシングを制す：消費者需要モデルの推定［基礎編1］」に関するRプログラムの紹介である。本プログラムによって紙面で紹介した分析を再現しつつ、実際に手を動かしながら学ぶことを目的とする。
+
+## 留意事項
+
+1.  本連載の内容、およびサンプルコード等の資料は、情報の提供のみを目的としていますので、運用につきましては十分にご確認をいただき、お客様ご自身の責任とご判断によって行ってください。これらの情報の運用結果により損害等が生じた場合でも、日本評論社および著者はいかなる責任を負うこともできませんので、ご留意ください。
+
+## 全体の流れ
+
+1.  下準備：パッケージの導入、
+2.  データの読み込み、クリーニング
+3.  記述統計の作成
+4.  ロジットモデルの推定
+5.  推定結果に基づくエクササイズ
+
+## 謝辞
+
+消費者需要の推定において使用する日本の自動車市場のデータは藤田光明さん(現・サイバーエージェント)から提供頂きました。また、消費者需要モデルの推定プログラムの準備に際して哥丸連太朗さん(現・東京大学大学院経済学研究科)に手助け頂きました。この場を借りて御礼申し上げます。
+
+# Rに関する下準備
+
+## R及びRstudioのインストールに関して
+
+Rの初心者向けのオンラインリソースとして、宋財泫・矢内勇生[「私たちのR:
+ベストプラクティスの探究」](https://www.jaysong.net/RBook/)を推奨する。。
+インストールに関しては、同ウェブサイトにおける、[「3.
+Rのインストール」](https://www.jaysong.net/RBook/installation.html)を参照されたい。OSに応じたインストール方法が詳細に解説されている。
+
+## 必要なパッケージの読み込み
+
+以下のコードを回すのに必要なパッケージ一式を準備します。
+もしインストールされていないものがありましたら、`install.package()`
+コマンドを利用しインストールして下さい。
+
+簡単な紹介：
+
+-   `tidyverse`:
+    データ加工やグラフ作成などのパッケージが一式入っています。特に、データ加工の`dplyr`、グラフ作成の`ggplot2`、そしてパイプ演算のための`magrittr`を使います。
+-   `fixest`:
+    線形モデル推定のためのパッケージ。今回は利用しませんが、ダミー変数を多数入れた場合に計算が非常に早いパッケージになります。
+-   `summarytools`: 記述統計作成用のパッケージ。
+
+```{r, echo=FALSE}
+# ワークスペースを初期化
+rm(list = ls())
+
+# パッケージを読み込む。
+require(tidyverse)
+require(fixest)
+require(summarytools)
+require(sjmisc)
+require(kableExtra)
+```
+
+### 細かい留意点
+
+Rで外部ライブラリを利用する際には、以下の二通りがあります。
+
+1.  `require()`や`library()`で事前に読み込み、パッケージ内の関数を呼び出す。例：`require(dplyr)`の後に`mutate()`.
+
+2.  パッケージ全体を事前に読み込みはせず、特定のパッケージの関数を使う際に`[package_name]::[function_name]`として呼び出す。例：`dplyr::mutate()`.
+
+今回は、どの関数がどのライブラリから来ているをわかりやすくするために、後者の方法でプログラミングしていきます。
+
+# データの準備
+
+## データ読み込み
+
+まず自動車データを読み込みます。
+
+```{r}
+data <- readr::read_csv(file = "data/CleanData_20180222.csv", locale = locale(encoding = "shift-jis"))
+```
+
+続いて、家計数データ（潜在的な市場規模）を読み込む。ソースは以下。
+<https://www.airia.or.jp/publish/file/r5c6pv0000006s9v-att/r5c6pv0000006saa.pdf>
+
+```{r}
+dataHH <-
+  readr::read_csv(file = "data/HHsize.csv")
+```
+
+価格を実質化するべく、消費者物価指数を読み込む。
+ソースは以下：<https://www.e-stat.go.jp/stat-search/file-download?statInfId=000031431770&fileKind=1>
+
+```{r}
+dataCPI <-
+  readr::read_csv(file = "data/zni2015s.csv", locale = locale(encoding = "shift-jis"))
+
+dataCPI <- dataCPI[6:56, ]
+dataCPI <- 
+  dataCPI %>% 
+  rename(year = '類・品目',
+         cpi = '総合') %>% 
+  select(year, cpi) %>% 
+  mutate(year = as.numeric(year), 
+         cpi = as.numeric(cpi))
+```
+
+## データクリーニング
+
+まずは、自動車データを整理しつつ、家計データをマージする。
+
+```{r}
+# 必要な変数のみをキープ。
+data <-
+  data %>%
+  dplyr::select(
+    Maker, Type, Name, Year, Sales, Model, price, kata,
+    weight, capacity, FuelType, FuelEfficiency, HorsePower,
+    overall_length, overall_width, overall_height
+  ) %>%
+  dplyr::rename(year = Year)
+
+# ダミー変数の作成
+# 外国車ダミー
+data <- data %>%
+  mutate(Foreign_d = if_else(Type == "Foreign", 1, 0))
+
+# FuelType=レギュラーのダミー
+data <- data %>%
+  mutate(FuelRegular_d = if_else(FuelType == "レギュラー", 1, 0))
+
+# 年ダミー
+data <- data %>%
+  mutate(year = as.factor(year)) %>%
+  to_dummy(year, suffix = "label") %>%
+  bind_cols(data) %>%
+  mutate(year = as.numeric(year))
+
+# year 2006を基準に
+data <- data %>%
+  select(-year_2006)
+
+# ダミー変数を最後の列に移動
+data <- data %>%
+  relocate(starts_with("Type_"), starts_with("year_"), starts_with("Maker_"), .after = last_col())
+
+# capacity ダミー(4以下と5以上で分ける)
+data <- data %>%
+  mutate(capacity_d = if_else(capacity > 4, 1, 0))
+
+# 家計サイズをマージする。
+data <-
+  data %>%
+  dplyr::left_join(dataHH, by = "year")
+
+# CPIをマージする
+data <- 
+  data %>% 
+  dplyr::left_join(dataCPI, by = "year") 
+
+# 燃費が欠損しているデータがある。今回は簡便な処理として観測から落とす。
+data <-
+  data %>%
+  dplyr::filter(is.na(FuelEfficiency) == 0)
+
+# 価格の実質化を行う。ここでは、2016年を基準年とする。
+# また、価格の単位を100万円にする。元のデータは1万円
+cpi2016 <- 
+  dataCPI %>% 
+  filter(year == 2016) %>% 
+  select(cpi) %>% 
+  as.double()
+
+data <- 
+  data %>% 
+  mutate(price = price / (cpi / cpi2016)) %>% 
+  mutate(price = price / 100) %>%
+  select(-cpi) 
+
+# サイズ(高さ＊幅＊長さ)、燃費の重量に対する比率を定義する。
+data <-
+  data %>%
+  dplyr::mutate(size = (overall_length / 1000) * (overall_width / 1000) * (overall_height / 1000)) %>%
+  dplyr::mutate(hppw = HorsePower / weight) %>%
+  dplyr::select(-HorsePower, -weight) %>% 
+  dplyr::select(-starts_with("overall")) 
+  
+# 自動車の車種IDを作成する。
+data <-
+  data %>%
+  dplyr::group_by(Name) %>%
+  dplyr::mutate(NameID = dplyr::cur_group_id()) %>%
+  dplyr::ungroup() %>%
+  dplyr::relocate(NameID, year)
+```
+
+続いて、市場シェアとアウトサイドオプションシェアを定義する。ここでは、マーケット(年)ごとに総販売台数(変数`inside_total`)を定義し、それを用いてアウトサイドオプションのシェアを計算している。
+
+```{r}
+# マーケットシェアとOutside option shareを定義する。
+data <-
+  data %>%
+  dplyr::group_by(year) %>%
+  dplyr::mutate(inside_total = sum(Sales)) %>%
+  dplyr::ungroup() %>%
+  dplyr::mutate(outside_total = HH - inside_total) %>%
+  dplyr::mutate(share = Sales / HH) %>%
+  dplyr::mutate(share0 = outside_total / HH) %>%
+  dplyr::select(-inside_total, -outside_total)
+```
+
+## 操作変数の構築
+
+操作変数を構築しよう。
+ここでは、BLP型操作変数と、Gandhi-HoudeのDifferentiation IVを定義する。
+コードが若干複雑なので、構築のアイデアを先に説明しよう。
+
+まず、Gandhi-HoudeのDifferentiation IVは以下のように定義される。
+
+$$
+\begin{split}Z_{jtk}^{\text{Quad,Other}}(X)=\sum_{k\in J_{ft}\setminus\{j\}}d_{jkt\ell}^{2},\\
+Z_{jtk}^{\text{Quad,Rival}}(X)=\sum_{k\notin J_{ft}}d_{jkt\ell}^{2}.
+\end{split}
+$$
+
+まず$Z_{jtk}^{\text{Quad,Other}}$の作成方法を考える．
+具体的なイメージを持つべく、以下のように，市場と企業でグループ化したうえで，同じ企業が生産する財$1,2,3,4$と，財の特質$X$を持ったデータ(data)を考える．
+
+| 市場 | 企業 | 財  | 特性$X$ | 特性の差の二乗$d^{2}$                                            |
+|-------|-------|-------|-------|---------------------------------------------|
+| 1    | 1    | 1   | A       | $\left(A-B\right)^{2}+\left(A-C\right)^{2}+\left(A-D\right)^{2}$ |
+| 1    | 1    | 2   | B       | $\left(B-A\right)^{2}+\left(B-C\right)^{2}+\left(B-D\right)^{2}$ |
+| 1    | 1    | 3   | C       | $\left(C-A\right)^{2}+\left(C-B\right)^{2}+\left(C-D\right)^{2}$ |
+| 1    | 1    | 4   | D       | $\left(D-A\right)^{2}+\left(D-B\right)^{2}+\left(D-C\right)^{2}$ |
+
+ここで，財$1$についての$d^{2}$を考えると，以下のように書ける．
+
+$$
+\left(A-B\right)^{2}+\left(A-C\right)^{2}+\left(A-D\right)^{2}=3A^{2}+\left(B^{2}+C^{2}+D^{2}\right)-2A\left(B+C+D\right)
+$$
+
+これを一般化した形で書くと、
+
+$$
+d^{2}=\left(\mathrm{nrow(data)}-1\right)*X^{2}+\left(\mathrm{sum}(X^{2})-X^{2}\right)-2*X*\left(\mathrm{sum}(X)-X\right)
+$$
+
+となる。
+
+以下では、このアイデアをコードに落とし込んだものを見ていこう。
+
+```{r}
+# まず、マーケット・企業レベルにおける、各製品属性の和と自乗和を計算する。
+# ここでacross関数は、最初に文字列ベクトルで指定した変数について、後ろにリスト内で定義した操作を適用している。
+data <-
+  data %>%
+  dplyr::group_by(year, Maker) %>%
+  dplyr::mutate(
+    dplyr::across(c("hppw", "FuelEfficiency", "size"),
+                  list(sum_own = ~ sum(.x, na.rm = TRUE))),
+    dplyr::across(c("hppw", "FuelEfficiency", "size"),
+                  list(sqr_sum_own = ~ sum(.x^2, na.rm = TRUE))),
+    group_n = n()) %>%
+  dplyr::ungroup()
+
+# 次に、マーケットレベルでの、各製品属性の和を計算する。
+data <- 
+  data %>% 
+  dplyr::group_by(year) %>%
+  dplyr::mutate(
+    dplyr::across(c("hppw", "FuelEfficiency", "size"),
+                  list(sum_mkt = ~ sum(.x, na.rm = TRUE))),
+    dplyr::across(c("hppw", "FuelEfficiency", "size"),
+                  list(sqr_sum_mkt = ~ sum(.x^2, na.rm = TRUE))),
+    mkt_n = n()) %>%
+  dplyr::ungroup() 
+
+# 以上で定義した変数を利用して、まずBLP操作変数を構築する。
+data <- 
+  data %>% 
+  dplyr::mutate(
+    iv_BLP_own_hppw = hppw_sum_own - hppw,
+    iv_BLP_own_FuelEfficiency = FuelEfficiency_sum_own - FuelEfficiency,
+    iv_BLP_own_size = size_sum_own - size,
+    iv_BLP_other_hppw = hppw_sum_mkt - hppw_sum_own,
+    iv_BLP_other_FuelEfficiency = FuelEfficiency_sum_mkt - FuelEfficiency_sum_own,
+    iv_BLP_other_size = size_sum_mkt - size_sum_own ) 
+
+# 続いて、Differentiation IVを構築する。
+data <- 
+  data %>% 
+  mutate(
+    iv_GH_own_hppw = (group_n - 1) * hppw^2 + (hppw_sqr_sum_own - hppw^2) - 2 * hppw * (hppw_sum_own - hppw),
+    iv_GH_own_FuelEfficiency = (group_n - 1) * FuelEfficiency^2 + (FuelEfficiency_sqr_sum_own - FuelEfficiency^2) - 2 * FuelEfficiency * (FuelEfficiency_sum_own - FuelEfficiency),
+    iv_GH_own_size = (group_n - 1) * size^2 + (size_sqr_sum_own - size^2) - 2 * size * (size_sum_own - size),
+    iv_GH_other_hppw = (mkt_n - group_n) * hppw^2 + (hppw_sqr_sum_mkt - hppw_sqr_sum_own) - 2 * hppw * (hppw_sum_mkt - hppw_sum_own),
+    iv_GH_other_FuelEfficiency = (mkt_n - group_n) * FuelEfficiency^2 + (FuelEfficiency_sqr_sum_mkt - FuelEfficiency_sqr_sum_own) - 2 * FuelEfficiency * (FuelEfficiency_sum_mkt - FuelEfficiency_sum_own),
+    iv_GH_other_size = (mkt_n - group_n) * size^2 + (size_sqr_sum_mkt - size_sqr_sum_own) - 2 * size * (size_sum_mkt - size_sum_own)
+    ) %>%
+  dplyr::select(
+    -starts_with("sum_own"),
+    -starts_with("sum_mkt"),
+    -starts_with("sqr_sum_own"),
+    -starts_with("sqr_sum_mkt"),
+    -mkt_n,
+    -group_n)　
+```
+
+# 記述統計と基礎的な分析
+
+まずは、第３章のケースに載せたものを再現しよう。
+
+## イントロダクションの日評自動車
+
+イントロダクションにおける、日評自動車が社内で行った分析についてみていこう。
+日評自動車はあくまで仮想の自動車会社であるため、ここでは、全車種からランダム選ばれた30車種
+を保有する自動車メーカーと考えよう。
+
+まず、日評自動車のデータセットを用意する。
+
+```{r}
+# 車種のID
+IDvec <- sort(unique(data$NameID))
+J <- length(IDvec)
+
+# 乱数のシードを固定する。これを行うことで、毎回同じ乱数を得ることができる。
+set.seed(125)
+
+# sample関数を使って、先に用意した車種IDベクトルから、重複無しで30車種を取得する。
+# なお、sample関数は内部で乱数を利用しているため、先の乱数シード固定が重要となる。
+NIPPYOautoIDvec <- sample(IDvec, size = 30, replace = FALSE)
+NIPPYOautoIDvec <- sort(NIPPYOautoIDvec)
+
+# 日評自動車のデータセットを作成する。
+data_NIPPYO <-
+  data %>% 
+  filter(NameID %in% NIPPYOautoIDvec) %>% 
+  select(Sales, price, hppw, FuelEfficiency, size,
+         capacity_d, FuelRegular_d, Foreign_d) %>% 
+  mutate(log_sales = log(Sales),
+         log_price = log(price)) 
+```
+
+その上で、イントロダクションにおける以下の回帰式をOLSで推定しよう。
+
+$$
+\log q_j\  =\alpha_0+\alpha_1\ \log\ p_j\ +\alpha_2 size_j+\alpha_3 fuelefficiency_j+\alpha_4 hppw_j+\alpha_5{capacity\_d_{j}}+\alpha_6{FuelRegular\_d_{j}}+\alpha_7{Foreign\_d_{j}}
+$$
+
+```{r}
+ols_intro <-
+  fixest::feols(log_sales ~ log_price + hppw + FuelEfficiency + size +
+                  capacity_d + FuelRegular_d + Foreign_d,
+                data = data_NIPPYO)
+
+# 結果のアウトプット
+fixest::etable("OLS_NIPPYO" = ols_intro, 
+               se = "hetero",
+               signif.code = NA, 
+               fitstat = c("r2", "n" ), 
+               dict = c(log_price = "log(価格)",
+                        hppw = "馬力／重量",
+                        FuelEfficiency = "燃費(キロメートル／ 1 リットル)",
+                        size = "サイズ",
+                        capacity_d = "キャパシティダミー(5以上)",
+                        FuelRegular_d = "レギュラータイプダミー",
+                        Foreign_d = "外国車ダミー",
+                        `(Intercept)` = "定数項"),
+               digits = 2,
+               digits.stats = 2,
+               depvar = FALSE) %>%
+  kable(align = c('l', 'c', 'c'),
+        booktabs = TRUE, format = "html") %>%
+  kable_styling(full_width = FALSE)
+```
+
+参考：価格と販売台数の散布図
+
+```{r}
+#日評自動車のデータのみ取り出す。
+data_graph <-
+  data_NIPPYO %>% dplyr::select(price, Sales)
+
+g1 <-
+  ggplot2::ggplot(data_graph, aes(price, Sales)) +
+  scale_x_continuous(trans = "log10") +
+  scale_y_continuous(trans = "log10") +
+  geom_point() +
+  geom_smooth(method = "lm", formula = y ~ x)
+
+plot(g1)
+```
+
+## 記述統計
+
+データセット全体の記述統計を見てみよう。
+
+```{r}
+data %>% 
+  dplyr::select(Sales, price, FuelEfficiency, size, hppw,
+                capacity_d, FuelRegular_d, Foreign_d) %>% 
+  summarytools::descr(transpose = TRUE,
+                      stats = c("mean", "sd", "min", "q1", "med", "q3", "max"),
+                      order = "preserve")
+```
+
+# ロジットモデルの推定とその応用
+
+本誌で導入した、以下のモデルを推定しよう。
+
+$$
+\log S_{jt} - \log S_{0t} = \alpha p_{jt} + \beta'\mathbf{X}_{jt} + \lambda_t + \xi_{jt} 
+$$
+
+推定に際しては、OLS、BLP操作変数による結果、そしてDifferentiation
+IVによる結果の3通りについて比較する。
+
+```{r}
+# まず被説明変数を定義する。
+data <-
+  data %>%
+  dplyr::mutate(logit_share = log(share) - log(share0))
+
+# OLSの結果
+ols <-
+  fixest::feols(logit_share ~ price + hppw + FuelEfficiency + size + 
+                  capacity_d + FuelRegular_d + Foreign_d | year, data = data)
+
+# BLP操作変数を用いた結果
+iv_BLP <-
+  fixest::feols(
+    logit_share ~ hppw + FuelEfficiency + size + 
+      capacity_d + FuelRegular_d + Foreign_d | year |
+      price ~ iv_BLP_own_hppw + iv_BLP_own_FuelEfficiency + iv_BLP_own_size +
+      iv_BLP_other_hppw + iv_BLP_other_FuelEfficiency + iv_BLP_other_size,
+    data = data)
+
+# Differentiation IVを用いた結果
+iv_GH <-
+  fixest::feols(
+    logit_share ~ hppw + FuelEfficiency + size + 
+      capacity_d + FuelRegular_d + Foreign_d | year |
+      price ~ iv_GH_own_hppw + iv_GH_own_FuelEfficiency + iv_GH_own_size +
+      iv_GH_other_hppw + iv_GH_other_FuelEfficiency + iv_GH_other_size,
+    data = data)
+
+# 推定結果をレポートする。
+fixest::etable(list("OLS" = ols, "iv_BLP" = iv_BLP, "iv_GH" = iv_GH),  
+               se = "hetero",
+               fitstat = c("r2", "n", "ivf" ), 
+               signif.code = NA, 
+               dict = c(price = "自動車価格",
+                        hppw = "馬力／重量",
+                        FuelEfficiency = "燃費(キロメートル／ 1 リットル)",
+                        size = "サイズ",
+                        capacity_d = "キャパシティダミー(5以上)",
+                        FuelRegular_d = "レギュラータイプダミー",
+                        Foreign_d = "外国車ダミー",
+                        `(Intercept)` = "定数項"),
+               digits = 2,
+               digits.stats = 2,
+               depvar = FALSE) %>%
+  kable(align = c('l', 'c', 'c', 'c'),
+        booktabs = TRUE, format = "html") %>%
+  kable_styling(full_width = FALSE)
+```
+
+## 1st stage
+
+```{r}
+# BLP操作変数を用いた結果
+iv1st_BLP <-
+  fixest::feols(
+    price ~ hppw + FuelEfficiency + size +
+      capacity_d + FuelRegular_d + Foreign_d +
+      iv_BLP_own_hppw + iv_BLP_own_FuelEfficiency + iv_BLP_own_size +
+      iv_BLP_other_hppw + iv_BLP_other_FuelEfficiency + iv_BLP_other_size | year,
+    data = data)
+
+# Differentiation IVを用いた結果
+iv1st_GH <-
+  fixest::feols(
+    price ~ hppw + FuelEfficiency + size + 
+      capacity_d + FuelRegular_d + Foreign_d +
+      iv_GH_own_hppw + iv_GH_own_FuelEfficiency + iv_GH_own_size +
+      iv_GH_other_hppw + iv_GH_other_FuelEfficiency + iv_GH_other_size | year,
+    data = data)
+
+# 推定結果をレポートする。
+fixest::etable(list("iv1st_BLP" = iv1st_BLP, "iv1st_GH" = iv1st_GH),  
+               se = "hetero",
+               fitstat = c("r2", "n"), 
+               signif.code = NA, 
+               dict = c(price = "自動車価格",
+                        hppw = "馬力／重量",
+                        FuelEfficiency = "燃費(キロメートル／ 1 リットル)",
+                        size = "サイズ",
+                        capacity_d = "キャパシティダミー(5以上)",
+                        FuelRegular_d = "レギュラータイプダミー",
+                        Foreign_d = "外国車ダミー",
+                        `(Intercept)` = "定数項"),
+               digits = 2,
+               digits.stats = 2,
+               depvar = FALSE) %>%
+  kable(align = c('l', 'c', 'c'),
+        booktabs = TRUE, format = "html") %>%
+  kable_styling(full_width = FALSE)
+```
+
+## 自己価格弾力性の計算
+
+各推定結果について、自己価格弾力性を計算しよう。
+
+```{r}
+data %>% 
+  dplyr::mutate(own_elas_ols = ols$coefficients["price"] * price * (1 - share), 
+                own_elas_ivblp = iv_BLP$coefficients["fit_price"] * price * (1 - share), 
+                own_elas_ivgh  = iv_GH$coefficients["fit_price"] * price * (1 - share)) -> data_elas
+
+data_elas %>% 
+  dplyr::select(starts_with("own_elas")) %>% 
+  summarytools::descr(transpose = TRUE, 
+                      stats = c("mean", "sd", "med", "min", "max"))
+```
+
+# 推定結果の応用
+
+## 需要曲線と収入曲線を書く
+
+需要関数の推定結果にもとづいて、需要曲線を書こう。
+
+1.  まず、推定結果から$\xi_{jt}$をゲットする。
+2.  関数を作成する。
+3.  どこか市場を固定する。
+4.  製品を一つ固定する。
+5.  その製品の価格を変えたときに、どの製品のSalesがどう変わるかをPredictする。その際、他の製品価格はデータのものに固定しておく。
+
+```{r}
+data %>% 
+  select(NameID, year, Sales, price, FuelEfficiency, size, hppw, HH, share, 
+         capacity_d, FuelRegular_d, Foreign_d) %>% 
+  mutate(xi_fit = resid(iv_GH)) -> dt_application
+
+```
+
+まず、日評自動車が販売する中での特定の車種に着目しよう。ここではNameID
+87について考えてみよう。
+
+```{r}
+NameID_target <- 87
+
+dt_application %>% 
+  filter(NameID == NameID_target & year == 2016) %>% 
+  head()
+```
+
+価格をインプットとして、販売台数を返す関数を考える。
+
+```{r}
+f_share <- function(price_cand, year, modelID_target, dt, est) {
+  
+  estparam <- est$coefficients
+  
+  fe <- fixef(est)$year[paste0(year)]
+  
+  dt %>% 
+    filter(year == 2016) %>% 
+    mutate(fe = fe) %>%
+    mutate(temp_price = ifelse(NameID == modelID_target, price_cand, price)) %>% 
+    mutate(delta = estparam[1] * temp_price + estparam[2] * hppw + 
+             estparam[3] * FuelEfficiency + estparam[4] * size + 
+             estparam[5] * capacity_d + estparam[6] * FuelRegular_d +
+             estparam[7] * Foreign_d + xi_fit + fe) %>%
+    mutate(denom = 1 + sum(exp(delta))) %>%
+    mutate(pred_sales = exp(delta) / denom * HH) %>%
+    filter(NameID == modelID_target) -> dt_result
+  
+  return(dt_result$pred_sales)
+}
+```
+
+```{r}
+NameID_target <- 87
+
+# 価格の範囲として、0.5(50万円)から5(500万円)を考える。なお、もとの価格は3.198 (319.8万円)
+pricevec <- seq(from = 0.3, to = 5,　by = 0.05)
+quantvec <- numeric(length(pricevec))
+revenuevec <- numeric(length(pricevec))
+
+for (i in 1:length(pricevec)) {
+  quantvec[i] <- f_share(price_cand = pricevec[i], year = 2016,
+                         modelID_target = NameID_target, dt = dt_application, est = iv_GH)
+  revenuevec[i] <- pricevec[i] * quantvec[i]
+}
+```
+
+まず、需要曲線をプロットする。
+
+```{r}
+data.frame(x = quantvec, y = pricevec) %>%
+  ggplot(aes(x = x / 10000, y = y * 100)) +
+  geom_line() +
+  theme_bw() +
+  ggplot2::theme(
+    axis.title.y = element_text(angle = 0, vjust = 0.5),
+    theme(text = element_text(family = 'HiraKakuPro-W3')),
+    panel.grid.major.y = element_line(color = 'grey',
+                                      linewidth = 0.3, linetype = 'dotted'),
+    panel.grid.minor.y = element_line(color = 'grey',
+                                      linewidth = 0.3, linetype = 'dotted'),
+    panel.grid.minor = element_blank(),
+    panel.grid.major.x = element_blank(),
+    panel.border = element_blank(),
+    axis.line = element_line(colour = 'black', linewidth = 0.2)) +
+  scale_x_continuous(breaks = seq(0, 20, 2)) + 
+  scale_y_continuous(breaks = seq(0, 500, 100)) + 
+  ggplot2::labs(y = '価格(万円)',
+                x = '販売台数(万台)') 
+
+ggsave(file = "output/chap3_demand.png", width = 9, height = 6)
+ggsave(file = "output/chap3_demand.pdf", width = 9, height = 6, device = cairo_pdf)
+```
+
+続いて、収入と価格の関係をプロットする。
+
+```{r}
+# pricevecの価格の単位を1万円にする。
+data.frame(x = pricevec, y = revenuevec) %>%
+  ggplot(aes(x = x * 100, y = y * 100 / 10000)) +
+  geom_line() +
+  theme_bw() +
+  ggplot2::theme(
+    axis.title.y = element_text(angle = 0, vjust = 0.5),
+    theme(text = element_text(family = 'HiraKakuPro-W3')),
+    panel.grid.major.y = element_line(color = 'grey',
+                                      linewidth = 0.3, linetype = 'dotted'),
+    panel.grid.minor.y = element_line(color = 'grey',
+                                      linewidth = 0.3, linetype = 'dotted'),
+    panel.grid.minor = element_blank(),
+    panel.grid.major.x = element_blank(),
+    panel.border = element_blank(),
+    axis.line = element_line(colour = 'black', linewidth = 0.2)) +
+  scale_x_continuous(breaks = seq(0, 500, 100)) + 
+  scale_y_continuous(breaks = seq(500, 1500, 250)) + 
+  ggplot2::labs(y = "収入(億円)",,
+                x = "価格(万円)") 
+
+ggsave(file = "output/chap3_revenue.png", width = 9, height = 6)
+ggsave(file = "output/chap3_revenue.pdf", width = 9, height = 6, device = cairo_pdf)
+```
+
+## 収入を最大化にする価格
+
+実際に収入が最大になる価格を、最適化を使って求めてみよう。
+
+```{r}
+# 最適化で利用する関数を定義する。
+f_revenue <- function(price_cand, year, modelID_target, dt , est) {
+  
+  quantity <- f_share(price_cand, year, modelID_target, dt, est)
+  revenue <- price_cand * quantity
+  return(revenue)
+}
+
+# 最適化アルゴリズムを使って、収入を最大にする価格を求める。
+result <- optimise(f_revenue, interval = c(0.3, 3), maximum = TRUE, 
+                   year = 2016, modelID_target = NameID_target,
+                   dt = dt_application, est = iv_GH)
+print(result)
+```
