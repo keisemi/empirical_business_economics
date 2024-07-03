@@ -489,6 +489,8 @@ ggsave(filename = "output/Revenue_Kinoko.pdf", plot = fig_rev, width = 8, height
  
 # スクラッチで推定 
  以下では、ロジット、消費者属性を考慮したロジット、ランダム係数ロジットモデルを、それぞれスクラッチで推定する。手始めにロジットモデルを推定する。
+
+
 ## ロジットモデル
 　尤度関数は以下で定義する。
 ```{r}
@@ -803,7 +805,7 @@ result_rcdc <- optimx( par = ini_rcdc,
 
 est_vec_rcdc <- result_rcdc[1:6]
 ```
-　以下が推定されたパラメタである。価格の係数がパッケージによるものと異なる
+　以下が推定されたパラメタである。パッケージによる推定に近い値となっていることがわかる。
 ```{r}
 est_vec_rcdc
 ```
