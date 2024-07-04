@@ -71,6 +71,7 @@ require(fixest)
 require(summarytools)
 require(sjmisc)
 require(kableExtra)
+require(xtable)
 ```
 
 ### 細かい留意点
@@ -367,24 +368,32 @@ ols_intro <-
                 data = data_NIPPYO)
 
 # 結果のアウトプット
-fixest::etable("OLS_NIPPYO" = ols_intro, 
-               se = "hetero",
-               signif.code = NA, 
-               fitstat = c("r2", "n" ), 
-               dict = c(log_price = "log(価格)",
-                        hppw = "馬力／重量",
-                        FuelEfficiency = "燃費(キロメートル／ 1 リットル)",
-                        size = "サイズ",
-                        capacity_d = "キャパシティダミー(5以上)",
-                        FuelRegular_d = "レギュラータイプダミー",
-                        Foreign_d = "外国車ダミー",
-                        `(Intercept)` = "定数項"),
-               digits = 2,
-               digits.stats = 2,
-               depvar = FALSE) %>%
+tbl_ols_intro <- fixest::etable("OLS_NIPPYO" = ols_intro, 
+                                se = "hetero",
+                                signif.code = NA, 
+                                fitstat = c("r2", "n" ), 
+                                dict = c(log_price = "log(価格)",
+                                         hppw = "馬力／重量",
+                                         FuelEfficiency = "燃費(キロメートル／ 1 リットル)",
+                                         size = "サイズ",
+                                         capacity_d = "キャパシティダミー(5以上)",
+                                         FuelRegular_d = "レギュラータイプダミー",
+                                         Foreign_d = "外国車ダミー",
+                                         `(Intercept)` = "定数項"),
+                                digits = 2,
+                                digits.stats = 2,
+                                depvar = FALSE)
+tbl_ols_intro %>%
   kable(align = c('l', 'c', 'c'),
-        booktabs = TRUE, format = "html") %>%
+        booktabs = FALSE, format = "html") %>%
   kable_styling(full_width = FALSE)
+
+## 表の保存
+tbl_ols_intro %>%
+  kable(align = c('l', 'c', 'c'),
+        booktabs = FALSE, format = "latex") %>%
+  kable_styling(full_width = FALSE) %>%
+  save_kable("output/chap3_ols_intro.tex")
 ```
 
 参考：価格と販売台数の散布図
@@ -409,12 +418,16 @@ plot(g1)
 データセット全体の記述統計を見てみよう。
 
 ```{r}
-data %>% 
+tbl_data_summary <- data %>% 
   dplyr::select(Sales, price, FuelEfficiency, size, hppw,
                 capacity_d, FuelRegular_d, Foreign_d) %>% 
   summarytools::descr(transpose = TRUE,
                       stats = c("mean", "sd", "min", "q1", "med", "q3", "max"),
                       order = "preserve")
+print(tbl_data_summary)
+tbl_data_summary %>%
+  xtable::xtable(digits = rep(2, ncol(.) + 1)) %>%
+  print(file = 'output/chap3_data_summary.tex')
 ```
 
 # ロジットモデルの推定とその応用
@@ -458,24 +471,33 @@ iv_GH <-
     data = data)
 
 # 推定結果をレポートする。
-fixest::etable(list("OLS" = ols, "iv_BLP" = iv_BLP, "iv_GH" = iv_GH),  
-               se = "hetero",
-               fitstat = c("r2", "n", "ivf" ), 
-               signif.code = NA, 
-               dict = c(price = "自動車価格",
-                        hppw = "馬力／重量",
-                        FuelEfficiency = "燃費(キロメートル／ 1 リットル)",
-                        size = "サイズ",
-                        capacity_d = "キャパシティダミー(5以上)",
-                        FuelRegular_d = "レギュラータイプダミー",
-                        Foreign_d = "外国車ダミー",
-                        `(Intercept)` = "定数項"),
-               digits = 2,
-               digits.stats = 2,
-               depvar = FALSE) %>%
+tbl_logit_iv <- fixest::etable(list("OLS" = ols, "iv_BLP" = iv_BLP, "iv_GH" = iv_GH),  
+                               se = "hetero",
+                               fitstat = c("r2", "n", "ivf" ), 
+                               signif.code = NA, 
+                               dict = c(price = "自動車価格",
+                                        hppw = "馬力／重量",
+                                        FuelEfficiency = "燃費(キロメートル／ 1 リットル)",
+                                        size = "サイズ",
+                                        capacity_d = "キャパシティダミー(5以上)",
+                                        FuelRegular_d = "レギュラータイプダミー",
+                                        Foreign_d = "外国車ダミー",
+                                        `(Intercept)` = "定数項"),
+                               digits = 2,
+                               digits.stats = 2,
+                               depvar = FALSE)
+
+tbl_logit_iv %>%
   kable(align = c('l', 'c', 'c', 'c'),
-        booktabs = TRUE, format = "html") %>%
+        booktabs = FALSE, format = "html") %>%
   kable_styling(full_width = FALSE)
+
+## 表の保存
+tbl_logit_iv %>%
+  kable(align = c('l', 'c', 'c', 'c'),
+        booktabs = FALSE, format = "latex") %>%
+  kable_styling(full_width = FALSE) %>%
+  save_kable("output/chap3_logit_iv.tex")
 ```
 
 ## 1st stage
@@ -500,24 +522,32 @@ iv1st_GH <-
     data = data)
 
 # 推定結果をレポートする。
-fixest::etable(list("iv1st_BLP" = iv1st_BLP, "iv1st_GH" = iv1st_GH),  
-               se = "hetero",
-               fitstat = c("r2", "n"), 
-               signif.code = NA, 
-               dict = c(price = "自動車価格",
-                        hppw = "馬力／重量",
-                        FuelEfficiency = "燃費(キロメートル／ 1 リットル)",
-                        size = "サイズ",
-                        capacity_d = "キャパシティダミー(5以上)",
-                        FuelRegular_d = "レギュラータイプダミー",
-                        Foreign_d = "外国車ダミー",
-                        `(Intercept)` = "定数項"),
-               digits = 2,
-               digits.stats = 2,
-               depvar = FALSE) %>%
+tbl_logit_iv_1st <- fixest::etable(list("iv1st_BLP" = iv1st_BLP, "iv1st_GH" = iv1st_GH),  
+                                   se = "hetero",
+                                   fitstat = c("r2", "n"), 
+                                   signif.code = NA, 
+                                   dict = c(price = "自動車価格",
+                                            hppw = "馬力／重量",
+                                            FuelEfficiency = "燃費(キロメートル／ 1 リットル)",
+                                            size = "サイズ",
+                                            capacity_d = "キャパシティダミー(5以上)",
+                                            FuelRegular_d = "レギュラータイプダミー",
+                                            Foreign_d = "外国車ダミー",
+                                            `(Intercept)` = "定数項"),
+                                   digits = 2,
+                                   digits.stats = 2,
+                                   depvar = FALSE)
+
+tbl_logit_iv_1st %>%
   kable(align = c('l', 'c', 'c'),
-        booktabs = TRUE, format = "html") %>%
+        booktabs = FALSE, format = "html") %>%
   kable_styling(full_width = FALSE)
+
+tbl_logit_iv_1st %>%
+  kable(align = c('l', 'c', 'c'),
+        booktabs = FALSE, format = "latex") %>%
+  kable_styling(full_width = FALSE) %>%
+  save_kable("output/chap3_logit_iv_1st.tex")
 ```
 
 ## 自己価格弾力性の計算
@@ -530,10 +560,15 @@ data %>%
                 own_elas_ivblp = iv_BLP$coefficients["fit_price"] * price * (1 - share), 
                 own_elas_ivgh  = iv_GH$coefficients["fit_price"] * price * (1 - share)) -> data_elas
 
-data_elas %>% 
+tbl_own_elas <- data_elas %>% 
   dplyr::select(starts_with("own_elas")) %>% 
   summarytools::descr(transpose = TRUE, 
-                      stats = c("mean", "sd", "med", "min", "max"))
+                      stats = c("mean", "sd", "med", "min", "max"),
+                      order = "preserve")
+print(tbl_own_elas)
+tbl_own_elas %>%
+  xtable::xtable(digits = rep(2, ncol(.) + 1)) %>%
+  print(file = 'output/chap3_own_elas.tex')
 ```
 
 # 推定結果の応用
