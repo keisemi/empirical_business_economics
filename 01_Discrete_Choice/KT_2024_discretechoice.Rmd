@@ -8,7 +8,7 @@ output:
     df_print: paged
     code_folding: hide
     number_section: true
-date: "2024-06-19"
+date: "2024-07-03"
 ---
 
 　このファイルは、2024年度のきのこの山・たけのこの里アンケートについての分析用のコード及びその結果をまとめたものである。
@@ -673,7 +673,7 @@ print(est_vec)
 　mlogitパッケージによる推定値と比べると以下のようになっている。概ね近い値となっている。
 ```{r}
 # パッケージでの推定値:
-est_vec_pack <- c(0.063, 12.521,12.661,0.013, 3.363,3.529, -0.002, -0.046 ,-0.429, -0.018, -3.324,	-3.664,0.016, 0.013, 3.817,2.796, 3.365,3.390 )
+est_vec_pack <- ml_consumer_atr$coefficients[1:18]
 # 比較 やや差があるが概ね同じ
 print(rbind(est_vec, est_vec_pack))
 ```
@@ -720,12 +720,25 @@ f_rcdclogit_prob <- function(alpha_Kinoko, alpha_Takenoko, beta, price_Kinoko, p
   return( cbind(prob_Kinoko, prob_Takenoko, prob_Other))
 }
 ```
+```{r}
+# ドロー回数
+times_draw =1000
+# 乱数の格納用
+tau<- matrix(nrow = times_draw*236, ncol = 3)
+for(i in 1:236){
+  set.seed(500+i)
+# 回答者iがドローする乱数
+  tau[(times_draw*(i-1)+1):(times_draw*i), 1] <- rnorm(times_draw, mean = 0, sd = 1)
+  tau[(times_draw*(i-1)+1):(times_draw*i), 2] <- rnorm(times_draw, mean = 0, sd = 1)
+  tau[(times_draw*(i-1)+1):(times_draw*i), 3] <- rnorm(times_draw, mean = 0, sd = 1)}
+```
+
 
 　方針:各回答者ごとの一連の選択の確率を1000ドローしたものを、平均して近似する。以下で対数尤度を算出する。
 ```{r}
-f_likelihood_rcdclogit <- function(param, data, times_draw){
+f_likelihood_rcdclogit <- function(param, data){
   # 空のデータフレーム
-  pred <- data.frame(matrix(ncol = 3, nrow = 1180*times_draw))
+  pred <- matrix(ncol = 3, nrow = 1180*times_draw)
   colnames(pred) <- c("prob_Kinoko", "prob_Takenoko","prob_Other")
   ID <- numeric(236*times_draw)
   beta <- param[1]
@@ -735,21 +748,17 @@ f_likelihood_rcdclogit <- function(param, data, times_draw){
   sigma_Kinoko <- param[5]
   sigma_Takenoko <- param[6]
   
-  tau<- matrix(nrow = times_draw, ncol = 3)
 
 # 各回答者の選択確率を予測する
   for(i in 1:236){
-  set.seed(500+i)
-  # 回答者iがドローする乱数
-  tau[, 1] <- rnorm(times_draw, mean = 0, sd = 1)
-  tau[, 2] <- rnorm(times_draw, mean = 0, sd = 1)
-  tau[, 3] <- rnorm(times_draw, mean = 0, sd = 1)
+  
+  
 # 各選択フェーズでのドロー回数分の選択確率を予測
-  P1 <- f_rcdclogit_prob(alpha_Kinoko, alpha_Takenoko, beta, 200, 200, sigma_Kinoko, sigma_Takenoko, sigma_price, tau)
-  P2 <- f_rcdclogit_prob(alpha_Kinoko, alpha_Takenoko, beta, 180, 200, sigma_Kinoko, sigma_Takenoko, sigma_price, tau)
-  P3 <- f_rcdclogit_prob(alpha_Kinoko, alpha_Takenoko, beta, 200, 170, sigma_Kinoko, sigma_Takenoko, sigma_price, tau)
-  P4 <- f_rcdclogit_prob(alpha_Kinoko, alpha_Takenoko, beta, 220, 200, sigma_Kinoko, sigma_Takenoko, sigma_price, tau)
-  P5 <- f_rcdclogit_prob(alpha_Kinoko, alpha_Takenoko, beta, 190, 210, sigma_Kinoko, sigma_Takenoko, sigma_price, tau)
+  P1 <- f_rcdclogit_prob(alpha_Kinoko, alpha_Takenoko, beta, 200, 200, sigma_Kinoko, sigma_Takenoko, sigma_price, tau[(times_draw*(i-1)+1):(times_draw*i), ])
+  P2 <- f_rcdclogit_prob(alpha_Kinoko, alpha_Takenoko, beta, 180, 200, sigma_Kinoko, sigma_Takenoko, sigma_price, tau[(times_draw*(i-1)+1):(times_draw*i), ])
+  P3 <- f_rcdclogit_prob(alpha_Kinoko, alpha_Takenoko, beta, 200, 170, sigma_Kinoko, sigma_Takenoko, sigma_price, tau[(times_draw*(i-1)+1):(times_draw*i), ])
+  P4 <- f_rcdclogit_prob(alpha_Kinoko, alpha_Takenoko, beta, 220, 200, sigma_Kinoko, sigma_Takenoko, sigma_price, tau[(times_draw*(i-1)+1):(times_draw*i), ])
+  P5 <- f_rcdclogit_prob(alpha_Kinoko, alpha_Takenoko, beta, 190, 210, sigma_Kinoko, sigma_Takenoko, sigma_price, tau[(times_draw*(i-1)+1):(times_draw*i), ])
   # 各設問ごとのドロー回数分の選択確率を格納
   pred[(5*(i-1)*(times_draw)+1):(5*(i-1)*(times_draw)+times_draw),] <- P1
   pred[(5*(i-1)*(times_draw)+times_draw+1):(5*(i-1)*(times_draw)+2*times_draw),] <- P2
@@ -760,6 +769,7 @@ f_likelihood_rcdclogit <- function(param, data, times_draw){
   ID[(5*(i-1)*(times_draw)+1):(5*(i-1)*(times_draw)+5*times_draw)] <- rep(data$ID[(5*(i-1)+1)], 5*times_draw)
   
   }
+  pred<- as.data.frame(pred)
   # IDと設問、ドローフェーズ(マージ用)
   pred$ID<- ID
   pred$occasion <- rep(rep(c("Q1", "Q2", "Q3", "Q4", "Q5"), each = times_draw), 236)
@@ -785,32 +795,44 @@ f_likelihood_rcdclogit <- function(param, data, times_draw){
 
 }
 ```
-```{r}
-# カンニングしてパッケージで推定されたパラメタを入れたら、対数尤度は同じくらいになった
-f_likelihood_rcdclogit( c(0.164, 35.194, 36.499, -0.031, 1.238, 4.294), data_for_estimation_with_atr, 50)
-```
-
-
+　
 　推定を行う。
-```{r}
-
+```{r, cache = TRUE}
+# おおざっぱに選んだ初期値
 ini_rcdc <- c(0.6,20,20,	0.1,1,1)
+# 最大化
 result_rcdc <- optimx( par = ini_rcdc, 
                   fn = f_likelihood_rcdclogit, 
                   method="BFGS", 
                   data = data_for_estimation_with_atr, 
                   control = list(fnscale=-1), 
-                  hessian = TRUE,
-                  times_draw=1000)
+                  hessian = TRUE)
 
-est_vec_rcdc <- result_rcdc[1:6]
+est_vec_rcdc <- as.numeric(result_rcdc[1,1:6])
 ```
 　以下が推定されたパラメタである。パッケージによる推定に近い値となっていることがわかる。
 ```{r}
-est_vec_rcdc
+# パッケージの推定値
+est_vec_package_rcdc <- rcdc$coefficients[1:6]
+# 比較
+print(rbind(est_vec_rcdc, est_vec_package_rcdc))
 ```
-
-
-
+　対数尤度を以下に示す。
+```{r}
+result_rcdc[7]$value
+```
+　標準誤差を算出する。
+```{r}
+#　ヘシアンの計算
+Hessian <- gHgen(par = as.numeric(result_rcdc[1,1:6]), 
+                 fn = f_likelihood_rcdclogit, 
+                 data = data_for_estimation_with_atr)
+se_vec <- round(sqrt(diag(solve(-Hessian$Hn))), 3)
+```
+　推定値と標準誤差を並べたものを以下に示す。
+```{r}
+print(rbind(est_vec_rcdc, se_vec))
+```
+　
 
 
