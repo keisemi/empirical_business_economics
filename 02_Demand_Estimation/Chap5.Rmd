@@ -496,10 +496,21 @@ colnames(beta_hat) <- "coeff"
 names(se)[length(GMM_linear$theta1) + 1] <- "random_price"
 
 est_table <- as.data.frame(cbind(beta_hat, se))
-kable(est_table,  align = rep('c', 3),
-      booktabs = TRUE, format = "html",
-      caption = "Estimates of The Parameters") %>%
+est_table %>%
+  kable(align = c("l", rep("c", 2)),
+        digits = 2, 
+        booktabs = FALSE, format = "html",
+        caption = "Estimates of The Parameters") %>%
   kable_styling(full_width = FALSE)
+
+# 表の保存
+est_table %>%
+  kable(align = c("l", rep("c", 2)),
+        digits = 2, 
+        booktabs = FALSE, format = "latex",
+        caption = "Estimates of The Parameters") %>%
+  kable_styling(full_width = FALSE) %>%
+  save_kable("output/chap5_blp.tex")
 ```
 
 
@@ -609,17 +620,31 @@ Table_4dt <-  Marginal_Cost_2016_Est %>%
   
 colnames(Table_4dt) <- c("Maker", "Name", "Price", "Marginal Cost", "Margin (p-mc)/p")
 
-kable(Table_4dt, align = rep('c', 5),
-      booktabs = TRUE, format = "html",
-      caption = "Predicted Marginal Costs") %>%
+Table_4dt %>% 
+  kable(align = rep("c", 5),
+        digits = 3,
+        booktabs = FALSE, format = "html",
+        caption = "Predicted Marginal Costs") %>%
   kable_styling(full_width = FALSE)
+
+# 表の保存
+Table_4dt %>%
+  kable(align = rep("c", 5),
+        digits = 3,
+        booktabs = FALSE, format = "latex",
+        caption = "Predicted Marginal Costs") %>%
+  kable_styling(full_width = FALSE) %>%
+  save_kable("output/chap5_mc_2016.tex")
 ```
 
 ```{r}
 # distribution of margin
 g <- ggplot(Marginal_Cost_2016_Est, aes(x = margin)) + 
-  geom_histogram(binwidth = 0.01)
-g
+  geom_histogram(binwidth = 0.01) +
+  theme_bw()
+plot(g)
+ggsave(g, file = "output/chap5_margin.png", width = 9, height = 6)
+ggsave(g, file = "output/chap5_margin.pdf", width = 9, height = 6, device = cairo_pdf)
 ```
 
 # 合併シミュレーション
@@ -872,11 +897,23 @@ Table_5dt <- data_2016 %>%
 colnames(Table_5dt) <- c("Maker", "Name", "p", "q", "p", "q")
 
 # 表を作る
-kable(Table_5dt, align = rep('c', 5),
-      booktabs = TRUE, format = "html", 
-      caption = "Predicted Percent Change in Prices and Quantities as a Result of Mergers") %>%
+Table_5dt %>%
+  kable(align = rep("c", 6),
+        digits = 3,
+        booktabs = FALSE, format = "html", 
+        caption = "Predicted Percent Change in Prices and Quantities as a Result of Mergers") %>%
   add_header_above(c(" ", " ", "Nippyo and Brand A" = 2, "Nippyo and Brand B" = 2)) %>%
   kable_styling(full_width = FALSE)
+
+# 表の保存
+Table_5dt %>%
+  kable(align = rep("c", 6),
+        digits = 3,
+        booktabs = FALSE, format = "latex", 
+        caption = "Predicted Percent Change in Prices and Quantities as a Result of Mergers") %>%
+  add_header_above(c(" ", " ", "Nippyo and Brand A" = 2, "Nippyo and Brand B" = 2)) %>%
+  kable_styling(full_width = FALSE) %>%
+  save_kable("output/chap5_merger_change_p_q.tex")
 ```
 
 
@@ -935,10 +972,21 @@ colnames(Table_6dt) <- c("Origin Maker", "Name", "Nippyo and Brand A",
                          "Nippyo and Brand B")
 
 # 表を作る
-kable(Table_6dt, align = rep('c', 5),
-      booktabs = TRUE, format = "html", 
-      caption = "Percent Reduction in Marginal Costs Required for No Change in Predicted Postmerger Prices") %>%
+Table_6dt %>%
+  kable(align = rep("c", 4),
+        digits = 3,
+        booktabs = FALSE, format = "html", 
+        caption = "Percent Reduction in Marginal Costs Required for No Change in Predicted Postmerger Prices") %>%
   kable_styling(full_width = FALSE)
+
+# 表の保存
+Table_6dt %>%
+  kable(align = rep("c", 4),
+        digits = 3,
+        booktabs = FALSE, format = "latex", 
+        caption = "Percent Reduction in Marginal Costs Required for No Change in Predicted Postmerger Prices") %>%
+  kable_styling(full_width = FALSE) %>%
+  save_kable("output/chap5_merger_change_mc.tex")
 ```
 
 ## 合併シミュレーションの厚生分析
@@ -1056,11 +1104,21 @@ Table_7dt1 <- tibble(
 
 colnames(Table_7dt1) <- c("Measure", "Nippyo and Brand A",
                           "Nippyo and Brand B")
-
-kable(Table_7dt1, align = rep('c', 3), 
-      booktabs = TRUE, format = "html",
-      caption = "Consumer Surplus and Welfare") %>%
+Table_7dt1 %>%
+  kable(align = rep("c", 3), 
+        digits = 1,
+        booktabs = FALSE, format = "html",
+        caption = "Consumer Surplus and Welfare") %>%
   kable_styling(full_width = FALSE)
+
+# 表の保存
+Table_7dt1 %>%
+  kable(align = rep("c", 3), 
+        digits = 1,
+        booktabs = FALSE, format = "latex",
+        caption = "Consumer Surplus and Welfare") %>%
+  kable_styling(full_width = FALSE) %>%
+  save_kable("output/chap5_merger_welfare.tex")
 ```
 
 表を作る前の下準備をする関数を作成
@@ -1095,11 +1153,22 @@ gen_pro_rev_table <- function(pro_rev_2016, pro_rev_NippyoA, pro_rev_NippyoB) {
 Table_7dt2 <- gen_pro_rev_table(pro_rev_2016, pro_rev_NippyoA, pro_rev_NippyoB)
 
 # 表を作る
-kable(Table_7dt2, align = rep('c', 5),
-      booktabs = TRUE, format = "html",
-      caption = "Change in Profits and Revenues") %>%
+Table_7dt2 %>%
+  kable(align = rep("c", 5),
+        digits = 1,
+        booktabs = FALSE, format = "html",
+        caption = "Change in Profits and Revenues") %>%
   add_header_above(c(" ", "Nippyo and Brand A" = 2, "Nippyo and Brand B" = 2)) %>%
   kable_styling(full_width = FALSE)
+# 表の保存
+Table_7dt2 %>%
+  kable(align = rep("c", 5),
+        digits = 1,
+        booktabs = FALSE, format = "latex",
+        caption = "Change in Profits and Revenues") %>%
+  add_header_above(c(" ", "Nippyo and Brand A" = 2, "Nippyo and Brand B" = 2)) %>%
+  kable_styling(full_width = FALSE) %>%
+  save_kable("output/chap5_merger_revenue.tex")
 ```
 
 
@@ -1276,10 +1345,21 @@ Table_7dt3 <- tibble(
 colnames(Table_7dt3) <- c("Measure", "Nippyo and Brand A",
                           "Nippyo and Brand B")
 
-kable(Table_7dt3, align = rep('c', 3),
-      booktabs = TRUE, format = "html",
-      caption = "Cost Reduction (Percent)") %>% 
+Table_7dt3 %>%
+  kable(align = rep("c", 3),
+        digits = 2,
+        booktabs = FALSE, format = "html",
+        caption = "Cost Reduction (Percent)") %>% 
   kable_styling(full_width = FALSE)
+
+# 表の保存
+Table_7dt3 %>%
+  kable(align = rep("c", 3),
+        digits = 2,
+        booktabs = FALSE, format = "latex",
+        caption = "Cost Reduction (Percent)") %>% 
+  kable_styling(full_width = FALSE) %>%
+  save_kable("output/chap5_appendix_merger_mc.tex")
 ```
 
 ## 限界費用削減をした場合の利潤と収入の変化
@@ -1297,11 +1377,23 @@ pro_rev_NippyoB_rc <- f_profit(data_2016$Maker, data_2016$p_NippyoB_TSfix, data_
 Table_7dt4 <- gen_pro_rev_table(pro_rev_2016, pro_rev_NippyoA_rc, pro_rev_NippyoB_rc)
 
 # 表を作る
-kable(Table_7dt4, align = rep('c', 5),
-      booktabs = TRUE, format = "html",
-      caption = "Change in Profits and Revenues") %>%
+Table_7dt4 %>%
+  kable(align = rep("c", 5),
+        digits = 2,
+        booktabs = FALSE, format = "html",
+        caption = "Change in Profits and Revenues") %>% 
   add_header_above(c(" ", "Nippyo and Brand A" = 2, "Nippyo and Brand B" = 2)) %>%
   kable_styling(full_width = FALSE)
+
+# 表の保存
+Table_7dt4 %>%
+  kable(align = rep("c", 5),
+        digits = 2,
+        booktabs = FALSE, format = "latex",
+        caption = "Change in Profits and Revenues") %>% 
+  add_header_above(c(" ", "Nippyo and Brand A" = 2, "Nippyo and Brand B" = 2)) %>%
+  kable_styling(full_width = FALSE) %>%
+  save_kable("output/chap5_appendix_merger_revenue.tex")
 ```
 
 ## 限界費用削減をした場合の全体の利潤と収入の変化率
