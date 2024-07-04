@@ -71,7 +71,6 @@ require(fixest)
 require(summarytools)
 require(sjmisc)
 require(kableExtra)
-require(xtable)
 ```
 
 ### 細かい留意点
@@ -384,13 +383,13 @@ tbl_ols_intro <- fixest::etable("OLS_NIPPYO" = ols_intro,
                                 digits.stats = 2,
                                 depvar = FALSE)
 tbl_ols_intro %>%
-  kable(align = c('l', 'c', 'c'),
+  kable(align = c("l", "c", "c"),
         booktabs = FALSE, format = "html") %>%
   kable_styling(full_width = FALSE)
 
 ## 表の保存
 tbl_ols_intro %>%
-  kable(align = c('l', 'c', 'c'),
+  kable(align = c("l", "c", "c"),
         booktabs = FALSE, format = "latex") %>%
   kable_styling(full_width = FALSE) %>%
   save_kable("output/chap3_ols_intro.tex")
@@ -426,8 +425,11 @@ tbl_data_summary <- data %>%
                       order = "preserve")
 print(tbl_data_summary)
 tbl_data_summary %>%
-  xtable::xtable(digits = rep(2, ncol(.) + 1)) %>%
-  print(file = 'output/chap3_data_summary.tex')
+  kable(align = c("l", rep("c", 7)),
+        digits = 2,
+        booktabs = FALSE, format = "latex") %>%
+  kable_styling(full_width = FALSE) %>%
+  save_kable("output/chap3_data_summary.tex")
 ```
 
 # ロジットモデルの推定とその応用
@@ -488,13 +490,13 @@ tbl_logit_iv <- fixest::etable(list("OLS" = ols, "iv_BLP" = iv_BLP, "iv_GH" = iv
                                depvar = FALSE)
 
 tbl_logit_iv %>%
-  kable(align = c('l', 'c', 'c', 'c'),
+  kable(align = c("l", "c", "c", "c"),
         booktabs = FALSE, format = "html") %>%
   kable_styling(full_width = FALSE)
 
 ## 表の保存
 tbl_logit_iv %>%
-  kable(align = c('l', 'c', 'c', 'c'),
+  kable(align = c("l", "c", "c", "c"),
         booktabs = FALSE, format = "latex") %>%
   kable_styling(full_width = FALSE) %>%
   save_kable("output/chap3_logit_iv.tex")
@@ -539,12 +541,12 @@ tbl_logit_iv_1st <- fixest::etable(list("iv1st_BLP" = iv1st_BLP, "iv1st_GH" = iv
                                    depvar = FALSE)
 
 tbl_logit_iv_1st %>%
-  kable(align = c('l', 'c', 'c'),
+  kable(align = c("l", "c", "c"),
         booktabs = FALSE, format = "html") %>%
   kable_styling(full_width = FALSE)
 
 tbl_logit_iv_1st %>%
-  kable(align = c('l', 'c', 'c'),
+  kable(align = c("l", "c", "c"),
         booktabs = FALSE, format = "latex") %>%
   kable_styling(full_width = FALSE) %>%
   save_kable("output/chap3_logit_iv_1st.tex")
@@ -567,8 +569,11 @@ tbl_own_elas <- data_elas %>%
                       order = "preserve")
 print(tbl_own_elas)
 tbl_own_elas %>%
-  xtable::xtable(digits = rep(2, ncol(.) + 1)) %>%
-  print(file = 'output/chap3_own_elas.tex')
+  kable(align = c("l", rep("c", 5)),
+        digits = 2,
+        booktabs = FALSE, format = "latex") %>%
+  kable_styling(full_width = FALSE) %>%
+  save_kable("output/chap3_own_elas.tex")
 ```
 
 # 推定結果の応用
@@ -651,19 +656,19 @@ data.frame(x = quantvec, y = pricevec) %>%
   theme_bw() +
   ggplot2::theme(
     axis.title.y = element_text(angle = 0, vjust = 0.5),
-    theme(text = element_text(family = 'HiraKakuPro-W3')),
-    panel.grid.major.y = element_line(color = 'grey',
-                                      linewidth = 0.3, linetype = 'dotted'),
-    panel.grid.minor.y = element_line(color = 'grey',
-                                      linewidth = 0.3, linetype = 'dotted'),
+    theme(text = element_text(family = "HiraKakuPro-W3")),
+    panel.grid.major.y = element_line(color = "grey",
+                                      linewidth = 0.3, linetype = "dotted"),
+    panel.grid.minor.y = element_line(color = "grey",
+                                      linewidth = 0.3, linetype = "dotted"),
     panel.grid.minor = element_blank(),
     panel.grid.major.x = element_blank(),
     panel.border = element_blank(),
-    axis.line = element_line(colour = 'black', linewidth = 0.2)) +
+    axis.line = element_line(colour = "black", linewidth = 0.2)) +
   scale_x_continuous(breaks = seq(0, 20, 2)) + 
   scale_y_continuous(breaks = seq(0, 500, 100)) + 
-  ggplot2::labs(y = '価格(万円)',
-                x = '販売台数(万台)') 
+  ggplot2::labs(y = "価格(万円)",
+                x = "販売台数(万台)") 
 
 ggsave(file = "output/chap3_demand.png", width = 9, height = 6)
 ggsave(file = "output/chap3_demand.pdf", width = 9, height = 6, device = cairo_pdf)
@@ -679,15 +684,15 @@ data.frame(x = pricevec, y = revenuevec) %>%
   theme_bw() +
   ggplot2::theme(
     axis.title.y = element_text(angle = 0, vjust = 0.5),
-    theme(text = element_text(family = 'HiraKakuPro-W3')),
-    panel.grid.major.y = element_line(color = 'grey',
-                                      linewidth = 0.3, linetype = 'dotted'),
-    panel.grid.minor.y = element_line(color = 'grey',
-                                      linewidth = 0.3, linetype = 'dotted'),
+    theme(text = element_text(family = "HiraKakuPro-W3")),
+    panel.grid.major.y = element_line(color = "grey",
+                                      linewidth = 0.3, linetype = "dotted"),
+    panel.grid.minor.y = element_line(color = "grey",
+                                      linewidth = 0.3, linetype = "dotted"),
     panel.grid.minor = element_blank(),
     panel.grid.major.x = element_blank(),
     panel.border = element_blank(),
-    axis.line = element_line(colour = 'black', linewidth = 0.2)) +
+    axis.line = element_line(colour = "black", linewidth = 0.2)) +
   scale_x_continuous(breaks = seq(0, 500, 100)) + 
   scale_y_continuous(breaks = seq(500, 1500, 250)) + 
   ggplot2::labs(y = "収入(億円)",,

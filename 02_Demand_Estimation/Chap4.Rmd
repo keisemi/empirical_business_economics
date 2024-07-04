@@ -410,7 +410,7 @@ readr::write_csv(data, "intermediate/chap4_data.csv")
 ```
 
 ```{r}
-## 入れ子型ロジットでは、外国車ダミー(Foreign_d)を除いている。
+# 入れ子型ロジットでは、外国車ダミー(Foreign_d)を除いている。
 
 # OLSの結果
 ols <-
@@ -436,24 +436,34 @@ iv_GH <-
       iv_GH_other_size_nest,
     data = data)
 
-fixest::etable(list("OLS" = ols, "IV_BLP" = iv_BLP2, "IV_GH" = iv_GH),  
-               se = "hetero",
-               fitstat = c("r2", "n", "ivf"), 
-               signif.code = NA, 
-               dict = c(price = "自動車価格",
-                        hppw = "馬力／重量",
-                        FuelEfficiency = "燃費 (キロメートル／ 1 リットル)",
-                        size = "サイズ",
-                        capacity_d = "キャパシティダミー(5以上)",
-                        FuelRegular_d = "レギュラータイプダミー",
-                        Foreign_d = "外国車ダミー",
-                        `(Intercept)` = "定数項"),
-               digits = 2,
-               digits.stats = 2,
-               depvar = FALSE) %>%
-  kable(align = c('l', 'c', 'c'),
-        booktabs = TRUE, format = "html") %>%
+# 推定結果をレポートする。
+tbl_nest_iv <- fixest::etable(list("OLS" = ols, "IV_BLP" = iv_BLP2, "IV_GH" = iv_GH),  
+                              se = "hetero",
+                              fitstat = c("r2", "n", "ivf"), 
+                              signif.code = NA, 
+                              dict = c(price = "自動車価格",
+                                       hppw = "馬力／重量",
+                                       FuelEfficiency = "燃費 (キロメートル／ 1 リットル)",
+                                       size = "サイズ",
+                                       capacity_d = "キャパシティダミー(5以上)",
+                                       FuelRegular_d = "レギュラータイプダミー",
+                                       Foreign_d = "外国車ダミー",
+                                       `(Intercept)` = "定数項"),
+                              digits = 2,
+                              digits.stats = 2,
+                              depvar = FALSE)
+
+tbl_nest_iv %>%
+  kable(align = c("l", "c", "c", "c"),
+        booktabs = FALSE, format = "html") %>%
   kable_styling(full_width = FALSE)
+
+# 表の保存
+tbl_nest_iv %>%
+  kable(align = c("l", "c", "c", "c"),
+        booktabs = FALSE, format = "latex") %>%
+  kable_styling(full_width = FALSE) %>%
+  save_kable("output/chap4_nest_iv.tex")
 ```
 
 
@@ -478,10 +488,19 @@ data %>%
     own_elas_ivblp = alpha2 * price * (1 - sigma2 * inside_share - (1 - sigma2) * share) / (1 - sigma2),
     own_elas_ivgh = alpha3 * price * (1 - sigma3 * inside_share - (1 - sigma3) * share) / (1 - sigma3)) -> data_elas
 
-data_elas %>% 
+tbl_nest_own_elas <- data_elas %>% 
   dplyr::select(starts_with("own_elas")) %>% 
   summarytools::descr(transpose = TRUE, 
-                      stats = c("mean", "sd", "med", "min", "max"))
+                      stats = c("mean", "sd", "med", "min", "max"),
+                      order = "preserve")
+print(tbl_nest_own_elas)
+# 表の保存
+tbl_nest_own_elas %>%
+  kable(align = rep("l", 5),
+        digits = 2,
+        booktabs = FALSE, format = "latex") %>%
+  kable_styling(full_width = FALSE) %>%
+  save_kable("output/chap4_nest_own_elas.tex")
 ```
 
 
@@ -536,7 +555,24 @@ ind_other_group <- (temp_mat1 != temp_mat2)
 elas_mat_nl <- cross_elas_samegroup * ind_same_group + cross_elas_othergroup * ind_other_group
 diag(elas_mat_nl) <- own_elas
 
-elas_mat_nl[NameID %in% c(87, 122, 155, 178), NameID %in% c(87, 122, 155, 178)]
+elas_mat_nl_restricted <- elas_mat_nl[NameID %in% c(87, 122, 155, 178), NameID %in% c(87, 122, 155, 178)]
+Name <- c("ベータード", "セダン(A)", "SUV(B)", "軽自動車(C)")
+colnames(elas_mat_nl_restricted) <- Name
+rownames(elas_mat_nl_restricted) <- Name
+
+elas_mat_nl_restricted %>%
+  kable(align = rep("c", 4),
+        digits = 4,
+        booktabs = FALSE, format = "html") %>%
+  kable_styling(full_width = FALSE)
+
+# 表の保存
+elas_mat_nl_restricted %>%
+  kable(align = rep("c", 4),
+        digits = 4,
+        booktabs = FALSE, format = "latex") %>%
+  kable_styling(full_width = FALSE) %>%
+  save_kable("output/chap4_elas_mat_nest.tex")
 ```
 
 
@@ -939,10 +975,21 @@ result_table <-
   as.data.frame(beta_hat) %>%
   mutate(se = se)
 
-kable(result_table,  align = rep('c', 3),
-      booktabs = TRUE, format = "html",
-      caption = "Estimates of The Parameters") %>%
+result_table %>%
+  kable(align = c("l", rep("c", 2)),
+        digits = 2, 
+        booktabs = FALSE, format = "html",
+        caption = "Estimates of The Parameters") %>%
   kable_styling(full_width = FALSE)
+
+# 表の保存
+result_table %>%
+  kable(align = c("l", rep("c", 2)),
+        digits = 2, 
+        booktabs = FALSE, format = "latex",
+        caption = "Estimates of The Parameters") %>%
+  kable_styling(full_width = FALSE) %>%
+  save_kable("output/chap4_blp.tex")
 ```
 
 
@@ -1048,7 +1095,25 @@ NameID2016 <- data %>%
   select(NameID) %>% 
   pull()
 
-elasticity$elasmat_2016[NameID2016 %in% c(87, 122, 155, 178), NameID2016 %in% c(87, 122, 155, 178)]
+elas_mat_blp_restricted <- elasticity$elasmat_2016[NameID2016 %in% c(87, 122, 155, 178), NameID2016 %in% c(87, 122, 155, 178)]
+
+Name <- c("ベータード", "セダン(A)", "SUV(B)", "軽自動車(C)")
+colnames(elas_mat_blp_restricted) <- Name
+rownames(elas_mat_blp_restricted) <- Name
+
+elas_mat_blp_restricted %>%
+  kable(align = rep("c", 4),
+        digits = 4,
+        booktabs = FALSE, format = "html") %>%
+  kable_styling(full_width = FALSE)
+
+# 表の保存
+elas_mat_blp_restricted %>%
+  kable(align = rep("c", 4),
+        digits = 4,
+        booktabs = FALSE, format = "latex") %>%
+  kable_styling(full_width = FALSE) %>%
+  save_kable("output/chap4_elas_mat_blp.tex")
 ```
 
 
@@ -1139,10 +1204,27 @@ dt_fig1 <- tibble(price = pricevec * 100,
   pivot_longer( -price, names_to = "name")
 
 fig_pi1 <- ggplot(dt_fig1, aes(price, value)) + 
-  geom_point() 
+  geom_point() +
+  theme_bw() +
+  ggplot2::theme(
+    axis.title.y = element_text(angle = 0, vjust = 0.5),
+    theme(text = element_text(family = "HiraKakuPro-W3")),
+    panel.grid.major.y = element_line(color = "grey",
+                                      linewidth = 0.3, linetype = "dotted"),
+    panel.grid.minor.y = element_line(color = "grey",
+                                      linewidth = 0.3, linetype = "dotted"),
+    panel.grid.minor = element_blank(),
+    panel.grid.major.x = element_blank(),
+    panel.border = element_blank(),
+    axis.line = element_line(colour = "black", linewidth = 0.2)) +
+  scale_x_continuous(breaks = seq(0, 500, 50)) + 
+  ggplot2::labs(y = "収入(億円)",
+                x = "価格(万円)") 
 
 plot(fig_pi1)
 
+ggsave(fig_pi1, file = "output/chap4_revenue_betard.png", width = 9, height = 6)
+ggsave(fig_pi1, file = "output/chap4_revenue_betard.pdf", width = 9, height = 6, device = cairo_pdf)
 
 # ベータードのみの利潤+日評自動車の他の車種の収入
 dt_fig2 <- tibble(price = pricevec * 100, 
@@ -1150,9 +1232,27 @@ dt_fig2 <- tibble(price = pricevec * 100,
   pivot_longer(-price, names_to = "name")
 
 fig_pi2 <- ggplot(dt_fig2, aes(price, value)) + 
-  geom_point() 
+  geom_point() +
+  theme_bw() +
+  ggplot2::theme(
+    axis.title.y = element_text(angle = 0, vjust = 0.5),
+    theme(text = element_text(family = "HiraKakuPro-W3")),
+    panel.grid.major.y = element_line(color = "grey",
+                                      linewidth = 0.3, linetype = "dotted"),
+    panel.grid.minor.y = element_line(color = "grey",
+                                      linewidth = 0.3, linetype = "dotted"),
+    panel.grid.minor = element_blank(),
+    panel.grid.major.x = element_blank(),
+    panel.border = element_blank(),
+    axis.line = element_line(colour = "black", linewidth = 0.2)) +
+  scale_x_continuous(breaks = seq(0, 500, 50)) + 
+  ggplot2::labs(y = "収入(億円)",
+                x = "価格(万円)") 
 
 plot(fig_pi2)
+
+ggsave(fig_pi2, file = "output/chap4_revenue_all.png", width = 9, height = 6)
+ggsave(fig_pi2, file = "output/chap4_revenue_all.pdf", width = 9, height = 6, device = cairo_pdf)
 ```
 
 最後に、数値最適化を使って、利潤を最大にする価格を求める。
