@@ -1729,6 +1729,8 @@ display: none;
 ロジットモデル(消費者属性入り)</a></li>
 <li><a href="#ランダム係数ロジット消費者属性無し" id="toc-ランダム係数ロジット消費者属性無し"><span class="toc-section-number">6.3</span>
 ランダム係数ロジット(消費者属性無し)</a></li>
+<li><a href="#ランダム係数ロジット消費者属性入り" id="toc-ランダム係数ロジット消費者属性入り"><span class="toc-section-number">6.4</span>
+ランダム係数ロジット(消費者属性入り)</a></li>
 </ul></li>
 </ul>
 </div>
@@ -2741,15 +2743,31 @@ result &lt;- optimx( par = ini,
 
 # 推定値の取得
 est_vec &lt;- as.numeric(result[1,1:3])</code></pre>
+<p>　以下が推定されたパラメタである。パッケージによる推定に近い値となっていることがわかる。</p>
+<pre class="r"><code># パッケージの推定値
+est_vec_package &lt;- ml$coefficients
+names(est_vec) &lt;- c(attr(ml$coefficients, &quot;names&quot;))
+# 比較
+print(rbind(est_vec, est_vec_package ))</code></pre>
+<pre><code>##                      price   Kinoko    Takenoko
+## est_vec         11.6514737 12.20311  0.05744605
+## est_vec_package  0.0574416 11.65085 12.20224359</code></pre>
+<p>　また、以下が対数尤度である。こちらもほとんど変わらないことが見て取れる。</p>
+<pre class="r"><code>loglik_ml &lt;- result[4]$value
+loglik_ml_package &lt;- as.numeric(ml$logLik)
+print(rbind(loglik_ml, loglik_ml_package))</code></pre>
+<pre><code>##                        [,1]
+## loglik_ml         -1067.662
+## loglik_ml_package -1067.662</code></pre>
 <p>　ヘシアンから標準誤差を得る。</p>
 <pre class="r"><code>#　ヘシアンの計算
 Hessian &lt;- gHgen(par = as.numeric(result[1,1:3]), 
                  fn = f_likelihood_logit, 
                  data = data_for_estimation)
 se_vec &lt;- round(sqrt(diag(solve(-Hessian$Hn))), 3)</code></pre>
-<p>　以下がスクラッチで求めたロジットモデルの解である。上記のmlogitで求めた値とほとんど同じである。</p>
+<p>　以下に推定値と標準誤差を並べて示す。</p>
 <pre class="r"><code>print(rbind(est_vec, se_vec))</code></pre>
-<pre><code>##             [,1]     [,2]       [,3]
+<pre><code>##            price   Kinoko   Takenoko
 ## est_vec 11.65147 12.20311 0.05744605
 ## se_vec   0.72900  0.74500 0.00400000</code></pre>
 </div>
@@ -2784,7 +2802,7 @@ data_for_estimation_with_atr &lt;- data_for_estimation %&gt;%
 <p>　以下で尤度関数を定義する。</p>
 <pre class="r"><code>f_likelihood_logit_with_atr &lt;- function(param, data){
   # 空のデータフレーム
-  pred &lt;- data.frame(matrix(ncol = 3, nrow = 1180))
+  pred &lt;- matrix(ncol = 3, nrow = 1180)
   colnames(pred) &lt;- c(&quot;prob_Kinoko&quot;, &quot;prob_Takenoko&quot;,&quot;prob_Other&quot;)
   ID &lt;- numeric(236)
   atr &lt;- numeric(5)
@@ -2818,6 +2836,7 @@ data_for_estimation_with_atr &lt;- data_for_estimation %&gt;%
   pred[(5*(i-1)+5),] &lt;- P5
   ID[(5*(i-1)+1):(5*(i-1)+5)] &lt;- rep(data$ID[(5*(i-1)+1)], 5)
   }
+  pred &lt;- as.data.frame(pred)
   # IDと設問(マージ用)
   pred$ID&lt;- ID
   pred$occasion &lt;- rep(c(&quot;Q1&quot;, &quot;Q2&quot;, &quot;Q3&quot;, &quot;Q4&quot;, &quot;Q5&quot;), 236)
@@ -2836,7 +2855,7 @@ data_for_estimation_with_atr &lt;- data_for_estimation %&gt;%
   return(likelihood)
 
 }</code></pre>
-<p>初期値を与えて最適化を行う。</p>
+<p>　初期値を与えて最適化を行う。</p>
 <pre class="r"><code># 初期パラメタ
 # おおざっぱに決めた初期値
 ini &lt;- c(0, 10, 10, 0, 1, 1, 0, 0, 0, 0, -1, -1, 0, 0, 1, 1, 1, 1)
@@ -2851,62 +2870,69 @@ result_with_atr &lt;- optimx( par = ini,
                   hessian = TRUE  )
 
 # 推定値の取得
- est_vec &lt;- as.numeric(result_with_atr[1,1:18])</code></pre>
-<p>　推定された値は以下である。</p>
-<pre class="r"><code># 推定されたパラメタ。
-
-print(est_vec)</code></pre>
-<pre><code>##  [1]  0.062149228 12.398453665 12.538753421  0.012545208  3.295277421
-##  [6]  3.462830582 -0.002578097 -0.187933920 -0.566943412 -0.017648604
-## [11] -3.352337190 -3.692199456  0.015220854  0.012269198  3.575174370
-## [16]  2.596360527  3.140860557  3.190329159</code></pre>
-<p>　mlogitパッケージによる推定値と比べると以下のようになっている。概ね近い値となっている。</p>
+ est_vec_ml_atr &lt;- as.numeric(result_with_atr[1,1:18])</code></pre>
+<p>　推定された値をmlogitパッケージによる推定値と比べると以下のようになっており、概ね近い値となっている。</p>
 <pre class="r"><code># パッケージでの推定値:
-est_vec_pack &lt;- ml_consumer_atr$coefficients[1:18]
+est_vec_package_ml_atr &lt;- ml_consumer_atr$coefficients[1:18]
 # 比較 やや差があるが概ね同じ
-print(rbind(est_vec, est_vec_pack))</code></pre>
-<pre><code>##                   price   Kinoko Takenoko price:genderfemale
-## est_vec      0.06214923 12.39845 12.53875         0.01254521
-## est_vec_pack 0.06277855 12.52051 12.66100         0.01288602
-##              Takenoko:genderfemale Kinoko:genderfemale price:familyhouse
-## est_vec                   3.295277            3.462831      -0.002578097
-## est_vec_pack              3.363386            3.529209      -0.001863436
-##              Takenoko:familyhouse Kinoko:familyhouse price:adult Takenoko:adult
-## est_vec                -0.1879339         -0.5669434 -0.01764860      -3.352337
-## est_vec_pack           -0.0457339         -0.4294590 -0.01750679      -3.324093
-##              Kinoko:adult price:regionKansai price:regionOversea
-## est_vec         -3.692199         0.01522085          0.01226920
-## est_vec_pack    -3.663559         0.01641528          0.01327033
-##              Takenoko:regionKansai Takenoko:regionOversea Kinoko:regionKansai
-## est_vec                   3.575174               2.596361            3.140861
-## est_vec_pack              3.816852               2.795783            3.364897
-##              Kinoko:regionOversea
-## est_vec                  3.190329
-## est_vec_pack             3.389892</code></pre>
+print(rbind(est_vec_ml_atr, est_vec_package_ml_atr))</code></pre>
+<pre><code>##                             price   Kinoko Takenoko price:genderfemale
+## est_vec_ml_atr         0.06214923 12.39845 12.53875         0.01254521
+## est_vec_package_ml_atr 0.06277855 12.52051 12.66100         0.01288602
+##                        Takenoko:genderfemale Kinoko:genderfemale
+## est_vec_ml_atr                      3.295277            3.462831
+## est_vec_package_ml_atr              3.363386            3.529209
+##                        price:familyhouse Takenoko:familyhouse
+## est_vec_ml_atr              -0.002578097           -0.1879339
+## est_vec_package_ml_atr      -0.001863436           -0.0457339
+##                        Kinoko:familyhouse price:adult Takenoko:adult
+## est_vec_ml_atr                 -0.5669434 -0.01764860      -3.352337
+## est_vec_package_ml_atr         -0.4294590 -0.01750679      -3.324093
+##                        Kinoko:adult price:regionKansai price:regionOversea
+## est_vec_ml_atr            -3.692199         0.01522085          0.01226920
+## est_vec_package_ml_atr    -3.663559         0.01641528          0.01327033
+##                        Takenoko:regionKansai Takenoko:regionOversea
+## est_vec_ml_atr                      3.575174               2.596361
+## est_vec_package_ml_atr              3.816852               2.795783
+##                        Kinoko:regionKansai Kinoko:regionOversea
+## est_vec_ml_atr                    3.140861             3.190329
+## est_vec_package_ml_atr            3.364897             3.389892</code></pre>
 <p>　</p>
 <p>　対数尤度で見ても概ね等しい。</p>
 <pre class="r"><code># 対数尤度はそれぞれこのようになっている。
-print(result_with_atr[19]$value)</code></pre>
-<pre><code>## [1] -1038.88</code></pre>
-<pre class="r"><code>ml_consumer_atr$logLik</code></pre>
-<pre><code>## &#39;log Lik.&#39; -1038.798 (df=18)</code></pre>
+loglik_ml_atr &lt;- result_with_atr[19]$value
+loglik_ml_atr_package &lt;-as.numeric(ml_consumer_atr$logLik)
+print(rbind(loglik_ml_atr, loglik_ml_atr_package))</code></pre>
+<pre><code>##                            [,1]
+## loglik_ml_atr         -1038.880
+## loglik_ml_atr_package -1038.798</code></pre>
 <p>　標準誤差を算出する。</p>
 <pre class="r"><code>#　ヘシアンの計算
 Hessian &lt;- gHgen(par = as.numeric(result_with_atr[1,1:18]), 
                  fn = f_likelihood_logit_with_atr, 
                  data = data_for_estimation_with_atr)
-se_vec &lt;- round(sqrt(diag(solve(-Hessian$Hn))), 3)</code></pre>
+se_vec_ml_atr &lt;- round(sqrt(diag(solve(-Hessian$Hn))), 3)</code></pre>
 <p>　推定値と標準誤差を並べたものを以下に示す。</p>
-<pre class="r"><code>print(rbind(est_vec, se_vec))</code></pre>
-<pre><code>##               [,1]     [,2]     [,3]       [,4]     [,5]     [,6]         [,7]
-## est_vec 0.06214923 12.39845 12.53875 0.01254521 3.295277 3.462831 -0.002578097
-## se_vec  0.01000000  2.04500  2.07300 0.00800000 1.641000 1.609000  0.010000000
-##               [,8]       [,9]      [,10]     [,11]     [,12]      [,13]
-## est_vec -0.1879339 -0.5669434 -0.0176486 -3.352337 -3.692199 0.01522085
-## se_vec   1.9280000  1.9040000  0.0080000  1.527000  1.498000 0.01600000
-##             [,14]    [,15]    [,16]    [,17]    [,18]
-## est_vec 0.0122692 3.575174 2.596361 3.140861 3.190329
-## se_vec  0.0180000 3.230000 3.520000 3.142000 3.518000</code></pre>
+<pre class="r"><code>names(est_vec_ml_atr) = c(attr(ml_consumer_atr$coefficients, &quot;names&quot;))
+print(rbind(est_vec_ml_atr, se_vec_ml_atr))</code></pre>
+<pre><code>##                     price   Kinoko Takenoko price:genderfemale
+## est_vec_ml_atr 0.06214923 12.39845 12.53875         0.01254521
+## se_vec_ml_atr  0.01000000  2.04500  2.07300         0.00800000
+##                Takenoko:genderfemale Kinoko:genderfemale price:familyhouse
+## est_vec_ml_atr              3.295277            3.462831      -0.002578097
+## se_vec_ml_atr               1.641000            1.609000       0.010000000
+##                Takenoko:familyhouse Kinoko:familyhouse price:adult
+## est_vec_ml_atr           -0.1879339         -0.5669434  -0.0176486
+## se_vec_ml_atr             1.9280000          1.9040000   0.0080000
+##                Takenoko:adult Kinoko:adult price:regionKansai
+## est_vec_ml_atr      -3.352337    -3.692199         0.01522085
+## se_vec_ml_atr        1.527000     1.498000         0.01600000
+##                price:regionOversea Takenoko:regionKansai Takenoko:regionOversea
+## est_vec_ml_atr           0.0122692              3.575174               2.596361
+## se_vec_ml_atr            0.0180000              3.230000               3.520000
+##                Kinoko:regionKansai Kinoko:regionOversea
+## est_vec_ml_atr            3.140861             3.190329
+## se_vec_ml_atr             3.142000             3.518000</code></pre>
 </div>
 <div id="ランダム係数ロジット消費者属性無し" class="section level2" number="6.3">
 <h2><span class="header-section-number">6.3</span>
@@ -2928,7 +2954,9 @@ se_vec &lt;- round(sqrt(diag(solve(-Hessian$Hn))), 3)</code></pre>
 
   return( cbind(prob_Kinoko, prob_Takenoko, prob_Other))
 }</code></pre>
-<pre class="r"><code># ドロー回数
+<p>　計算時間節約のために、以下でドローをあらかじめ用意する。</p>
+<pre class="r"><code># 事前にドローを用意する
+# ドロー回数
 times_draw =1000
 # 乱数の格納用
 tau&lt;- matrix(nrow = times_draw*236, ncol = 3)
@@ -2951,6 +2979,8 @@ for(i in 1:236){
   sigma_Kinoko &lt;- param[5]
   sigma_Takenoko &lt;- param[6]
   
+  repID &lt;- c(data$ID)
+  
 
 # 各回答者の選択確率を予測する
   for(i in 1:236){
@@ -2969,7 +2999,7 @@ for(i in 1:236){
   pred[(5*(i-1)*(times_draw)+3*times_draw+1):(5*(i-1)*(times_draw)+4*times_draw),] &lt;- P4
   pred[(5*(i-1)*(times_draw)+4*times_draw+1):(5*(i-1)*(times_draw)+5*times_draw),] &lt;- P5
   # 各回答者の固有のIDをあらかじめ用意しておく。
-  ID[(5*(i-1)*(times_draw)+1):(5*(i-1)*(times_draw)+5*times_draw)] &lt;- rep(data$ID[(5*(i-1)+1)], 5*times_draw)
+  ID[(5*(i-1)*(times_draw)+1):(5*(i-1)*(times_draw)+5*times_draw)] &lt;- rep(repID[(5*(i-1)+1)], 5*times_draw)
   
   }
   pred&lt;- as.data.frame(pred)
@@ -2996,7 +3026,7 @@ for(i in 1:236){
    return(likelihood)
 
 }</code></pre>
-<p>　 　推定を行う。</p>
+<p>　推定を行う。</p>
 <pre class="r"><code># おおざっぱに選んだ初期値
 ini_rcdc &lt;- c(0.6,20,20,    0.1,1,1)
 # 最大化
@@ -3019,21 +3049,208 @@ print(rbind(est_vec_rcdc, est_vec_package_rcdc))</code></pre>
 ##                      sd.Takenoko
 ## est_vec_rcdc            3.859592
 ## est_vec_package_rcdc    4.294105</code></pre>
-<p>　対数尤度を以下に示す。</p>
-<pre class="r"><code>result_rcdc[7]$value</code></pre>
-<pre><code>## [1] -725.9604</code></pre>
+<p>　対数尤度を以下に示す。こちらも概ね同じである。</p>
+<pre class="r"><code>loglik_rcdc &lt;- result_rcdc[7]$value
+loglik_rcdc_package &lt;- as.numeric(rcdc$logLik)
+print(rbind(loglik_rcdc, loglik_rcdc_package))</code></pre>
+<pre><code>##                          [,1]
+## loglik_rcdc         -725.9604
+## loglik_rcdc_package -727.7424</code></pre>
 <p>　標準誤差を算出する。</p>
 <pre class="r"><code>#　ヘシアンの計算
 Hessian &lt;- gHgen(par = as.numeric(result_rcdc[1,1:6]), 
                  fn = f_likelihood_rcdclogit, 
                  data = data_for_estimation_with_atr)
-se_vec &lt;- round(sqrt(diag(solve(-Hessian$Hn))), 3)</code></pre>
+se_vec_rcdc &lt;- round(sqrt(diag(solve(-Hessian$Hn))), 3)</code></pre>
 <p>　推定値と標準誤差を並べたものを以下に示す。</p>
-<pre class="r"><code>print(rbind(est_vec_rcdc, se_vec))</code></pre>
-<pre><code>##                   [,1]     [,2]     [,3]        [,4]     [,5]     [,6]
-## est_vec_rcdc 0.1643461 34.99595 36.26602 -0.03044538 2.275145 3.859592
-## se_vec       0.0140000  2.91100  3.00100  0.00500000 0.615000 0.523000</code></pre>
-<p>　</p>
+<pre class="r"><code>names(est_vec_rcdc) = c(attr(rcdc$coefficients, &quot;names&quot;))
+print(rbind(est_vec_rcdc, se_vec_rcdc))</code></pre>
+<pre><code>##                  price   Kinoko Takenoko    sd.price sd.Kinoko sd.Takenoko
+## est_vec_rcdc 0.1643461 34.99595 36.26602 -0.03044538  2.275145    3.859592
+## se_vec_rcdc  0.0140000  2.91100  3.00100  0.00500000  0.615000    0.523000</code></pre>
+</div>
+<div id="ランダム係数ロジット消費者属性入り" class="section level2" number="6.4">
+<h2><span class="header-section-number">6.4</span>
+ランダム係数ロジット(消費者属性入り)</h2>
+<p>　次に、消費者属性入りのランダム係数ロジットをスクラッチで推定する。消費者属性を含める以外は、先ほどの属性なしのものと変わらない。</p>
+<p>　まず、以下で選択確率を定義する。</p>
+<pre class="r"><code>f_rcdclogit_prob_with_atr &lt;- function(alpha_Kinoko, alpha_Takenoko, beta, price_Kinoko, price_Takenoko, param_atr_Kinoko,param_atr_Takenoko, param_atr_price, atr, sigma_Kinoko, sigma_Takenoko, sigma_price, tau){
+# きのこ、たけのこから得られるそれぞれの効用の算出
+# sigma_〇〇は各パラメタの標準偏差、tauは標準正規分布に従う乱数を(ドロー回数)行×3列発生させたもの
+  alpha_Kinoko_draw &lt;- alpha_Kinoko + sigma_Kinoko*tau[, 1]
+  alpha_Takenoko_draw &lt;- alpha_Takenoko + sigma_Takenoko*tau[, 2]
+  beta_draw &lt;- beta + sigma_price*tau[, 3]
+  util_Kinoko &lt;- alpha_Kinoko_draw + sum(param_atr_Kinoko*atr) - price_Kinoko*(beta_draw +  sum(param_atr_price*atr))
+  util_Takenoko &lt;- alpha_Takenoko_draw + sum(param_atr_Takenoko*atr) - price_Takenoko*(beta_draw +  sum(param_atr_price*atr))
+# 選択確率の算出
+  prob_Kinoko &lt;- exp( util_Kinoko ) / ( 1 + exp( util_Kinoko ) + exp( util_Takenoko ))
+  prob_Takenoko &lt;- exp( util_Takenoko ) / ( 1 + exp( util_Kinoko ) + exp( util_Takenoko ))
+  prob_Other &lt;- 1 - (prob_Kinoko + prob_Takenoko)
+
+  return( cbind(prob_Kinoko, prob_Takenoko, prob_Other))
+}</code></pre>
+<pre class="r"><code># ドロー回数
+times_draw =1000
+# 乱数の格納用
+tau&lt;- matrix(nrow = times_draw*236, ncol = 3)
+for(i in 1:236){
+  set.seed(500+i)
+# 回答者iがドローする乱数
+  tau[(times_draw*(i-1)+1):(times_draw*i), 1] &lt;- rnorm(times_draw, mean = 0, sd = 1)
+  tau[(times_draw*(i-1)+1):(times_draw*i), 2] &lt;- rnorm(times_draw, mean = 0, sd = 1)
+  tau[(times_draw*(i-1)+1):(times_draw*i), 3] &lt;- rnorm(times_draw, mean = 0, sd = 1)}</code></pre>
+<p>　以下で対数尤度を算出する。</p>
+<pre class="r"><code>f_likelihood_rcdclogit_with_atr &lt;- function(param, data){
+  # 空のデータフレーム
+  pred &lt;- matrix(ncol = 3, nrow = 1180*times_draw)
+  colnames(pred) &lt;- c(&quot;prob_Kinoko&quot;, &quot;prob_Takenoko&quot;,&quot;prob_Other&quot;)
+  ID &lt;- numeric(236*times_draw)
+  atr &lt;- numeric(5)
+  beta &lt;- param[1]
+  alpha_Kinoko &lt;- param[2]
+  alpha_Takenoko &lt;- param[3]
+  sigma_price &lt;- param[4]
+  sigma_Kinoko &lt;- param[5]
+  sigma_Takenoko &lt;- param[6]
+  param_atr_Kinoko &lt;- param[c(9, 12, 15, 20, 21)]
+  param_atr_Takenoko &lt;- param[c(8, 11, 14, 18, 19)]
+  param_atr_price &lt;- param[c(7, 10, 13, 16, 17)]
+  repID &lt;- c(data$ID)
+  
+
+# 各回答者の選択確率を予測する
+  for(i in 1:236){
+  gender &lt;- data$gender[(5*(i-1)+1)]
+  familyhouse &lt;- data$familyhouse[(5*(i-1)+1)]
+  adult &lt;- data$adult[(5*(i-1)+1)]
+  kansai &lt;- data$kansai[(5*(i-1)+1)]
+  oversea &lt;- data$oversea[(5*(i-1)+1)]
+  atr[1:5] &lt;- c(gender, familyhouse, adult, kansai, oversea)
+  
+# 各選択フェーズでのドロー回数分の選択確率を予測
+  P1 &lt;- f_rcdclogit_prob_with_atr(alpha_Kinoko, alpha_Takenoko, beta, 200, 200, param_atr_Kinoko,param_atr_Takenoko, param_atr_price, atr, sigma_Kinoko, sigma_Takenoko, sigma_price, tau[(times_draw*(i-1)+1):(times_draw*i), ])
+  P2 &lt;- f_rcdclogit_prob_with_atr(alpha_Kinoko, alpha_Takenoko, beta, 180, 200, param_atr_Kinoko,param_atr_Takenoko, param_atr_price, atr, sigma_Kinoko, sigma_Takenoko, sigma_price, tau[(times_draw*(i-1)+1):(times_draw*i), ])
+  P3 &lt;- f_rcdclogit_prob_with_atr(alpha_Kinoko, alpha_Takenoko, beta, 200, 170, param_atr_Kinoko,param_atr_Takenoko, param_atr_price, atr, sigma_Kinoko, sigma_Takenoko, sigma_price, tau[(times_draw*(i-1)+1):(times_draw*i), ])
+  P4 &lt;- f_rcdclogit_prob_with_atr(alpha_Kinoko, alpha_Takenoko, beta, 220, 200, param_atr_Kinoko,param_atr_Takenoko, param_atr_price, atr, sigma_Kinoko, sigma_Takenoko, sigma_price, tau[(times_draw*(i-1)+1):(times_draw*i), ])
+  P5 &lt;- f_rcdclogit_prob_with_atr(alpha_Kinoko, alpha_Takenoko, beta, 190, 210, param_atr_Kinoko,param_atr_Takenoko, param_atr_price, atr, sigma_Kinoko, sigma_Takenoko, sigma_price, tau[(times_draw*(i-1)+1):(times_draw*i), ])
+  # 各設問ごとのドロー回数分の選択確率を格納
+  pred[(5*(i-1)*(times_draw)+1):(5*(i-1)*(times_draw)+times_draw),] &lt;- P1
+  pred[(5*(i-1)*(times_draw)+times_draw+1):(5*(i-1)*(times_draw)+2*times_draw),] &lt;- P2
+  pred[(5*(i-1)*(times_draw)+2*times_draw+1):(5*(i-1)*(times_draw)+3*times_draw),] &lt;- P3
+  pred[(5*(i-1)*(times_draw)+3*times_draw+1):(5*(i-1)*(times_draw)+4*times_draw),] &lt;- P4
+  pred[(5*(i-1)*(times_draw)+4*times_draw+1):(5*(i-1)*(times_draw)+5*times_draw),] &lt;- P5
+  # 各回答者の固有のIDをあらかじめ用意しておく。
+  ID[(5*(i-1)*(times_draw)+1):(5*(i-1)*(times_draw)+5*times_draw)] &lt;- rep(repID[(5*(i-1)+1)], 5*times_draw)
+  
+  }
+  pred&lt;- as.data.frame(pred)
+  # IDと設問、ドローフェーズ(マージ用)
+  pred$ID&lt;- ID
+  pred$occasion &lt;- rep(rep(c(&quot;Q1&quot;, &quot;Q2&quot;, &quot;Q3&quot;, &quot;Q4&quot;, &quot;Q5&quot;), each = times_draw), 236)
+  pred$draw_phase &lt;- rep(c(1:times_draw), 5*236)
+  # 各選択フェーズに対する実際の選択と、予測された選択確率を対応させる
+  data %&gt;%
+    left_join(pred, by = c(&quot;ID&quot;,&quot;occasion&quot;)) %&gt;%
+    mutate( choice_prob = case_when( choice == 0 ~ prob_Other,
+                                     choice == 1 ~ prob_Kinoko,
+                                     choice == 2 ~ prob_Takenoko) ) %&gt;%
+    group_by(ID, draw_phase) %&gt;%　# 各回答者の設問1～5への選択の組み合わせが実現する確率を各ドローフェーズごとに算出。
+    summarise(joint_by_draw = prod(choice_prob),.groups = &quot;drop&quot;) %&gt;%
+    group_by(ID) %&gt;% # 算出した確率を各回答者ごとに平均する。
+    summarise(mean_joint_prob=mean(joint_by_draw), .groups = &quot;drop&quot;) %&gt;%　
+    mutate(log_choice_joint_prob = log(mean_joint_prob)) %&gt;%
+    select(log_choice_joint_prob) -&gt; result
+
+    # 和を取って対数尤度を計算する
+  likelihood &lt;- sum(result)
+
+   return(likelihood)
+
+}</code></pre>
+<p>　対数尤度を最大化する。</p>
+<pre class="r"><code># おおざっぱに選んだ初期値
+ini_rcdc_with_atr &lt;- c(0.6, 20, 20, 0.1, 1, 1, 0, 3, 3, 0, 0, 0, 0, -3, -3, 0, 0, 1, 1, 1, 1 )
+# 最大化(1時間30分)
+result_rcdc_with_atr &lt;- optimx( par = ini_rcdc_with_atr, 
+                  fn = f_likelihood_rcdclogit_with_atr, 
+                  method=&quot;BFGS&quot;, 
+                  data = data_for_estimation_with_atr, 
+                  control = list(fnscale=-1), 
+                  hessian = TRUE)
+
+est_vec_rcdc_with_atr &lt;- as.numeric(result_rcdc_with_atr[1,1:21])</code></pre>
+<p>　以下が推定されたパラメタである。パッケージによる推定に近い値となっていることがわかる。</p>
+<pre class="r"><code># パッケージの推定値
+est_vec_package_rcdc_with_atr &lt;- rcdc_consumer_atr$coefficients[c(1:3,19:21,4:18)]
+names(est_vec_rcdc_with_atr) &lt;- c(attr(rcdc_consumer_atr$coefficients, &quot;names&quot;)[c(1:3,19:21,4:18)])
+# 比較
+print(rbind(est_vec_rcdc_with_atr, est_vec_package_rcdc_with_atr))</code></pre>
+<pre><code>##                                   price   Kinoko Takenoko    sd.price sd.Kinoko
+## est_vec_rcdc_with_atr         0.1961649 40.54614 41.17006  0.02851175  2.075610
+## est_vec_package_rcdc_with_atr 0.1993331 40.22724 40.70910 -0.02750941 -2.471385
+##                               sd.Takenoko price:genderfemale
+## est_vec_rcdc_with_atr            4.094486         0.03552155
+## est_vec_package_rcdc_with_atr    4.047292         0.03492349
+##                               Takenoko:genderfemale Kinoko:genderfemale
+## est_vec_rcdc_with_atr                      9.685063            9.890666
+## est_vec_package_rcdc_with_atr              9.739385            9.924617
+##                               price:familyhouse Takenoko:familyhouse
+## est_vec_rcdc_with_atr               -0.01872610            -3.433303
+## est_vec_package_rcdc_with_atr       -0.02298505            -3.343716
+##                               Kinoko:familyhouse price:adult Takenoko:adult
+## est_vec_rcdc_with_atr                  -4.119536 -0.04911800      -9.488970
+## est_vec_package_rcdc_with_atr          -4.128577 -0.04779075      -8.876397
+##                               Kinoko:adult price:regionKansai
+## est_vec_rcdc_with_atr            -9.983269       -0.001597940
+## est_vec_package_rcdc_with_atr    -9.569257       -0.001252962
+##                               price:regionOversea Takenoko:regionKansai
+## est_vec_rcdc_with_atr                 -0.01625603              1.607817
+## est_vec_package_rcdc_with_atr         -0.01844211              1.704572
+##                               Takenoko:regionOversea Kinoko:regionKansai
+## est_vec_rcdc_with_atr                      -2.884993           0.8169038
+## est_vec_package_rcdc_with_atr              -2.617780           0.7922703
+##                               Kinoko:regionOversea
+## est_vec_rcdc_with_atr                    -1.307322
+## est_vec_package_rcdc_with_atr            -1.088285</code></pre>
+<p>　対数尤度を以下に示す。</p>
+<pre class="r"><code>loglik_rcdc_atr &lt;- result_rcdc_with_atr[22]$value
+loglik_rcdc_atr_package &lt;- as.numeric(rcdc_consumer_atr$logLik)
+print(rbind(loglik_rcdc_atr, loglik_rcdc_atr_package))</code></pre>
+<pre><code>##                              [,1]
+## loglik_rcdc_atr         -714.8453
+## loglik_rcdc_atr_package -713.7962</code></pre>
+<p>　標準誤差を算出する。</p>
+<pre class="r"><code>#　ヘシアンの計算
+Hessian &lt;- gHgen(par = as.numeric(result_rcdc_with_atr[1,1:21]), 
+                 fn = f_likelihood_rcdclogit_with_atr, 
+                 data = data_for_estimation_with_atr)
+se_vec_with_atr &lt;- round(sqrt(diag(solve(-Hessian$Hn))), 3)</code></pre>
+<p>　推定値と標準誤差を並べたものを以下に示す。</p>
+<pre class="r"><code>print(rbind(est_vec_rcdc_with_atr, se_vec_with_atr))</code></pre>
+<pre><code>##                           price   Kinoko Takenoko   sd.price sd.Kinoko
+## est_vec_rcdc_with_atr 0.1961649 40.54614 41.17006 0.02851175   2.07561
+## se_vec_with_atr       0.0300000  6.03700  6.19900 0.00500000   0.87400
+##                       sd.Takenoko price:genderfemale Takenoko:genderfemale
+## est_vec_rcdc_with_atr    4.094486         0.03552155              9.685063
+## se_vec_with_atr          0.641000         0.02100000              4.196000
+##                       Kinoko:genderfemale price:familyhouse
+## est_vec_rcdc_with_atr            9.890666        -0.0187261
+## se_vec_with_atr                  4.135000         0.0240000
+##                       Takenoko:familyhouse Kinoko:familyhouse price:adult
+## est_vec_rcdc_with_atr            -3.433303          -4.119536   -0.049118
+## se_vec_with_atr                   4.713000           4.622000    0.020000
+##                       Takenoko:adult Kinoko:adult price:regionKansai
+## est_vec_rcdc_with_atr       -9.48897    -9.983269        -0.00159794
+## se_vec_with_atr              3.88900     3.814000         0.03600000
+##                       price:regionOversea Takenoko:regionKansai
+## est_vec_rcdc_with_atr         -0.01625603              1.607817
+## se_vec_with_atr                0.03800000              6.979000
+##                       Takenoko:regionOversea Kinoko:regionKansai
+## est_vec_rcdc_with_atr              -2.884993           0.8169038
+## se_vec_with_atr                     7.522000           6.7530000
+##                       Kinoko:regionOversea
+## est_vec_rcdc_with_atr            -1.307322
+## se_vec_with_atr                   7.466000</code></pre>
 </div>
 </div>
 
