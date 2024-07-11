@@ -60,14 +60,14 @@ require(kableExtra)
 一気に前回の作業を読み込む。
 
 ```{r}
-#まず自動車データを読み込みます。
+# まず自動車データを読み込みます。
 data <- readr::read_csv(file = "data/CleanData_20180222.csv", locale = locale(encoding = "shift-jis"))
 
-#続いて、家計数データ（潜在的な市場規模）を読み込む。ソースは以下。 <https://www.airia.or.jp/publish/file/r5c6pv0000006s9v-att/r5c6pv0000006saa.pdf>
+# 続いて、家計数データ（潜在的な市場規模）を読み込む。ソースは以下。 <https://www.airia.or.jp/publish/file/r5c6pv0000006s9v-att/r5c6pv0000006saa.pdf>
 dataHH <- readr::read_csv(file = "data/HHsize.csv")
 
-#価格を実質化するべく、消費者物価指数を読み込む。
-#ソースは以下：<https://www.e-stat.go.jp/stat-search/file-download?statInfId=000031431770&fileKind=1>
+# 価格を実質化するべく、消費者物価指数を読み込む。
+# ソースは以下：<https://www.e-stat.go.jp/stat-search/file-download?statInfId=000031431770&fileKind=1>
 
 dataCPI <- readr::read_csv(file = "data/zni2015s.csv", locale = locale(encoding = "shift-jis"))
 
@@ -322,12 +322,12 @@ data <-
   data %>%
   dplyr::group_by(year, Maker, Type) %>%
   dplyr::mutate(
-    dplyr::across(c("hppw", "FuelEfficiency", "size", "FuelRegular_d", "capacity_d"),
+    dplyr::across(c("hppw", "FuelEfficiency", "size"),
                   list(sum_own = ~ sum(.x, na.rm = TRUE))),
     dplyr::across(c("hppw", "FuelEfficiency", "size"),
                   list(sqr_sum_own = ~ sum(.x^2, na.rm = TRUE))),
     group_n = n()
-    ) %>%
+  ) %>%
   dplyr::ungroup()
 
 # 次に、マーケットレベルでの、各製品属性の和を計算する。
@@ -335,25 +335,12 @@ data <-
   data %>% 
   dplyr::group_by(year, Type) %>%
   dplyr::mutate( 
-    dplyr::across(c("hppw", "FuelEfficiency", "size", "FuelRegular_d", "capacity_d"),
+    dplyr::across(c("hppw", "FuelEfficiency", "size"),
                   list(sum_mkt = ~ sum(.x, na.rm = TRUE))),
     dplyr::across(c("hppw", "FuelEfficiency", "size"),
                   list(sqr_sum_mkt = ~ sum(.x^2, na.rm = TRUE))),
     mkt_n = n()) %>%
   dplyr::ungroup() 
-
-# 以上で定義した変数を利用して、まずBLP操作変数を構築する。
-data <- 
-  data %>% 
-  dplyr::mutate(
-    iv_BLP_own_hppw_nest = hppw_sum_own - hppw,
-    iv_BLP_own_FuelEfficiency_nest = FuelEfficiency_sum_own - FuelEfficiency,
-    iv_BLP_own_size_nest = size_sum_own - size,
-    iv_BLP_other_hppw_nest = hppw_sum_mkt - hppw_sum_own,
-    iv_BLP_other_FuelEfficiency_nest = FuelEfficiency_sum_mkt - FuelEfficiency_sum_own,
-    iv_BLP_other_size_nest = size_sum_mkt - size_sum_own, 
-    iv_BLP_own_num_nest = group_n - 1, 
-    iv_BLP_other_num_nest = mkt_n - group_n) 
 
 # 続いて、Differentiation IVを構築する。
 data <- 
@@ -418,15 +405,6 @@ ols <-
                   FuelEfficiency + size + capacity_d + FuelRegular_d | year ,
                 data = data)
 
-# BLP操作変数を用いた結果
-iv_BLP2 <-
-  fixest::feols(
-    logit_share ~ hppw + FuelEfficiency + size + FuelRegular_d + capacity_d | year |
-      price + log_inside_share ~ iv_BLP_own_hppw_nest + iv_BLP_own_FuelEfficiency_nest +
-      iv_BLP_own_size_nest + iv_BLP_other_hppw_nest + iv_BLP_other_FuelEfficiency_nest +
-      iv_BLP_other_size_nest + iv_BLP_own_num_nest +  iv_BLP_other_num_nest,
-    data = data)
-
 # GH操作変数を用いた結果
 iv_GH <-
   fixest::feols(
@@ -437,7 +415,7 @@ iv_GH <-
     data = data)
 
 # 推定結果をレポートする。
-tbl_nest_iv <- fixest::etable(list("OLS" = ols, "IV_BLP" = iv_BLP2, "IV_GH" = iv_GH),  
+tbl_nest_iv <- fixest::etable(list("OLS" = ols, "IV_GH" = iv_GH),  
                               se = "hetero",
                               fitstat = c("r2", "n", "ivf"), 
                               signif.code = NA, 
@@ -454,13 +432,13 @@ tbl_nest_iv <- fixest::etable(list("OLS" = ols, "IV_BLP" = iv_BLP2, "IV_GH" = iv
                               depvar = FALSE)
 
 tbl_nest_iv %>%
-  kable(align = c("l", "c", "c", "c"),
+  kable(align = c("l", "c", "c"),
         booktabs = FALSE, format = "html") %>%
   kable_styling(full_width = FALSE)
 
 # 表の保存
 tbl_nest_iv %>%
-  kable(align = c("l", "c", "c", "c"),
+  kable(align = c("l", "c", "c"),
         booktabs = FALSE, format = "latex") %>%
   kable_styling(full_width = FALSE) %>%
   save_kable("output/chap4_nest_iv.tex")
@@ -476,17 +454,13 @@ tbl_nest_iv %>%
 alpha1 <- ols$coefficients["price"]
 sigma1 <- ols$coefficients["log_inside_share"]
 
-alpha2 <- iv_BLP2$coefficients["fit_price"]
-sigma2 <- iv_BLP2$coefficients["fit_log_inside_share"]
-
-alpha3 <- iv_GH$coefficients["fit_price"]
-sigma3 <- iv_GH$coefficients["fit_log_inside_share"]
+alpha2 <- iv_GH$coefficients["fit_price"]
+sigma2 <- iv_GH$coefficients["fit_log_inside_share"]
 
 data %>% 
   dplyr::mutate(
     own_elas_ols = alpha1 * price * (1 - sigma1 * inside_share - (1 - sigma1) * share) / (1 - sigma1),
-    own_elas_ivblp = alpha2 * price * (1 - sigma2 * inside_share - (1 - sigma2) * share) / (1 - sigma2),
-    own_elas_ivgh = alpha3 * price * (1 - sigma3 * inside_share - (1 - sigma3) * share) / (1 - sigma3)) -> data_elas
+    own_elas_ivgh = alpha2 * price * (1 - sigma2 * inside_share - (1 - sigma2) * share) / (1 - sigma2)) -> data_elas
 
 tbl_nest_own_elas <- data_elas %>% 
   dplyr::select(starts_with("own_elas")) %>% 
@@ -527,23 +501,18 @@ inside_share <- dt2016$inside_share
 group <- dt2016$Type
 
 # Own elasticity
-# own_elas <- alpha2 * price * (1 - sigma2 * inside_share - (1 - sigma2) * share) / (1 - sigma2)
-own_elas <- alpha3 * price * (1 - sigma3 * inside_share - (1 - sigma3) * share) / (1 - sigma3)
+own_elas <- alpha2 * price * (1 - sigma2 * inside_share - (1 - sigma2) * share) / (1 - sigma2)
 
 # Cross elasticity outside the group
-# cross_elas_othergroup <- (-1) * alpha2 * price * share
-cross_elas_othergroup <- (-1) * alpha3 * price * share
+cross_elas_othergroup <- (-1) * alpha2 * price * share
 J <- length(own_elas)
 cross_elas_othergroup <- matrix(rep(cross_elas_othergroup, J), nrow = J, ncol = J)
 
 # Cross elasticity within the group (matrix representation)
-
 price_l_mat <- matrix(rep(price, J), nrow = J, ncol = J)
 share_l_mat <- matrix(rep(share, J), nrow = J, ncol = J)
 insideshare_l_mat <- matrix(rep(inside_share, J), nrow = J, ncol = J)
-# cross_elas_samegroup <- (-1) * alpha2 * price_l_mat * (sigma2 * insideshare_l_mat + (1 - sigma2) * share_l_mat) / (1 - sigma2)
-cross_elas_samegroup <- (-1) * alpha3 * price_l_mat * (sigma3 * insideshare_l_mat + (1 - sigma3) * share_l_mat) / (1 - sigma3)
-                                             
+cross_elas_samegroup <- (-1) * alpha2 * price_l_mat * (sigma2 * insideshare_l_mat + (1 - sigma2) * share_l_mat) / (1 - sigma2)
 
 # Indicator of group
 temp_mat1 <- matrix(rep(group, J), nrow = J, ncol = J)
@@ -999,7 +968,7 @@ result_table %>%
 
 ```{r}
 f_elasticity <- function(datalist, parameter, beta_hat, delta) {
-
+  
   # Unpack data
   X2 <- datalist$X2
   ns <- parameter$Nsim
@@ -1009,56 +978,56 @@ f_elasticity <- function(datalist, parameter, beta_hat, delta) {
   K2 <- length(theta2)
   draw_vec <- datalist$draw_vec[1:(ns * K2)]
   uniquemarketindex <- datalist$uniquemarketindex
-
+  
   # 製品を示す行列を取り出す
   # tempmat2 <- datalist$tempmat2
-
-
+  
+  
   # 以下マーケットシェアの関数とほぼ同じ
   # Nonlinear component. mu (N, ns) matrix.
   mu <- X2 %*% diag(x = theta2, nrow = length(theta2)) %*% matrix(draw_vec, nrow = K2)
-
+  
   denom_outside <- exp(matrix(0, T, ns))
   delta_mu <- delta %*% matrix(1, nrow = 1, ncol = ns) + mu
   exp_delta_mu <- exp(delta_mu)
   tempmat <- datalist$tempmat
   denom_temp <- t(t(exp_delta_mu) %*% tempmat)
   denom_temp <- denom_temp + denom_outside
-
+  
   denom <- tempmat %*% denom_temp
-
+  
   # Choice prob for individual (N * ns) matrix
   s_jt_i <- exp_delta_mu / denom
-
+  
   # Price parameter alpha_i
   draw_for_price <- matrix(draw_vec, nrow = K2)[1, ]
   alpha_i <- beta_hat[rownames(beta_hat) == "price"] + beta_hat[rownames(beta_hat) == "random_price"] * draw_for_price
-
+  
   # 弾力性行列を保存する空のリストを作成する
   elaslist <- as.list(rep(NA, T))
-
+  
   # 各マーケットごとに弾力性行列を作成する．
   for (t in 1:T) {
-
+    
     # マーケットの表示
     #cat("calculate the elasticity for Market", uniquemarketindex[t], "\n")
     
     # Number of products 
     J_t <- sum(marketindex == 2005 + t)
-
+    
     # それぞれのマーケットに注目した(J*ns)の選択確率の行列を作成する
     # あるマーケットに対して，製品ごとに集計した選択確率の行列(J*ns)を作成する
     ag_model_s_i <- s_jt_i[marketindex == 2005 + t,]
-
+    
     # 製品ごとの選択確率のベクトル(J * 1)
     ag_model_s <- apply(ag_model_s_i, 1, mean) %>% as.matrix()
-
+    
     # 空の弾力性行列(J * J)を定義
     elasmat <- matrix(0, nrow = J_t, ncol = J_t)
-
+    
     # あるマーケットに注目した，製品ごとの価格のベクトル(J*1)を作成する
     price_t <- price[marketindex == 2005 + t]
-
+    
     # 弾力性を計算し，弾力性行列を作成する
     for (k in 1:J_t) {
       for (j in 1:J_t) {
@@ -1071,7 +1040,7 @@ f_elasticity <- function(datalist, parameter, beta_hat, delta) {
         } 
       }
     }
-
+    
     # 弾力性行列をマーケットごとに名前を付けて保存する．
     elaslist[[t]] <- elasmat
     names(elaslist)[[t]] <- sprintf("elasmat_%d", t + 2005)
