@@ -1,0 +1,22 @@
+# R関連の一時ファイルと設定ファイル
+.Rhistory
+.RData
+.Ruserdata
+.Rproj.user/
+
+# renvの設定とキャッシュ
+.Rprofile
+
+# renvライブラリディレクトリ（通常はrenv/library以下）
+# このディレクトリは大きくなりがちなのでバージョン管理から除外します
+renv/library/
+
+# renvのロックファイルはバージョン管理に含めます
+# これにより、依存関係がプロジェクト全体で再現可能になります
+!renv.lock
+
+# renvプロファイル
+!renv/settings.dcf
+
+# システム固有のキャッシュファイルを無視
+renv/cache/
