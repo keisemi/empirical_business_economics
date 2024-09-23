@@ -330,7 +330,7 @@ elas_mat_restricted %>%
         digits = 4,
         booktabs = FALSE, format = "latex") %>%
   kable_styling(full_width = FALSE) %>%
-  save_kable("output/chap4_elas_mat_ols.tex")
+  save_kable("output/chap4_elas_mat_logit.tex")
 ```
 
 
