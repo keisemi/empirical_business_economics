@@ -213,7 +213,8 @@ data <-
     iv_BLP_other_FuelEfficiency = FuelEfficiency_sum_mkt - FuelEfficiency_sum_own,
     iv_BLP_other_size = size_sum_mkt - size_sum_own, 
     iv_BLP_own_num = group_n - 1, 
-    iv_BLP_other_num = mkt_n - group_n) 
+    iv_BLP_other_num = mkt_n - group_n
+  ) 
 
 # 続いて、Differentiation IVを構築する。
 data <- 
@@ -227,14 +228,15 @@ data <-
     iv_GH_other_FuelEfficiency = (mkt_n - group_n) * FuelEfficiency^2 +
       (FuelEfficiency_sqr_sum_mkt - FuelEfficiency_sqr_sum_own) - 2 * FuelEfficiency * (FuelEfficiency_sum_mkt - FuelEfficiency_sum_own),
     iv_GH_other_size = (mkt_n - group_n) * size^2 + (size_sqr_sum_mkt - size_sqr_sum_own) - 2 * size * (size_sum_mkt - size_sum_own)
-    ) %>%
+  ) %>%
   dplyr::select(
     -starts_with("sum_own"),
     -starts_with("sum_mkt"),
     -starts_with("sqr_sum_own"),
     -starts_with("sqr_sum_mkt"),
     -mkt_n,
-    -group_n)　
+    -group_n
+  )　
 ```
 
 # Logitモデルにおける価格弾力性
@@ -277,10 +279,12 @@ data <-
 # Differentiation IVを用いた結果
 iv_GH <-
   fixest::feols(
-    logit_share ~ hppw + FuelEfficiency + size | 0 |
+    logit_share ~ hppw + FuelEfficiency + size + 
+      capacity_d + FuelRegular_d + Foreign_d | year |
       price ~ iv_GH_own_hppw + iv_GH_own_FuelEfficiency + iv_GH_own_size +
       iv_GH_other_hppw + iv_GH_other_FuelEfficiency + iv_GH_other_size,
-    data = data)
+    data = data
+  )
 
 data_NIPPYO %>% 
   dplyr::filter(year == 2016) %>% 
@@ -309,7 +313,24 @@ diag(elas_mat) <- own_elas
 - 178: 軽自動車(C)
 
 ```{r}
-elas_mat[NameID %in% c(87, 122, 155, 178), NameID %in% c(87, 122, 155, 178)]
+elas_mat_restricted <- elas_mat[NameID %in% c(87, 122, 155, 178), NameID %in% c(87, 122, 155, 178)]
+Name <- c("ベータード", "セダン(A)", "SUV(B)", "軽自動車(C)")
+colnames(elas_mat_restricted) <- Name
+rownames(elas_mat_restricted) <- Name
+
+elas_mat_restricted %>%
+  kable(align = rep("c", 4),
+        digits = 4,
+        booktabs = FALSE, format = "html") %>%
+  kable_styling(full_width = FALSE)
+
+# 表の保存
+elas_mat_restricted %>%
+  kable(align = rep("c", 4),
+        digits = 4,
+        booktabs = FALSE, format = "latex") %>%
+  kable_styling(full_width = FALSE) %>%
+  save_kable("output/chap4_elas_mat_ols.tex")
 ```
 
 
@@ -339,7 +360,8 @@ data <-
                   list(sum_mkt = ~ sum(.x, na.rm = TRUE))),
     dplyr::across(c("hppw", "FuelEfficiency", "size"),
                   list(sqr_sum_mkt = ~ sum(.x^2, na.rm = TRUE))),
-    mkt_n = n()) %>%
+    mkt_n = n()
+  ) %>%
   dplyr::ungroup() 
 
 # 続いて、Differentiation IVを構築する。
@@ -353,14 +375,16 @@ data <-
     iv_GH_other_hppw_nest = (mkt_n - group_n) * hppw^2 + (hppw_sqr_sum_mkt - hppw_sqr_sum_own) - 2 * hppw * (hppw_sum_mkt - hppw_sum_own),
     iv_GH_other_FuelEfficiency_nest = (mkt_n - group_n) * FuelEfficiency^2 + 
       (FuelEfficiency_sqr_sum_mkt - FuelEfficiency_sqr_sum_own) - 2 * FuelEfficiency * (FuelEfficiency_sum_mkt - FuelEfficiency_sum_own),
-    iv_GH_other_size_nest = (mkt_n - group_n) * size^2 + (size_sqr_sum_mkt - size_sqr_sum_own) - 2 * size * (size_sum_mkt - size_sum_own)) %>%
+    iv_GH_other_size_nest = (mkt_n - group_n) * size^2 + (size_sqr_sum_mkt - size_sqr_sum_own) - 2 * size * (size_sum_mkt - size_sum_own)
+  ) %>%
   dplyr::select(
     -starts_with("sum_own"),
     -starts_with("sum_mkt"),
     -starts_with("sqr_sum_own"),
     -starts_with("sqr_sum_mkt"),
     -mkt_n,
-    -group_n)　
+    -group_n
+  )　
 ```
 
 # 入れ子型ロジットモデルの推定とその応用
@@ -401,9 +425,11 @@ readr::write_csv(data, "intermediate/chap4_data.csv")
 
 # OLSの結果
 ols <-
-  fixest::feols(logit_share ~ price + log_inside_share + hppw + 
-                  FuelEfficiency + size + capacity_d + FuelRegular_d | year ,
-                data = data)
+  fixest::feols(
+    logit_share ~ price + log_inside_share + hppw + FuelEfficiency + size + 
+      capacity_d + FuelRegular_d | year,
+    data = data
+  )
 
 # GH操作変数を用いた結果
 iv_GH <-
@@ -412,24 +438,27 @@ iv_GH <-
       price + log_inside_share ~ iv_GH_own_hppw_nest + iv_GH_own_FuelEfficiency_nest +
       iv_GH_own_size_nest + iv_GH_other_hppw_nest + iv_GH_other_FuelEfficiency_nest +
       iv_GH_other_size_nest,
-    data = data)
+    data = data
+  )
 
 # 推定結果をレポートする。
-tbl_nest_iv <- fixest::etable(list("OLS" = ols, "IV_GH" = iv_GH),  
-                              se = "hetero",
-                              fitstat = c("r2", "n", "ivf"), 
-                              signif.code = NA, 
-                              dict = c(price = "自動車価格",
-                                       hppw = "馬力／重量",
-                                       FuelEfficiency = "燃費 (キロメートル／ 1 リットル)",
-                                       size = "サイズ",
-                                       capacity_d = "キャパシティダミー(5以上)",
-                                       FuelRegular_d = "レギュラータイプダミー",
-                                       Foreign_d = "外国車ダミー",
-                                       `(Intercept)` = "定数項"),
-                              digits = 2,
-                              digits.stats = 2,
-                              depvar = FALSE)
+tbl_nest_iv <- fixest::etable(
+  list("OLS" = ols, "IV_GH" = iv_GH),  
+  se = "hetero",
+  fitstat = c("r2", "n", "ivf"), 
+  signif.code = NA, 
+  dict = c(price = "自動車価格",
+           hppw = "馬力／重量",
+           FuelEfficiency = "燃費 (キロメートル／ 1 リットル)",
+           size = "サイズ",
+           capacity_d = "キャパシティダミー(5以上)",
+           FuelRegular_d = "レギュラータイプダミー",
+           Foreign_d = "外国車ダミー",
+           `(Intercept)` = "定数項"),
+  digits = 2,
+  digits.stats = 2,
+  depvar = FALSE
+)
 
 tbl_nest_iv %>%
   kable(align = c("l", "c", "c"),
@@ -460,14 +489,19 @@ sigma2 <- iv_GH$coefficients["fit_log_inside_share"]
 data %>% 
   dplyr::mutate(
     own_elas_ols = alpha1 * price * (1 - sigma1 * inside_share - (1 - sigma1) * share) / (1 - sigma1),
-    own_elas_ivgh = alpha2 * price * (1 - sigma2 * inside_share - (1 - sigma2) * share) / (1 - sigma2)) -> data_elas
+    own_elas_ivgh = alpha2 * price * (1 - sigma2 * inside_share - (1 - sigma2) * share) / (1 - sigma2)
+  ) -> data_elas
 
 tbl_nest_own_elas <- data_elas %>% 
   dplyr::select(starts_with("own_elas")) %>% 
-  summarytools::descr(transpose = TRUE, 
-                      stats = c("mean", "sd", "med", "min", "max"),
-                      order = "preserve")
+  summarytools::descr(
+    transpose = TRUE, 
+    stats = c("mean", "sd", "med", "min", "max"),
+    order = "preserve"
+  )
+
 print(tbl_nest_own_elas)
+
 # 表の保存
 tbl_nest_own_elas %>%
   kable(align = rep("l", 5),
@@ -601,7 +635,8 @@ X1 <-
   mutate(cons = 1) %>%
   select(cons, price, FuelEfficiency, hppw, size,
          capacity_d, FuelRegular_d, Foreign_d,
-         starts_with("year_")) %>%
+         starts_with("year_")
+  ) %>%
   as.matrix()
 
 # ランダム係数とInteractする部分。
@@ -619,7 +654,8 @@ Z <-
     capacity_d, FuelRegular_d, Foreign_d,
     starts_with("year_"),
     starts_with("iv_GH"),
-    -ends_with("nest")) %>%
+    -ends_with("nest")
+  ) %>%
   as.matrix()
 
 # 市場シェア
@@ -741,8 +777,6 @@ f_contraction <- function(datalist, parameter, delta_ini) {
         t <- abs(exp_delta - exp_delta_old)
         norm <- max(t)
         
-        #print(norm)
-        
         # Update
         #exp_delta_old <- 0.95*exp_delta + 0.05*exp_delta_old
         exp_delta_old <- exp_delta 
@@ -765,8 +799,6 @@ f_contraction <- function(datalist, parameter, delta_ini) {
 
 ```{r}
 f_GMMobj <- function(theta2, parameter, datalist, option) {
-
-  # print(theta2)
   
   # 引数option
   # 0:最適化の際に指定
@@ -838,7 +870,7 @@ delta_global <- data$logit_share
 
 # 最適化
 result <-
-  optim(par = c(0.3),
+  optim(par = c(0.5),
         fn = f_GMMobj,
         method = "L-BFGS-B",
         lower = c(0),
@@ -981,7 +1013,6 @@ f_elasticity <- function(datalist, parameter, beta_hat, delta) {
   
   # 製品を示す行列を取り出す
   # tempmat2 <- datalist$tempmat2
-  
   
   # 以下マーケットシェアの関数とほぼ同じ
   # Nonlinear component. mu (N, ns) matrix.
@@ -1174,10 +1205,9 @@ dt_fig1 <- tibble(price = pricevec * 100,
 
 fig_pi1 <- ggplot(dt_fig1, aes(price, value)) + 
   geom_point() +
-  theme_bw() +
+  theme_bw(base_family = "HiraKakuPro-W3") +
   ggplot2::theme(
     axis.title.y = element_text(angle = 0, vjust = 0.5),
-    theme(text = element_text(family = "HiraKakuPro-W3")),
     panel.grid.major.y = element_line(color = "grey",
                                       linewidth = 0.3, linetype = "dotted"),
     panel.grid.minor.y = element_line(color = "grey",
@@ -1185,7 +1215,7 @@ fig_pi1 <- ggplot(dt_fig1, aes(price, value)) +
     panel.grid.minor = element_blank(),
     panel.grid.major.x = element_blank(),
     panel.border = element_blank(),
-    axis.line = element_line(colour = "black", linewidth = 0.2)) +
+    axis.line = element_line(colour = "black", linewidth = 0.2)) + 
   scale_x_continuous(breaks = seq(0, 500, 50)) + 
   ggplot2::labs(y = "収入(億円)",
                 x = "価格(万円)") 
@@ -1202,10 +1232,9 @@ dt_fig2 <- tibble(price = pricevec * 100,
 
 fig_pi2 <- ggplot(dt_fig2, aes(price, value)) + 
   geom_point() +
-  theme_bw() +
+  theme_bw(base_family = "HiraKakuPro-W3") +
   ggplot2::theme(
     axis.title.y = element_text(angle = 0, vjust = 0.5),
-    theme(text = element_text(family = "HiraKakuPro-W3")),
     panel.grid.major.y = element_line(color = "grey",
                                       linewidth = 0.3, linetype = "dotted"),
     panel.grid.minor.y = element_line(color = "grey",

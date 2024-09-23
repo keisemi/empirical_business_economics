@@ -297,7 +297,8 @@ data <-
     iv_BLP_own_size = size_sum_own - size,
     iv_BLP_other_hppw = hppw_sum_mkt - hppw_sum_own,
     iv_BLP_other_FuelEfficiency = FuelEfficiency_sum_mkt - FuelEfficiency_sum_own,
-    iv_BLP_other_size = size_sum_mkt - size_sum_own ) 
+    iv_BLP_other_size = size_sum_mkt - size_sum_own
+  ) 
 
 # 続いて、Differentiation IVを構築する。
 data <- 
@@ -309,14 +310,15 @@ data <-
     iv_GH_other_hppw = (mkt_n - group_n) * hppw^2 + (hppw_sqr_sum_mkt - hppw_sqr_sum_own) - 2 * hppw * (hppw_sum_mkt - hppw_sum_own),
     iv_GH_other_FuelEfficiency = (mkt_n - group_n) * FuelEfficiency^2 + (FuelEfficiency_sqr_sum_mkt - FuelEfficiency_sqr_sum_own) - 2 * FuelEfficiency * (FuelEfficiency_sum_mkt - FuelEfficiency_sum_own),
     iv_GH_other_size = (mkt_n - group_n) * size^2 + (size_sqr_sum_mkt - size_sqr_sum_own) - 2 * size * (size_sum_mkt - size_sum_own)
-    ) %>%
+  ) %>%
   dplyr::select(
     -starts_with("sum_own"),
     -starts_with("sum_mkt"),
     -starts_with("sqr_sum_own"),
     -starts_with("sqr_sum_mkt"),
     -mkt_n,
-    -group_n)　
+    -group_n
+  )　
 ```
 
 # 記述統計と基礎的な分析
@@ -362,26 +364,30 @@ $$
 
 ```{r}
 ols_intro <-
-  fixest::feols(log_sales ~ log_price + hppw + FuelEfficiency + size +
-                  capacity_d + FuelRegular_d + Foreign_d,
-                data = data_NIPPYO)
+  fixest::feols(
+    log_sales ~ log_price + hppw + FuelEfficiency + size + capacity_d + FuelRegular_d + Foreign_d,
+    data = data_NIPPYO
+  )
 
 # 結果のアウトプット
-tbl_ols_intro <- fixest::etable("OLS_NIPPYO" = ols_intro, 
-                                se = "hetero",
-                                signif.code = NA, 
-                                fitstat = c("r2", "n" ), 
-                                dict = c(log_price = "log(価格)",
-                                         hppw = "馬力／重量",
-                                         FuelEfficiency = "燃費(キロメートル／ 1 リットル)",
-                                         size = "サイズ",
-                                         capacity_d = "キャパシティダミー(5以上)",
-                                         FuelRegular_d = "レギュラータイプダミー",
-                                         Foreign_d = "外国車ダミー",
-                                         `(Intercept)` = "定数項"),
-                                digits = 2,
-                                digits.stats = 2,
-                                depvar = FALSE)
+tbl_ols_intro <- fixest::etable(
+  "OLS_NIPPYO" = ols_intro, 
+  se = "hetero",
+  signif.code = NA, 
+  fitstat = c("r2", "n" ), 
+  dict = c(log_price = "log(価格)",
+           hppw = "馬力／重量",
+           FuelEfficiency = "燃費(キロメートル／ 1 リットル)",
+           size = "サイズ",
+           capacity_d = "キャパシティダミー(5以上)",
+           FuelRegular_d = "レギュラータイプダミー",
+           Foreign_d = "外国車ダミー",
+           `(Intercept)` = "定数項"),
+  digits = 2,
+  digits.stats = 2,
+  depvar = FALSE
+)
+
 tbl_ols_intro %>%
   kable(align = c("l", "c", "c"),
         booktabs = FALSE, format = "html") %>%
@@ -473,21 +479,23 @@ iv_GH <-
     data = data)
 
 # 推定結果をレポートする。
-tbl_logit_iv <- fixest::etable(list("OLS" = ols, "iv_BLP" = iv_BLP, "iv_GH" = iv_GH),  
-                               se = "hetero",
-                               fitstat = c("r2", "n", "ivf" ), 
-                               signif.code = NA, 
-                               dict = c(price = "自動車価格",
-                                        hppw = "馬力／重量",
-                                        FuelEfficiency = "燃費(キロメートル／ 1 リットル)",
-                                        size = "サイズ",
-                                        capacity_d = "キャパシティダミー(5以上)",
-                                        FuelRegular_d = "レギュラータイプダミー",
-                                        Foreign_d = "外国車ダミー",
-                                        `(Intercept)` = "定数項"),
-                               digits = 2,
-                               digits.stats = 2,
-                               depvar = FALSE)
+tbl_logit_iv <- fixest::etable(
+  list("OLS" = ols, "iv_BLP" = iv_BLP, "iv_GH" = iv_GH),  
+  se = "hetero",
+  fitstat = c("r2", "n", "ivf" ), 
+  signif.code = NA, 
+  dict = c(price = "自動車価格",
+           hppw = "馬力／重量",
+           FuelEfficiency = "燃費(キロメートル／ 1 リットル)",
+           size = "サイズ",
+           capacity_d = "キャパシティダミー(5以上)",
+           FuelRegular_d = "レギュラータイプダミー",
+           Foreign_d = "外国車ダミー",
+           `(Intercept)` = "定数項"),
+  digits = 2,
+  digits.stats = 2,
+  depvar = FALSE
+)
 
 tbl_logit_iv %>%
   kable(align = c("l", "c", "c", "c"),
@@ -508,37 +516,39 @@ tbl_logit_iv %>%
 # BLP操作変数を用いた結果
 iv1st_BLP <-
   fixest::feols(
-    price ~ hppw + FuelEfficiency + size +
-      capacity_d + FuelRegular_d + Foreign_d +
+    price ~ hppw + FuelEfficiency + size + capacity_d + FuelRegular_d + Foreign_d +
       iv_BLP_own_hppw + iv_BLP_own_FuelEfficiency + iv_BLP_own_size +
       iv_BLP_other_hppw + iv_BLP_other_FuelEfficiency + iv_BLP_other_size | year,
-    data = data)
+    data = data
+  )
 
 # Differentiation IVを用いた結果
 iv1st_GH <-
   fixest::feols(
-    price ~ hppw + FuelEfficiency + size + 
-      capacity_d + FuelRegular_d + Foreign_d +
+    price ~ hppw + FuelEfficiency + size + capacity_d + FuelRegular_d + Foreign_d +
       iv_GH_own_hppw + iv_GH_own_FuelEfficiency + iv_GH_own_size +
       iv_GH_other_hppw + iv_GH_other_FuelEfficiency + iv_GH_other_size | year,
-    data = data)
+    data = data
+  )
 
 # 推定結果をレポートする。
-tbl_logit_iv_1st <- fixest::etable(list("iv1st_BLP" = iv1st_BLP, "iv1st_GH" = iv1st_GH),  
-                                   se = "hetero",
-                                   fitstat = c("r2", "n"), 
-                                   signif.code = NA, 
-                                   dict = c(price = "自動車価格",
-                                            hppw = "馬力／重量",
-                                            FuelEfficiency = "燃費(キロメートル／ 1 リットル)",
-                                            size = "サイズ",
-                                            capacity_d = "キャパシティダミー(5以上)",
-                                            FuelRegular_d = "レギュラータイプダミー",
-                                            Foreign_d = "外国車ダミー",
-                                            `(Intercept)` = "定数項"),
-                                   digits = 2,
-                                   digits.stats = 2,
-                                   depvar = FALSE)
+tbl_logit_iv_1st <- fixest::etable(
+  list("iv1st_BLP" = iv1st_BLP, "iv1st_GH" = iv1st_GH),  
+  se = "hetero",
+  fitstat = c("r2", "n"), 
+  signif.code = NA, 
+  dict = c(price = "自動車価格",
+           hppw = "馬力／重量",
+           FuelEfficiency = "燃費(キロメートル／ 1 リットル)",
+           size = "サイズ",
+           capacity_d = "キャパシティダミー(5以上)",
+           FuelRegular_d = "レギュラータイプダミー",
+           Foreign_d = "外国車ダミー",
+           `(Intercept)` = "定数項"),
+  digits = 2,
+  digits.stats = 2,
+  depvar = FALSE
+)
 
 tbl_logit_iv_1st %>%
   kable(align = c("l", "c", "c"),
@@ -568,6 +578,7 @@ tbl_own_elas <- data_elas %>%
                       stats = c("mean", "sd", "med", "min", "max"),
                       order = "preserve")
 print(tbl_own_elas)
+
 tbl_own_elas %>%
   kable(align = c("l", rep("c", 5)),
         digits = 2,
@@ -593,7 +604,6 @@ data %>%
   select(NameID, year, Sales, price, FuelEfficiency, size, hppw, HH, share, 
          capacity_d, FuelRegular_d, Foreign_d) %>% 
   mutate(xi_fit = resid(iv_GH)) -> dt_application
-
 ```
 
 まず、日評自動車が販売する中での特定の車種に着目しよう。ここではNameID
@@ -653,10 +663,9 @@ for (i in 1:length(pricevec)) {
 data.frame(x = quantvec, y = pricevec) %>%
   ggplot(aes(x = x / 10000, y = y * 100)) +
   geom_line() +
-  theme_bw() +
+  theme_bw(base_family = "HiraKakuPro-W3") +
   ggplot2::theme(
     axis.title.y = element_text(angle = 0, vjust = 0.5),
-    theme(text = element_text(family = "HiraKakuPro-W3")),
     panel.grid.major.y = element_line(color = "grey",
                                       linewidth = 0.3, linetype = "dotted"),
     panel.grid.minor.y = element_line(color = "grey",
@@ -681,10 +690,9 @@ ggsave(file = "output/chap3_demand.pdf", width = 9, height = 6, device = cairo_p
 data.frame(x = pricevec, y = revenuevec) %>%
   ggplot(aes(x = x * 100, y = y * 100 / 10000)) +
   geom_line() +
-  theme_bw() +
+  theme_bw(base_family = "HiraKakuPro-W3") +
   ggplot2::theme(
     axis.title.y = element_text(angle = 0, vjust = 0.5),
-    theme(text = element_text(family = "HiraKakuPro-W3")),
     panel.grid.major.y = element_line(color = "grey",
                                       linewidth = 0.3, linetype = "dotted"),
     panel.grid.minor.y = element_line(color = "grey",
