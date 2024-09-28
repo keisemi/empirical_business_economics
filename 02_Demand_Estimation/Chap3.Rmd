@@ -90,7 +90,7 @@ Rで外部ライブラリを利用する際には、以下の二通りがあり�
 まず自動車データを読み込みます。
 
 ```{r}
-data <- readr::read_csv(file = "data/CleanData_20180222.csv", locale = locale(encoding = "shift-jis"))
+data <- readr::read_csv(file = "data/CleanData_20180222_nippyo.csv")
 ```
 
 続いて、家計数データ（潜在的な市場規模）を読み込む。ソースは以下。
@@ -127,7 +127,8 @@ dataCPI <-
 data <-
   data %>%
   dplyr::select(
-    Maker, Type, Name, Year, Sales, Model, price, kata,
+    Maker, Type, Name, Year, Sales, Model,
+    Nippyo, price, kata,
     weight, capacity, FuelType, FuelEfficiency, HorsePower,
     overall_length, overall_width, overall_height
   ) %>%
@@ -328,28 +329,14 @@ data <-
 ## イントロダクションの日評自動車
 
 イントロダクションにおける、日評自動車が社内で行った分析についてみていこう。
-日評自動車はあくまで仮想の自動車会社であるため、ここでは、全車種からランダム選ばれた30車種
-を保有する自動車メーカーと考えよう。
 
 まず、日評自動車のデータセットを用意する。
 
 ```{r}
-# 車種のID
-IDvec <- sort(unique(data$NameID))
-J <- length(IDvec)
-
-# 乱数のシードを固定する。これを行うことで、毎回同じ乱数を得ることができる。
-set.seed(125)
-
-# sample関数を使って、先に用意した車種IDベクトルから、重複無しで30車種を取得する。
-# なお、sample関数は内部で乱数を利用しているため、先の乱数シード固定が重要となる。
-NIPPYOautoIDvec <- sample(IDvec, size = 30, replace = FALSE)
-NIPPYOautoIDvec <- sort(NIPPYOautoIDvec)
-
 # 日評自動車のデータセットを作成する。
 data_NIPPYO <-
   data %>% 
-  filter(NameID %in% NIPPYOautoIDvec) %>% 
+  filter(Nippyo == 1) %>%
   select(Sales, price, hppw, FuelEfficiency, size,
          capacity_d, FuelRegular_d, Foreign_d) %>% 
   mutate(log_sales = log(Sales),
@@ -610,7 +597,12 @@ data %>%
 87について考えてみよう。
 
 ```{r}
-NameID_target <- 87
+NameID_target <- data %>%
+  filter(Nippyo == 1, Maker == "Toyota", Name == "アルファード") %>%
+  distinct(NameID) %>%
+  pull()
+
+NameID_target
 
 dt_application %>% 
   filter(NameID == NameID_target & year == 2016) %>% 
@@ -643,8 +635,6 @@ f_share <- function(price_cand, year, modelID_target, dt, est) {
 ```
 
 ```{r}
-NameID_target <- 87
-
 # 価格の範囲として、0.5(50万円)から5(500万円)を考える。なお、もとの価格は3.198 (319.8万円)
 pricevec <- seq(from = 0.3, to = 5,　by = 0.05)
 quantvec <- numeric(length(pricevec))

@@ -61,7 +61,7 @@ require(kableExtra)
 
 ```{r}
 # まず自動車データを読み込みます。
-data <- readr::read_csv(file = "data/CleanData_20180222.csv", locale = locale(encoding = "shift-jis"))
+data <- readr::read_csv(file = "data/CleanData_20180222_nippyo.csv")
 
 # 続いて、家計数データ（潜在的な市場規模）を読み込む。ソースは以下。 <https://www.airia.or.jp/publish/file/r5c6pv0000006s9v-att/r5c6pv0000006saa.pdf>
 dataHH <- readr::read_csv(file = "data/HHsize.csv")
@@ -87,7 +87,8 @@ dataCPI <-
 data <-
   data %>%
   dplyr::select(
-    Maker, Type, Name, Year, Sales, Model, price, kata,
+    Maker, Type, Name, Year, Sales, Model,
+    Nippyo, price, kata,
     weight, capacity, FuelType, FuelEfficiency, HorsePower,
     overall_length, overall_width, overall_height
     ) %>%
@@ -247,22 +248,10 @@ data <-
 
 
 ```{r}
-# 車種のID
-IDvec <- sort(unique(data$NameID))
-J <- length(IDvec)
-
-# 乱数のシードを固定する。これを行うことで、毎回同じ乱数を得ることができる。
-set.seed(125)
-
-# sample関数を使って、先に用意した車種IDベクトルから、重複無しで30車種を取得する。
-# なお、sample関数は内部で乱数を利用しているため、先の乱数シード固定が重要となる。
-NIPPYOautoIDvec <- sample(IDvec, size = 30, replace = FALSE)
-NIPPYOautoIDvec <- sort(NIPPYOautoIDvec)
-
 # 日評自動車のデータセットを作成する。
 data_NIPPYO <-
   data %>% 
-  dplyr::filter(NameID %in% NIPPYOautoIDvec) %>% 
+  dplyr::filter(Nippyo == 1) %>% 
   dplyr::select(year, share, NameID, Sales, price, hppw, FuelEfficiency, size, Name) %>% 
   dplyr::mutate(log_sales = log(Sales),
                 log_price = log(price))
@@ -288,7 +277,7 @@ iv_GH <-
 
 data_NIPPYO %>% 
   dplyr::filter(year == 2016) %>% 
-  dplyr::select(price, share, NameID) %>% 
+  dplyr::select(price, share, NameID, Name) %>% 
   dplyr::arrange(NameID) -> dt2016
 
 price <- dt2016$price
@@ -307,13 +296,26 @@ diag(elas_mat) <- own_elas
 
 表１の価格弾力性行列。以下の製品について見る。
 
-- 87: ベータード
-- 122: セダン(A)
-- 155: SUV(B)
-- 178: 軽自動車(C)
+- ベータード, セダン(A), SUV(B), 軽自動車(C)
 
 ```{r}
-elas_mat_restricted <- elas_mat[NameID %in% c(87, 122, 155, 178), NameID %in% c(87, 122, 155, 178)]
+betard <- dt2016 %>%
+  filter(Name == "アルファード") %>%
+  pull(NameID)
+
+sedan <- dt2016 %>%
+  filter(Name == "カローラ") %>%
+  pull(NameID)
+
+suv <- dt2016 %>%
+  filter(Name == "ジューク") %>%
+  pull(NameID)
+
+kei <- dt2016 %>%
+  filter(Name == "タント") %>%
+  pull(NameID)
+
+elas_mat_restricted <- elas_mat[NameID %in% c(betard, sedan, suv, kei), NameID %in% c(betard, sedan, suv, kei)]
 Name <- c("ベータード", "セダン(A)", "SUV(B)", "軽自動車(C)")
 colnames(elas_mat_restricted) <- Name
 rownames(elas_mat_restricted) <- Name
@@ -518,7 +520,7 @@ tbl_nest_own_elas %>%
 ```{r}
 data_NIPPYO <-
   data %>% 
-  filter(NameID %in% NIPPYOautoIDvec) %>% 
+  filter(Nippyo == 1) %>%
   select(year, share, Type, inside_share, NameID, Sales, price, hppw, FuelEfficiency, size) %>% 
   mutate(log_sales = log(Sales),
          log_price = log(price)) 
@@ -558,7 +560,7 @@ ind_other_group <- (temp_mat1 != temp_mat2)
 elas_mat_nl <- cross_elas_samegroup * ind_same_group + cross_elas_othergroup * ind_other_group
 diag(elas_mat_nl) <- own_elas
 
-elas_mat_nl_restricted <- elas_mat_nl[NameID %in% c(87, 122, 155, 178), NameID %in% c(87, 122, 155, 178)]
+elas_mat_nl_restricted <- elas_mat_nl[NameID %in% c(betard, sedan, suv, kei), NameID %in% c(betard, sedan, suv, kei)]
 Name <- c("ベータード", "セダン(A)", "SUV(B)", "軽自動車(C)")
 colnames(elas_mat_nl_restricted) <- Name
 rownames(elas_mat_nl_restricted) <- Name
@@ -1095,7 +1097,7 @@ NameID2016 <- data %>%
   select(NameID) %>% 
   pull()
 
-elas_mat_blp_restricted <- elasticity$elasmat_2016[NameID2016 %in% c(87, 122, 155, 178), NameID2016 %in% c(87, 122, 155, 178)]
+elas_mat_blp_restricted <- elasticity$elasmat_2016[NameID2016 %in% c(betard, sedan, suv, kei), NameID2016 %in% c(betard, sedan, suv, kei)]
 
 Name <- c("ベータード", "セダン(A)", "SUV(B)", "軽自動車(C)")
 colnames(elas_mat_blp_restricted) <- Name
@@ -1133,13 +1135,17 @@ elas_mat_blp_restricted %>%
 まず関数を定義する。
 
 ```{r}
+NIPPYOautoIDvec <- data_NIPPYO %>%
+  distinct(NameID) %>%
+  pull()
+
 f_revenue <- function(price_cand, data , datalist , datalist_temp, result2, parameter, option) {
   
   # ベータードの限界費用。今回はラーナーの公式から簡便的に定義する。より詳しい内容は第5章を参照。
   mc_betado <- 3.198 * (1 - 1 / abs(-2.16720791))
 
   tempprice <- data$price
-  tempprice[data$NameID == 87 & data$year == 2016] <- price_cand
+  tempprice[data$NameID == betard & data$year == 2016] <- price_cand
   
   datalist_temp <- datalist
   datalist_temp$X1[, "price"] <- tempprice
@@ -1155,17 +1161,17 @@ f_revenue <- function(price_cand, data , datalist , datalist_temp, result2, para
   revenue <- tempprice * quant
   
   # ベータードのみの収入
-  revenuevec <-　revenue[data$NameID == 87 & data$year == 2016]
+  revenuevec <-　revenue[data$NameID == betard & data$year == 2016]
 
   # 日評自動車全体の収入
   revenuevec2 <-　sum(revenue[data$NameID %in% NIPPYOautoIDvec & data$year == 2016] )
   
   
   # ベータードのみの利潤
-  pivec <- revenuevec-mc_betado * quant[data$NameID == 87 & data$year == 2016]
+  pivec <- revenuevec-mc_betado * quant[data$NameID == betard & data$year == 2016]
   
   # ベータードのみの利潤+日評自動車の他の車種の収入
-  pivec2 <- revenuevec2 - mc_betado * quant[data$NameID == 87 & data$year == 2016]
+  pivec2 <- revenuevec2 - mc_betado * quant[data$NameID == betard & data$year == 2016]
 
   if (option == "own"){
     return(revenuevec)
@@ -1183,7 +1189,7 @@ f_revenue <- function(price_cand, data , datalist , datalist_temp, result2, para
 定義した関数を用いて、まず図を作成する。
 
 ```{r}
-NameID_target <- 87
+NameID_target <- betard
 
 # 価格の範囲として、0.5(50万円)から5(500万円)を考える。なお、もとの価格は3.198 (319.8万円)
 pricevec <- seq(from = 1.73, to = 4, by = 0.01)
