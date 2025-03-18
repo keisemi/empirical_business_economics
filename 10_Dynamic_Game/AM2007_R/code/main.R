@@ -124,7 +124,7 @@ CCP2 <- matrix(0.5, 8, 1)
 # CCP1 <- matrix(c(.5, .55, .6, .65, .4, .6, .45, .55))
 # CCP2 <- matrix(c(.5, .6, .55, .65, .4, .45, .6, .55))
 
-# 以下の関数を用いて上で与えた初期値のベクトルを行列へと変換する。
+# 以下の関数を用いて上で与えた初期値のベクトルを行列へと変換する。o
 # 例えば、CCP1Matは
 # CCP1Mat = [ 0   0.5 0.5
 # 0   0.5 0.5
@@ -487,6 +487,20 @@ for (m in 1:NumSimMarkets) {
 }
 
 # 4. Aguirregabiria and Mira (2007)の方法によるパラメターの推定----
+
+# 紙面における点推定値を同じものを得るためには、
+# Matlabで生成したFakedataを利用する必要がある。
+# なおこの場合でも、Bootstraにより計算した標準誤差については乱数の影響で若干の差が出ることには留意されたい。
+
+# isUseMatlabData = 0のときは上で生成したFakedataを利用する。
+# isUseMatlabData = 1のときは、Matlabで生成したFakedata（FakeData_Matlab.csvファイル）を利用する。
+isUseMatlabData <- 1
+
+if (isUseMatlabData == 1){
+  # Matlab で作ったFake dataをロードする。
+  dt <- read.csv("FakeData_Matlab.csv", header = FALSE)
+  FakeData <- as.matrix(dt)
+}
 
 # Step 1: データから推定される遷移確率行列やCCPの導出
 # データから推定されるCCP
