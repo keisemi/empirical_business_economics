@@ -59,7 +59,7 @@ gc()
 # 留意点：紙面表２におけるForward simulationを用いたP-SDの推定値＆標準誤差、
 # 及びBBL(不等式ベース)の推定値の結果を再現するようになっている。
 # BBL(不等式ベース)の標準誤差の再現はできないので留意されたい。
-option_matlab <- FALSE
+option_matlab <- TRUE
 
 # Bootstrapにおける並列計算のオプション
 # option_parallel: FALSEの場合は並列計算なし。TRUEの場合は並列計算を行う。
