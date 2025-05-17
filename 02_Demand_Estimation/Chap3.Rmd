@@ -65,7 +65,7 @@ Rのインストール」](https://www.jaysong.net/RBook/installation.html)を�
 # ワークスペースを初期化
 rm(list = ls())
 
-# パッケージを読み込む。
+# パッケージを読み込む
 require(tidyverse)
 require(fixest)
 require(summarytools)
@@ -124,7 +124,7 @@ dataCPI <- dataCPI %>%
 まずは、自動車データを整理しつつ、家計データをマージする。
 
 ```{r}
-# 必要な変数のみをキープ。
+# 必要な変数のみをキープ
 data <- data %>%
   dplyr::select(
     Maker, Type, Name, Year, Sales, Model,
@@ -134,7 +134,7 @@ data <- data %>%
   ) %>%
   dplyr::rename(year = Year)
 
-# 家計サイズをマージする。
+# 家計サイズをマージする
 data <- data %>%
   dplyr::left_join(dataHH, by = "year")
 
@@ -158,14 +158,14 @@ data <- data %>%
   dplyr::mutate(price = price / 100) %>%
   dplyr::select(-cpi)
 
-# サイズ(高さ＊幅＊長さ)、燃費の重量に対する比率を定義する。
+# サイズ(高さ＊幅＊長さ)、燃費の重量に対する比率を定義する
 data <- data %>%
   dplyr::mutate(size = (overall_length / 1000) * (overall_width / 1000) * (overall_height / 1000)) %>%
   dplyr::mutate(hppw = HorsePower / weight) %>%
   dplyr::select(-HorsePower, -weight) %>% 
   dplyr::select(-starts_with("overall")) 
   
-# 自動車の車種IDを作成する。
+# 自動車の車種IDを作成する
 data <- data %>%
   dplyr::group_by(Name) %>%
   dplyr::mutate(NameID = dplyr::cur_group_id()) %>%
@@ -176,7 +176,7 @@ data <- data %>%
 続いて、市場シェアとアウトサイドオプションシェアを定義する。ここでは、マーケット(年)ごとに総販売台数(変数`inside_total`)を定義し、それを用いてアウトサイドオプションのシェアを計算している。
 
 ```{r}
-# マーケットシェアとOutside option shareを定義する。
+# マーケットシェアとOutside option shareを定義する
 data <- data %>%
   dplyr::group_by(year) %>%
   dplyr::mutate(inside_total = sum(Sales)) %>%
@@ -314,8 +314,7 @@ $$
 $$
 
 ```{r}
-ols_intro <-
-  fixest::feols(
+ols_intro <- fixest::feols(
     log_sales ~ log_price + hppw + FuelEfficiency + size, data = data_NIPPYO
   )
 
@@ -325,27 +324,35 @@ tbl_ols_intro <- fixest::etable(
   se = "hetero",
   signif.code = NA, 
   fitstat = c("r2", "n" ), 
-  dict = c(log_price = "log(価格)",
-           hppw = "馬力／重量",
-           FuelEfficiency = "燃費(キロメートル／ 1 リットル)",
-           size = "サイズ",
-           `(Intercept)` = "定数項"),
+  dict = c(
+    log_price = "log(価格)",
+    hppw = "馬力／重量",
+    FuelEfficiency = "燃費(キロメートル／ 1 リットル)",
+    size = "サイズ",
+    `(Intercept)` = "定数項"
+  ),
   digits = 2,
   digits.stats = 2,
   depvar = FALSE
 )
 
 tbl_ols_intro %>%
-  kable(align = c("l", "c", "c"),
-        booktabs = FALSE, format = "html") %>%
-  kable_styling(full_width = FALSE)
+  knitr::kable(
+    align = c("l", "c", "c"),
+    booktabs = FALSE,
+    format = "html"
+  ) %>%
+  kableExtra::kable_styling(full_width = FALSE)
 
 ## 表の保存
 tbl_ols_intro %>%
-  kable(align = c("l", "c", "c"),
-        booktabs = FALSE, format = "latex") %>%
-  kable_styling(full_width = FALSE) %>%
-  save_kable("output/chap3_ols_intro.tex")
+  knitr::kable(
+    align = c("l", "c", "c"),
+    booktabs = FALSE,
+    format = "latex"
+  ) %>%
+  kableExtra::kable_styling(full_width = FALSE) %>%
+  kableExtra::save_kable("output/chap3_ols_intro.tex")
 ```
 
 参考：価格と販売台数の散布図
@@ -354,7 +361,7 @@ tbl_ols_intro %>%
 # 日評自動車のデータのみ取り出す。
 data_graph <- data_NIPPYO %>% dplyr::select(price, Sales)
 
-g_1 <-data_graph %>% 
+g_1 <- data_graph %>% 
   ggplot2::ggplot(aes(price, Sales)) +
   ggplot2::scale_x_continuous(trans = "log10") +
   ggplot2::scale_y_continuous(trans = "log10") +
@@ -381,13 +388,14 @@ tbl_data_summary <- data %>%
 print(tbl_data_summary)
 
 tbl_data_summary %>%
-  kable(
+  knitr::kable(
     align = c("l", rep("c", 7)),
     digits = 2,
-    booktabs = FALSE, format = "latex"
+    booktabs = FALSE,
+    format = "latex"
   ) %>%
-  kable_styling(full_width = FALSE) %>%
-  save_kable("output/chap3_data_summary.tex")
+  kableExtra::kable_styling(full_width = FALSE) %>%
+  kableExtra::save_kable("output/chap3_data_summary.tex")
 ```
 
 # ロジットモデルの推定とその応用
@@ -431,31 +439,35 @@ tbl_logit_iv <- fixest::etable(
   se = "hetero",
   fitstat = c("r2", "n", "ivf" ), 
   signif.code = NA, 
-  dict = c(price = "自動車価格",
-           hppw = "馬力／重量",
-           FuelEfficiency = "燃費(キロメートル／ 1 リットル)",
-           size = "サイズ",
-           `(Intercept)` = "定数項"),
+  dict = c(
+    price = "自動車価格",
+    hppw = "馬力／重量",
+    FuelEfficiency = "燃費(キロメートル／ 1 リットル)",
+    size = "サイズ",
+    `(Intercept)` = "定数項"
+  ),
   digits = 2,
   digits.stats = 2,
   depvar = FALSE
 )
 
 tbl_logit_iv %>%
-  kable(
+  knitr::kable(
     align = c("l", "c", "c", "c"),
-    booktabs = FALSE, format = "html"
+    booktabs = FALSE,
+    format = "html"
   ) %>%
-  kable_styling(full_width = FALSE)
+  kableExtra::kable_styling(full_width = FALSE)
 
 ## 表の保存
 tbl_logit_iv %>%
-  kable(
+  knitr::kable(
     align = c("l", "c", "c", "c"),
-    booktabs = FALSE, format = "latex"
+    booktabs = FALSE,
+    format = "latex"
   ) %>%
-  kable_styling(full_width = FALSE) %>%
-  save_kable("output/chap3_logit_iv.tex")
+  kableExtra::kable_styling(full_width = FALSE) %>%
+  kableExtra::save_kable("output/chap3_logit_iv.tex")
 ```
 
 ## 1st stage
@@ -483,30 +495,34 @@ tbl_logit_iv_1st <- fixest::etable(
   se = "hetero",
   fitstat = c("r2", "n"), 
   signif.code = NA, 
-  dict = c(price = "自動車価格",
-           hppw = "馬力／重量",
-           FuelEfficiency = "燃費(キロメートル／ 1 リットル)",
-           size = "サイズ",
-           `(Intercept)` = "定数項"),
+  dict = c(
+    price = "自動車価格",
+    hppw = "馬力／重量",
+    FuelEfficiency = "燃費(キロメートル／ 1 リットル)",
+    size = "サイズ",
+    `(Intercept)` = "定数項"
+  ),
   digits = 2,
   digits.stats = 2,
   depvar = FALSE
 )
 
 tbl_logit_iv_1st %>%
-  kable(
+  knitr::kable(
     align = c("l", "c", "c"),
-    booktabs = FALSE, format = "html"
+    booktabs = FALSE,
+    format = "html"
   ) %>%
-  kable_styling(full_width = FALSE)
+  kableExtra::kable_styling(full_width = FALSE)
 
 tbl_logit_iv_1st %>%
-  kable(
+  knitr::kable(
     align = c("l", "c", "c"),
-    booktabs = FALSE, format = "latex"
+    booktabs = FALSE,
+    format = "latex"
   ) %>%
-  kable_styling(full_width = FALSE) %>%
-  save_kable("output/chap3_logit_iv_1st.tex")
+  kableExtra::kable_styling(full_width = FALSE) %>%
+  kableExtra::save_kable("output/chap3_logit_iv_1st.tex")
 ```
 
 ## 自己価格弾力性の計算
@@ -531,13 +547,14 @@ tbl_own_elas <- data_elas %>%
 print(tbl_own_elas)
 
 tbl_own_elas %>%
-  kable(
+  knitr::kable(
     align = c("l", rep("c", 5)),
     digits = 2,
-    booktabs = FALSE, format = "latex"
+    booktabs = FALSE,
+    format = "latex"
   ) %>%
-  kable_styling(full_width = FALSE) %>%
-  save_kable("output/chap3_own_elas.tex")
+  kableExtra::kable_styling(full_width = FALSE) %>%
+  kableExtra::save_kable("output/chap3_own_elas.tex")
 ```
 
 # 推定結果の応用
@@ -563,12 +580,16 @@ dt_application <- data %>%
 
 ```{r}
 NameID_target <- data %>%
-  filter(Nippyo == 1, Maker == "Toyota", Name == "アルファード") %>%
-  distinct(NameID) %>%
-  pull()
+  dplyr::filter(
+    Nippyo == 1,
+    Maker == "Toyota",
+    Name == "アルファード"
+  ) %>%
+  dplyr::distinct(NameID) %>%
+  dplyr::pull()
 
 dt_application %>% 
-  filter(NameID == NameID_target & year == 2016) %>% 
+  dplyr::filter(NameID == NameID_target & year == 2016) %>% 
   head()
 ```
 
@@ -617,10 +638,16 @@ data.frame(x = quantvec, y = pricevec) %>%
   ggplot2::theme_bw(base_family = "HiraKakuPro-W3") +
   ggplot2::theme(
     axis.title.y = element_text(angle = 0, vjust = 0.5),
-    panel.grid.major.y = element_line(color = "grey",
-                                      linewidth = 0.3, linetype = "dotted"),
-    panel.grid.minor.y = element_line(color = "grey",
-                                      linewidth = 0.3, linetype = "dotted"),
+    panel.grid.major.y = element_line(
+      color = "grey",
+      linewidth = 0.3,
+      linetype = "dotted"
+    ),
+    panel.grid.minor.y = element_line(
+      color = "grey",
+      linewidth = 0.3,
+      linetype = "dotted"
+    ),
     panel.grid.minor = element_blank(),
     panel.grid.major.x = element_blank(),
     panel.border = element_blank(),
@@ -646,10 +673,16 @@ data.frame(x = pricevec, y = revenuevec) %>%
   ggplot2::theme_bw(base_family = "HiraKakuPro-W3") +
   ggplot2::theme(
     axis.title.y = element_text(angle = 0, vjust = 0.5),
-    panel.grid.major.y = element_line(color = "grey",
-                                      linewidth = 0.3, linetype = "dotted"),
-    panel.grid.minor.y = element_line(color = "grey",
-                                      linewidth = 0.3, linetype = "dotted"),
+    panel.grid.major.y = element_line(
+      color = "grey",
+      linewidth = 0.3,
+      linetype = "dotted"
+    ),
+    panel.grid.minor.y = element_line(
+      color = "grey",
+      linewidth = 0.3,
+      linetype = "dotted"
+    ),
     panel.grid.minor = element_blank(),
     panel.grid.major.x = element_blank(),
     panel.border = element_blank(),
@@ -671,7 +704,7 @@ ggsave(file = "output/chap3_revenue.pdf", width = 9, height = 6, device = cairo_
 
 ```{r}
 # 最適化で利用する関数を定義する。
-f_revenue <- function(price_cand, year, modelID_target, dt , est_param) {
+f_revenue <- function(price_cand, year, modelID_target, dt, est_param) {
   
   quantity <- f_share(price_cand, year, modelID_target, dt, est_param)
   revenue <- price_cand * quantity
