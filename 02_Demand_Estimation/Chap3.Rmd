@@ -97,25 +97,26 @@ data <- readr::read_csv(file = "data/CleanData_20180222_nippyo.csv")
 <https://www.airia.or.jp/publish/file/r5c6pv0000006s9v-att/r5c6pv0000006saa.pdf>
 
 ```{r}
-dataHH <-
-  readr::read_csv(file = "data/HHsize.csv")
+dataHH <- readr::read_csv(file = "data/HHsize.csv")
 ```
 
 価格を実質化するべく、消費者物価指数を読み込む。
 ソースは以下：<https://www.e-stat.go.jp/stat-search/file-download?statInfId=000031431770&fileKind=1>
 
 ```{r}
-dataCPI <-
-  readr::read_csv(file = "data/zni2015s.csv", locale = locale(encoding = "shift-jis"))
+dataCPI <- readr::read_csv(file = "data/zni2015s.csv", locale = locale(encoding = "shift-jis"))
 
 dataCPI <- dataCPI[6:56, ]
-dataCPI <- 
-  dataCPI %>% 
-  rename(year = '類・品目',
-         cpi = '総合') %>% 
-  select(year, cpi) %>% 
-  mutate(year = as.numeric(year), 
-         cpi = as.numeric(cpi))
+dataCPI <- dataCPI %>% 
+  dplyr::rename(
+    year = '類・品目',
+    cpi = '総合'
+  ) %>% 
+  dplyr::select(year, cpi) %>% 
+  dplyr::mutate(
+    year = as.numeric(year), 
+    cpi = as.numeric(cpi)
+  )
 ```
 
 ## データクリーニング
@@ -124,8 +125,7 @@ dataCPI <-
 
 ```{r}
 # 必要な変数のみをキープ。
-data <-
-  data %>%
+data <- data %>%
   dplyr::select(
     Maker, Type, Name, Year, Sales, Model,
     Nippyo, price, kata,
@@ -134,74 +134,39 @@ data <-
   ) %>%
   dplyr::rename(year = Year)
 
-# ダミー変数の作成
-# 外国車ダミー
-data <- data %>%
-  mutate(Foreign_d = if_else(Type == "Foreign", 1, 0))
-
-# FuelType=レギュラーのダミー
-data <- data %>%
-  mutate(FuelRegular_d = if_else(FuelType == "レギュラー", 1, 0))
-
-# 年ダミー
-data <- data %>%
-  mutate(year = as.factor(year)) %>%
-  to_dummy(year, suffix = "label") %>%
-  bind_cols(data) %>%
-  mutate(year = as.numeric(year))
-
-# year 2006を基準に
-data <- data %>%
-  select(-year_2006)
-
-# ダミー変数を最後の列に移動
-data <- data %>%
-  relocate(starts_with("Type_"), starts_with("year_"), starts_with("Maker_"), .after = last_col())
-
-# capacity ダミー(4以下と5以上で分ける)
-data <- data %>%
-  mutate(capacity_d = if_else(capacity > 4, 1, 0))
-
 # 家計サイズをマージする。
-data <-
-  data %>%
+data <- data %>%
   dplyr::left_join(dataHH, by = "year")
 
 # CPIをマージする
-data <- 
-  data %>% 
+data <- data %>% 
   dplyr::left_join(dataCPI, by = "year") 
 
 # 燃費が欠損しているデータがある。今回は簡便な処理として観測から落とす。
-data <-
-  data %>%
+data <- data %>%
   dplyr::filter(is.na(FuelEfficiency) == 0)
 
 # 価格の実質化を行う。ここでは、2016年を基準年とする。
 # また、価格の単位を100万円にする。元のデータは1万円
-cpi2016 <- 
-  dataCPI %>% 
-  filter(year == 2016) %>% 
-  select(cpi) %>% 
+cpi2016 <- dataCPI %>% 
+  dplyr::filter(year == 2016) %>% 
+  dplyr::select(cpi) %>% 
   as.double()
 
-data <- 
-  data %>% 
-  mutate(price = price / (cpi / cpi2016)) %>% 
-  mutate(price = price / 100) %>%
-  select(-cpi) 
+data <- data %>% 
+  dplyr::mutate(price = price / (cpi / cpi2016)) %>% 
+  dplyr::mutate(price = price / 100) %>%
+  dplyr::select(-cpi)
 
 # サイズ(高さ＊幅＊長さ)、燃費の重量に対する比率を定義する。
-data <-
-  data %>%
+data <- data %>%
   dplyr::mutate(size = (overall_length / 1000) * (overall_width / 1000) * (overall_height / 1000)) %>%
   dplyr::mutate(hppw = HorsePower / weight) %>%
   dplyr::select(-HorsePower, -weight) %>% 
   dplyr::select(-starts_with("overall")) 
   
 # 自動車の車種IDを作成する。
-data <-
-  data %>%
+data <- data %>%
   dplyr::group_by(Name) %>%
   dplyr::mutate(NameID = dplyr::cur_group_id()) %>%
   dplyr::ungroup() %>%
@@ -212,8 +177,7 @@ data <-
 
 ```{r}
 # マーケットシェアとOutside option shareを定義する。
-data <-
-  data %>%
+data <- data %>%
   dplyr::group_by(year) %>%
   dplyr::mutate(inside_total = sum(Sales)) %>%
   dplyr::ungroup() %>%
@@ -266,32 +230,31 @@ $$
 ```{r}
 # まず、マーケット・企業レベルにおける、各製品属性の和と自乗和を計算する。
 # ここでacross関数は、最初に文字列ベクトルで指定した変数について、後ろにリスト内で定義した操作を適用している。
-data <-
-  data %>%
+data <- data %>%
   dplyr::group_by(year, Maker) %>%
   dplyr::mutate(
     dplyr::across(c("hppw", "FuelEfficiency", "size"),
                   list(sum_own = ~ sum(.x, na.rm = TRUE))),
     dplyr::across(c("hppw", "FuelEfficiency", "size"),
                   list(sqr_sum_own = ~ sum(.x^2, na.rm = TRUE))),
-    group_n = n()) %>%
+    group_n = n()
+  ) %>%
   dplyr::ungroup()
 
 # 次に、マーケットレベルでの、各製品属性の和を計算する。
-data <- 
-  data %>% 
+data <- data %>% 
   dplyr::group_by(year) %>%
   dplyr::mutate(
     dplyr::across(c("hppw", "FuelEfficiency", "size"),
                   list(sum_mkt = ~ sum(.x, na.rm = TRUE))),
     dplyr::across(c("hppw", "FuelEfficiency", "size"),
                   list(sqr_sum_mkt = ~ sum(.x^2, na.rm = TRUE))),
-    mkt_n = n()) %>%
+    mkt_n = n()
+  ) %>%
   dplyr::ungroup() 
 
 # 以上で定義した変数を利用して、まずBLP操作変数を構築する。
-data <- 
-  data %>% 
+data <- data %>% 
   dplyr::mutate(
     iv_BLP_own_hppw = hppw_sum_own - hppw,
     iv_BLP_own_FuelEfficiency = FuelEfficiency_sum_own - FuelEfficiency,
@@ -302,9 +265,8 @@ data <-
   ) 
 
 # 続いて、Differentiation IVを構築する。
-data <- 
-  data %>% 
-  mutate(
+data <- data %>% 
+  dplyr::mutate(
     iv_GH_own_hppw = (group_n - 1) * hppw^2 + (hppw_sqr_sum_own - hppw^2) - 2 * hppw * (hppw_sum_own - hppw),
     iv_GH_own_FuelEfficiency = (group_n - 1) * FuelEfficiency^2 + (FuelEfficiency_sqr_sum_own - FuelEfficiency^2) - 2 * FuelEfficiency * (FuelEfficiency_sum_own - FuelEfficiency),
     iv_GH_own_size = (group_n - 1) * size^2 + (size_sqr_sum_own - size^2) - 2 * size * (size_sum_own - size),
@@ -333,27 +295,28 @@ data <-
 まず、日評自動車のデータセットを用意する。
 
 ```{r}
-# 日評自動車のデータセットを作成する。
-data_NIPPYO <-
-  data %>% 
-  filter(Nippyo == 1) %>%
-  select(Sales, price, hppw, FuelEfficiency, size,
-         capacity_d, FuelRegular_d, Foreign_d) %>% 
-  mutate(log_sales = log(Sales),
-         log_price = log(price)) 
+# 日評自動車のデータセットを用意する。
+data_NIPPYO <- data %>% 
+  dplyr::filter(Nippyo == 1) %>%
+  dplyr::select(
+    Sales, price, hppw, FuelEfficiency, size
+  ) %>% 
+  dplyr::mutate(
+    log_sales = log(Sales),
+    log_price = log(price)
+  ) 
 ```
 
 その上で、イントロダクションにおける以下の回帰式をOLSで推定しよう。
 
 $$
-\log q_j\  =\alpha_0+\alpha_1\ \log\ p_j\ +\alpha_2 size_j+\alpha_3 fuelefficiency_j+\alpha_4 hppw_j+\alpha_5{capacity\_d_{j}}+\alpha_6{FuelRegular\_d_{j}}+\alpha_7{Foreign\_d_{j}}
+\log q_j\  =\alpha_0+\alpha_1\ \log\ p_j\ +\alpha_2 size_j+\alpha_3 fuelefficiency_j+\alpha_4 hppw_j
 $$
 
 ```{r}
 ols_intro <-
   fixest::feols(
-    log_sales ~ log_price + hppw + FuelEfficiency + size + capacity_d + FuelRegular_d + Foreign_d,
-    data = data_NIPPYO
+    log_sales ~ log_price + hppw + FuelEfficiency + size, data = data_NIPPYO
   )
 
 # 結果のアウトプット
@@ -366,9 +329,6 @@ tbl_ols_intro <- fixest::etable(
            hppw = "馬力／重量",
            FuelEfficiency = "燃費(キロメートル／ 1 リットル)",
            size = "サイズ",
-           capacity_d = "キャパシティダミー(5以上)",
-           FuelRegular_d = "レギュラータイプダミー",
-           Foreign_d = "外国車ダミー",
            `(Intercept)` = "定数項"),
   digits = 2,
   digits.stats = 2,
@@ -391,18 +351,17 @@ tbl_ols_intro %>%
 参考：価格と販売台数の散布図
 
 ```{r}
-#日評自動車のデータのみ取り出す。
-data_graph <-
-  data_NIPPYO %>% dplyr::select(price, Sales)
+# 日評自動車のデータのみ取り出す。
+data_graph <- data_NIPPYO %>% dplyr::select(price, Sales)
 
-g1 <-
-  ggplot2::ggplot(data_graph, aes(price, Sales)) +
-  scale_x_continuous(trans = "log10") +
-  scale_y_continuous(trans = "log10") +
-  geom_point() +
-  geom_smooth(method = "lm", formula = y ~ x)
+g_1 <-data_graph %>% 
+  ggplot2::ggplot(aes(price, Sales)) +
+  ggplot2::scale_x_continuous(trans = "log10") +
+  ggplot2::scale_y_continuous(trans = "log10") +
+  ggplot2::geom_point() +
+  ggplot2::geom_smooth(method = "lm", formula = y ~ x)
 
-plot(g1)
+plot(g_1)
 ```
 
 ## 記述統計
@@ -411,16 +370,22 @@ plot(g1)
 
 ```{r}
 tbl_data_summary <- data %>% 
-  dplyr::select(Sales, price, FuelEfficiency, size, hppw,
-                capacity_d, FuelRegular_d, Foreign_d) %>% 
-  summarytools::descr(transpose = TRUE,
-                      stats = c("mean", "sd", "min", "q1", "med", "q3", "max"),
-                      order = "preserve")
+  dplyr::select(
+    Sales, price, FuelEfficiency, size, hppw
+  ) %>% 
+  summarytools::descr(
+    transpose = TRUE,
+    stats = c("mean", "sd", "min", "q1", "med", "q3", "max"),
+    order = "preserve"
+  )
 print(tbl_data_summary)
+
 tbl_data_summary %>%
-  kable(align = c("l", rep("c", 7)),
-        digits = 2,
-        booktabs = FALSE, format = "latex") %>%
+  kable(
+    align = c("l", rep("c", 7)),
+    digits = 2,
+    booktabs = FALSE, format = "latex"
+  ) %>%
   kable_styling(full_width = FALSE) %>%
   save_kable("output/chap3_data_summary.tex")
 ```
@@ -438,32 +403,27 @@ IVによる結果の3通りについて比較する。
 
 ```{r}
 # まず被説明変数を定義する。
-data <-
-  data %>%
+data <- data %>%
   dplyr::mutate(logit_share = log(share) - log(share0))
 
 # OLSの結果
-ols <-
-  fixest::feols(logit_share ~ price + hppw + FuelEfficiency + size + 
-                  capacity_d + FuelRegular_d + Foreign_d | year, data = data)
+ols <- fixest::feols(logit_share ~ price + hppw + FuelEfficiency + size, data = data)
 
 # BLP操作変数を用いた結果
-iv_BLP <-
-  fixest::feols(
-    logit_share ~ hppw + FuelEfficiency + size + 
-      capacity_d + FuelRegular_d + Foreign_d | year |
-      price ~ iv_BLP_own_hppw + iv_BLP_own_FuelEfficiency + iv_BLP_own_size +
-      iv_BLP_other_hppw + iv_BLP_other_FuelEfficiency + iv_BLP_other_size,
-    data = data)
+iv_BLP <- fixest::feols(
+  logit_share ~ hppw + FuelEfficiency + size | 0 |
+    price ~ iv_BLP_own_hppw + iv_BLP_own_FuelEfficiency + iv_BLP_own_size +
+    iv_BLP_other_hppw + iv_BLP_other_FuelEfficiency + iv_BLP_other_size,
+  data = data
+)
 
 # Differentiation IVを用いた結果
-iv_GH <-
-  fixest::feols(
-    logit_share ~ hppw + FuelEfficiency + size + 
-      capacity_d + FuelRegular_d + Foreign_d | year |
-      price ~ iv_GH_own_hppw + iv_GH_own_FuelEfficiency + iv_GH_own_size +
-      iv_GH_other_hppw + iv_GH_other_FuelEfficiency + iv_GH_other_size,
-    data = data)
+iv_GH <- fixest::feols(
+  logit_share ~ hppw + FuelEfficiency + size | 0 |
+    price ~ iv_GH_own_hppw + iv_GH_own_FuelEfficiency + iv_GH_own_size +
+    iv_GH_other_hppw + iv_GH_other_FuelEfficiency + iv_GH_other_size,
+  data = data
+)
 
 # 推定結果をレポートする。
 tbl_logit_iv <- fixest::etable(
@@ -475,9 +435,6 @@ tbl_logit_iv <- fixest::etable(
            hppw = "馬力／重量",
            FuelEfficiency = "燃費(キロメートル／ 1 リットル)",
            size = "サイズ",
-           capacity_d = "キャパシティダミー(5以上)",
-           FuelRegular_d = "レギュラータイプダミー",
-           Foreign_d = "外国車ダミー",
            `(Intercept)` = "定数項"),
   digits = 2,
   digits.stats = 2,
@@ -485,14 +442,18 @@ tbl_logit_iv <- fixest::etable(
 )
 
 tbl_logit_iv %>%
-  kable(align = c("l", "c", "c", "c"),
-        booktabs = FALSE, format = "html") %>%
+  kable(
+    align = c("l", "c", "c", "c"),
+    booktabs = FALSE, format = "html"
+  ) %>%
   kable_styling(full_width = FALSE)
 
 ## 表の保存
 tbl_logit_iv %>%
-  kable(align = c("l", "c", "c", "c"),
-        booktabs = FALSE, format = "latex") %>%
+  kable(
+    align = c("l", "c", "c", "c"),
+    booktabs = FALSE, format = "latex"
+  ) %>%
   kable_styling(full_width = FALSE) %>%
   save_kable("output/chap3_logit_iv.tex")
 ```
@@ -501,22 +462,20 @@ tbl_logit_iv %>%
 
 ```{r}
 # BLP操作変数を用いた結果
-iv1st_BLP <-
-  fixest::feols(
-    price ~ hppw + FuelEfficiency + size + capacity_d + FuelRegular_d + Foreign_d +
-      iv_BLP_own_hppw + iv_BLP_own_FuelEfficiency + iv_BLP_own_size +
-      iv_BLP_other_hppw + iv_BLP_other_FuelEfficiency + iv_BLP_other_size | year,
-    data = data
-  )
+iv1st_BLP <- fixest::feols(
+  price ~ hppw + FuelEfficiency + size +
+    iv_BLP_own_hppw + iv_BLP_own_FuelEfficiency + iv_BLP_own_size +
+    iv_BLP_other_hppw + iv_BLP_other_FuelEfficiency + iv_BLP_other_size,
+  data = data
+)
 
 # Differentiation IVを用いた結果
-iv1st_GH <-
-  fixest::feols(
-    price ~ hppw + FuelEfficiency + size + capacity_d + FuelRegular_d + Foreign_d +
-      iv_GH_own_hppw + iv_GH_own_FuelEfficiency + iv_GH_own_size +
-      iv_GH_other_hppw + iv_GH_other_FuelEfficiency + iv_GH_other_size | year,
-    data = data
-  )
+iv1st_GH <- fixest::feols(
+  price ~ hppw + FuelEfficiency + size +
+    iv_GH_own_hppw + iv_GH_own_FuelEfficiency + iv_GH_own_size +
+    iv_GH_other_hppw + iv_GH_other_FuelEfficiency + iv_GH_other_size,
+  data = data
+)
 
 # 推定結果をレポートする。
 tbl_logit_iv_1st <- fixest::etable(
@@ -528,9 +487,6 @@ tbl_logit_iv_1st <- fixest::etable(
            hppw = "馬力／重量",
            FuelEfficiency = "燃費(キロメートル／ 1 リットル)",
            size = "サイズ",
-           capacity_d = "キャパシティダミー(5以上)",
-           FuelRegular_d = "レギュラータイプダミー",
-           Foreign_d = "外国車ダミー",
            `(Intercept)` = "定数項"),
   digits = 2,
   digits.stats = 2,
@@ -538,13 +494,17 @@ tbl_logit_iv_1st <- fixest::etable(
 )
 
 tbl_logit_iv_1st %>%
-  kable(align = c("l", "c", "c"),
-        booktabs = FALSE, format = "html") %>%
+  kable(
+    align = c("l", "c", "c"),
+    booktabs = FALSE, format = "html"
+  ) %>%
   kable_styling(full_width = FALSE)
 
 tbl_logit_iv_1st %>%
-  kable(align = c("l", "c", "c"),
-        booktabs = FALSE, format = "latex") %>%
+  kable(
+    align = c("l", "c", "c"),
+    booktabs = FALSE, format = "latex"
+  ) %>%
   kable_styling(full_width = FALSE) %>%
   save_kable("output/chap3_logit_iv_1st.tex")
 ```
@@ -554,22 +514,28 @@ tbl_logit_iv_1st %>%
 各推定結果について、自己価格弾力性を計算しよう。
 
 ```{r}
-data %>% 
-  dplyr::mutate(own_elas_ols = ols$coefficients["price"] * price * (1 - share), 
-                own_elas_ivblp = iv_BLP$coefficients["fit_price"] * price * (1 - share), 
-                own_elas_ivgh  = iv_GH$coefficients["fit_price"] * price * (1 - share)) -> data_elas
+data_elas <- data %>% 
+  dplyr::mutate(
+    own_elas_ols = ols$coefficients["price"] * price * (1 - share), 
+    own_elas_ivblp = iv_BLP$coefficients["fit_price"] * price * (1 - share), 
+    own_elas_ivgh  = iv_GH$coefficients["fit_price"] * price * (1 - share)
+  )
 
 tbl_own_elas <- data_elas %>% 
   dplyr::select(starts_with("own_elas")) %>% 
-  summarytools::descr(transpose = TRUE, 
-                      stats = c("mean", "sd", "med", "min", "max"),
-                      order = "preserve")
+  summarytools::descr(
+    transpose = TRUE, 
+    stats = c("mean", "sd", "med", "min", "max"),
+    order = "preserve"
+  )
 print(tbl_own_elas)
 
 tbl_own_elas %>%
-  kable(align = c("l", rep("c", 5)),
-        digits = 2,
-        booktabs = FALSE, format = "latex") %>%
+  kable(
+    align = c("l", rep("c", 5)),
+    digits = 2,
+    booktabs = FALSE, format = "latex"
+  ) %>%
   kable_styling(full_width = FALSE) %>%
   save_kable("output/chap3_own_elas.tex")
 ```
@@ -587,10 +553,9 @@ tbl_own_elas %>%
 5.  その製品の価格を変えたときに、どの製品のSalesがどう変わるかをPredictする。その際、他の製品価格はデータのものに固定しておく。
 
 ```{r}
-data %>% 
-  select(NameID, year, Sales, price, FuelEfficiency, size, hppw, HH, share, 
-         capacity_d, FuelRegular_d, Foreign_d) %>% 
-  mutate(xi_fit = resid(iv_GH)) -> dt_application
+dt_application <- data %>% 
+  dplyr::select(NameID, year, Sales, price, FuelEfficiency, size, hppw, HH, share) %>% 
+  dplyr::mutate(xi_fit = resid(iv_GH))
 ```
 
 まず、日評自動車が販売する中での特定の車種に着目しよう。ここではNameID
@@ -602,8 +567,6 @@ NameID_target <- data %>%
   distinct(NameID) %>%
   pull()
 
-NameID_target
-
 dt_application %>% 
   filter(NameID == NameID_target & year == 2016) %>% 
   head()
@@ -612,37 +575,35 @@ dt_application %>%
 価格をインプットとして、販売台数を返す関数を考える。
 
 ```{r}
-f_share <- function(price_cand, year, modelID_target, dt, est) {
+f_share <- function(price_cand, year, modelID_target, dt, est_param) {
   
-  estparam <- est$coefficients
-  
-  fe <- fixef(est)$year[paste0(year)]
-  
-  dt %>% 
-    filter(year == 2016) %>% 
-    mutate(fe = fe) %>%
-    mutate(temp_price = ifelse(NameID == modelID_target, price_cand, price)) %>% 
-    mutate(delta = estparam[1] * temp_price + estparam[2] * hppw + 
-             estparam[3] * FuelEfficiency + estparam[4] * size + 
-             estparam[5] * capacity_d + estparam[6] * FuelRegular_d +
-             estparam[7] * Foreign_d + xi_fit + fe) %>%
-    mutate(denom = 1 + sum(exp(delta))) %>%
-    mutate(pred_sales = exp(delta) / denom * HH) %>%
-    filter(NameID == modelID_target) -> dt_result
+  dt_result <- dt %>% 
+    dplyr::filter(year == 2016) %>% 
+    dplyr::mutate(temp_price = ifelse(NameID == modelID_target, price_cand, price)) %>% 
+    dplyr::mutate(
+      delta = estparam[1] + estparam[2] * temp_price + estparam[3] * hppw + 
+             estparam[4] * FuelEfficiency + estparam[5] * size + xi_fit
+      ) %>% 
+    dplyr::mutate(denom = 1 + sum(exp(delta))) %>%
+    dplyr::mutate(pred_sales = (exp(delta) / denom) * HH) %>%
+    dplyr::filter(NameID == modelID_target)
   
   return(dt_result$pred_sales)
 }
 ```
 
 ```{r}
-# 価格の範囲として、0.5(50万円)から5(500万円)を考える。なお、もとの価格は3.198 (319.8万円)
+estparam <- iv_GH$coefficients
+# 価格の範囲として、0.3(30万円)から5(500万円)を考える。なお、もとの価格は3.198 (319.8万円)
 pricevec <- seq(from = 0.3, to = 5,　by = 0.05)
 quantvec <- numeric(length(pricevec))
 revenuevec <- numeric(length(pricevec))
 
 for (i in 1:length(pricevec)) {
-  quantvec[i] <- f_share(price_cand = pricevec[i], year = 2016,
-                         modelID_target = NameID_target, dt = dt_application, est = iv_GH)
+  quantvec[i] <- f_share(
+    price_cand = pricevec[i], year = 2016,
+    modelID_target = NameID_target, dt = dt_application, est_param = estparam
+  )
   revenuevec[i] <- pricevec[i] * quantvec[i]
 }
 ```
@@ -651,9 +612,9 @@ for (i in 1:length(pricevec)) {
 
 ```{r}
 data.frame(x = quantvec, y = pricevec) %>%
-  ggplot(aes(x = x / 10000, y = y * 100)) +
-  geom_line() +
-  theme_bw(base_family = "HiraKakuPro-W3") +
+  ggplot2::ggplot(aes(x = x / 10000, y = y * 100)) +
+  ggplot2::geom_line() +
+  ggplot2::theme_bw(base_family = "HiraKakuPro-W3") +
   ggplot2::theme(
     axis.title.y = element_text(angle = 0, vjust = 0.5),
     panel.grid.major.y = element_line(color = "grey",
@@ -664,10 +625,12 @@ data.frame(x = quantvec, y = pricevec) %>%
     panel.grid.major.x = element_blank(),
     panel.border = element_blank(),
     axis.line = element_line(colour = "black", linewidth = 0.2)) +
-  scale_x_continuous(breaks = seq(0, 20, 2)) + 
-  scale_y_continuous(breaks = seq(0, 500, 100)) + 
-  ggplot2::labs(y = "価格(万円)",
-                x = "販売台数(万台)") 
+  ggplot2::scale_x_continuous(breaks = seq(0, 20, 2)) + 
+  ggplot2::scale_y_continuous(breaks = seq(0, 500, 100)) + 
+  ggplot2::labs(
+    y = "価格(万円)",
+    x = "販売台数(万台)"
+  ) 
 
 ggsave(file = "output/chap3_demand.png", width = 9, height = 6)
 ggsave(file = "output/chap3_demand.pdf", width = 9, height = 6, device = cairo_pdf)
@@ -678,9 +641,9 @@ ggsave(file = "output/chap3_demand.pdf", width = 9, height = 6, device = cairo_p
 ```{r}
 # pricevecの価格の単位を1万円にする。
 data.frame(x = pricevec, y = revenuevec) %>%
-  ggplot(aes(x = x * 100, y = y * 100 / 10000)) +
-  geom_line() +
-  theme_bw(base_family = "HiraKakuPro-W3") +
+  ggplot2::ggplot(aes(x = x * 100, y = y * 100 / 10000)) +
+  ggplot2::geom_line() +
+  ggplot2::theme_bw(base_family = "HiraKakuPro-W3") +
   ggplot2::theme(
     axis.title.y = element_text(angle = 0, vjust = 0.5),
     panel.grid.major.y = element_line(color = "grey",
@@ -691,10 +654,12 @@ data.frame(x = pricevec, y = revenuevec) %>%
     panel.grid.major.x = element_blank(),
     panel.border = element_blank(),
     axis.line = element_line(colour = "black", linewidth = 0.2)) +
-  scale_x_continuous(breaks = seq(0, 500, 100)) + 
-  scale_y_continuous(breaks = seq(500, 1500, 250)) + 
-  ggplot2::labs(y = "収入(億円)",,
-                x = "価格(万円)") 
+  ggplot2::scale_x_continuous(breaks = seq(0, 500, 100)) + 
+  ggplot2::scale_y_continuous(breaks = seq(500, 1500, 250)) + 
+  ggplot2::labs(
+    y = "収入(億円)",,
+    x = "価格(万円)"
+  ) 
 
 ggsave(file = "output/chap3_revenue.png", width = 9, height = 6)
 ggsave(file = "output/chap3_revenue.pdf", width = 9, height = 6, device = cairo_pdf)
@@ -706,16 +671,18 @@ ggsave(file = "output/chap3_revenue.pdf", width = 9, height = 6, device = cairo_
 
 ```{r}
 # 最適化で利用する関数を定義する。
-f_revenue <- function(price_cand, year, modelID_target, dt , est) {
+f_revenue <- function(price_cand, year, modelID_target, dt , est_param) {
   
-  quantity <- f_share(price_cand, year, modelID_target, dt, est)
+  quantity <- f_share(price_cand, year, modelID_target, dt, est_param)
   revenue <- price_cand * quantity
   return(revenue)
 }
 
 # 最適化アルゴリズムを使って、収入を最大にする価格を求める。
-result <- optimise(f_revenue, interval = c(0.3, 3), maximum = TRUE, 
-                   year = 2016, modelID_target = NameID_target,
-                   dt = dt_application, est = iv_GH)
+result <- optimise(
+  f_revenue, interval = c(0.3, 3), maximum = TRUE, 
+  year = 2016, modelID_target = NameID_target,
+  dt = dt_application, est_param = estparam
+)
 print(result)
 ```
