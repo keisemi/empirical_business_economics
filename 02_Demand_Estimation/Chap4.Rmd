@@ -60,112 +60,78 @@ require(kableExtra)
 一気に前回の作業を読み込む。
 
 ```{r}
-# まず自動車データを読み込みます。
+# まず自動車データを読み込む
 data <- readr::read_csv(file = "data/CleanData_20180222_nippyo.csv")
 
 # 続いて、家計数データ（潜在的な市場規模）を読み込む。ソースは以下。 <https://www.airia.or.jp/publish/file/r5c6pv0000006s9v-att/r5c6pv0000006saa.pdf>
 dataHH <- readr::read_csv(file = "data/HHsize.csv")
 
-# 価格を実質化するべく、消費者物価指数を読み込む。
+# 価格を実質化するべく、消費者物価指数を読み込む
 # ソースは以下：<https://www.e-stat.go.jp/stat-search/file-download?statInfId=000031431770&fileKind=1>
 
 dataCPI <- readr::read_csv(file = "data/zni2015s.csv", locale = locale(encoding = "shift-jis"))
 
 dataCPI <- dataCPI[6:56, ]
-dataCPI <- 
-  dataCPI %>% 
+dataCPI <- dataCPI %>% 
   dplyr::rename(year = '類・品目',
                 cpi = '総合') %>% 
   dplyr::select(year, cpi) %>% 
-  dplyr::mutate(year = as.numeric(year), 
-                cpi = as.numeric(cpi))
+  dplyr::mutate(
+    year = as.numeric(year), 
+    cpi = as.numeric(cpi)
+  )
 
 ## データクリーニング
-#まずは、自動車データを整理しつつ、家計データをマージする。
-
-# 必要な変数のみをキープ。
-data <-
-  data %>%
+# まずは、自動車データを整理しつつ、家計データをマージする
+# 必要な変数のみをキープ
+data <- data %>%
   dplyr::select(
-    Maker, Type, Name, Year, Sales, Model,
-    Nippyo, price, kata,
+    Maker, Type, Name, Year, Sales, Model, Nippyo, price, kata,
     weight, capacity, FuelType, FuelEfficiency, HorsePower,
     overall_length, overall_width, overall_height
     ) %>%
   dplyr::rename(year = Year)
 
 # 家計サイズをマージする。
-data <-
-  data %>%
+data <- data %>%
   dplyr::left_join(dataHH, by = "year")
 
 # CPIをマージする
-data <- 
-  data %>% 
+data <- data %>% 
   dplyr::left_join(dataCPI, by = "year") 
 
 # 燃費が欠損しているデータがある。今回は簡便な処理として観測から落とす。
-data <-
-  data %>%
+data <- data %>%
   dplyr::filter(is.na(FuelEfficiency) == 0)
 
-# 価格の実質化を行う。ここでは、2016年を基準年とする。
+# 価格の実質化を行う。ここでは、2016年を基準年とする
 # また、価格の単位を100万円にする。元のデータは1万円
-cpi2016 <- 
-  dataCPI %>% 
+cpi2016 <- dataCPI %>% 
   dplyr::filter(year == 2016) %>% 
   dplyr::select(cpi) %>% 
   as.double()
 
-data <- 
-  data %>% 
+data <- data %>% 
   dplyr::mutate(price = price / (cpi / cpi2016)) %>% 
   dplyr::mutate(price = price / 100) %>%
   dplyr::select(-cpi) 
 
-# サイズ(高さ＊幅＊長さ)、燃費の重量に対する比率を定義する。
-data <-
-  data %>%
+# サイズ(高さ＊幅＊長さ)、燃費の重量に対する比率を定義する
+data <- data %>%
   dplyr::mutate(size = (overall_length / 1000) * (overall_width / 1000) * (overall_height / 1000)) %>%
   dplyr::mutate(hppw = HorsePower / weight) %>%
   dplyr::select(-HorsePower, -weight) %>% 
   dplyr::select(-starts_with("overall")) 
 
-# ダミー変数の作成
-# 外国車ダミー
+# 自動車の車種IDを作成する
 data <- data %>%
-  dplyr::mutate(Foreign_d = if_else(Type == "Foreign", 1, 0))
-
-# FuelType=レギュラーのダミー
-data <- data %>%
-  dplyr::mutate(FuelRegular_d = if_else(FuelType == "レギュラー", 1, 0))
-
-# 年ダミー
-data <- data %>%
-  dplyr::mutate(year = as.factor(year)) %>%
-  sjmisc::to_dummy(year, suffix = "label") %>%
-  dplyr::bind_cols(data) %>%
-  dplyr::mutate(year = as.numeric(year))
-
-# year 2006を基準に
-data <- data %>%
-  dplyr::select(-year_2006)
-
-# capacity ダミー(4以下と5以上で分ける)
-data <- data %>%
-  dplyr::mutate(capacity_d = if_else(capacity > 4, 1, 0))
-
-# 自動車の車種IDを作成する。
-data <-
-  data %>%
   dplyr::group_by(Name) %>%
   dplyr::mutate(NameID = dplyr::cur_group_id()) %>%
   dplyr::ungroup() %>%
   dplyr::relocate(NameID, year)
 
-# マーケットシェアとOutside option shareを定義する。
-data <-
-  data %>%
+# マーケットシェアとOutside option shareを定義する
+data <- data %>%
   dplyr::group_by(year) %>%
   dplyr::mutate(inside_total = sum(Sales)) %>%
   dplyr::ungroup() %>%
@@ -175,11 +141,9 @@ data <-
   dplyr::select(-inside_total, -outside_total)
 
 # 操作変数の構築
-
 # まず、マーケット・企業レベルにおける、各製品属性の和と自乗和を計算する。
 # ここでacross関数は、最初に文字列ベクトルで指定した変数について、後ろにリスト内で定義した操作を適用している。
-data <-
-  data %>%
+data <- data %>%
   dplyr::group_by(year, Maker) %>%
   dplyr::mutate(
     dplyr::across(c("hppw", "FuelEfficiency", "size"),
@@ -187,12 +151,11 @@ data <-
     dplyr::across(c("hppw", "FuelEfficiency", "size"),
                   list(sqr_sum_own = ~ sum(.x^2, na.rm = TRUE))),
     group_n = n()
-    ) %>%
+  ) %>%
   dplyr::ungroup()
 
 # 次に、マーケットレベルでの、各製品属性の和を計算する。
-data <- 
-  data %>% 
+data <- data %>% 
   dplyr::group_by(year) %>%
   dplyr::mutate( 
     dplyr::across(c("hppw", "FuelEfficiency", "size"),
@@ -204,8 +167,7 @@ data <-
   dplyr::ungroup() 
 
 # 以上で定義した変数を利用して、まずBLP操作変数を構築する。
-data <- 
-  data %>% 
+data <- data %>% 
   dplyr::mutate(
     iv_BLP_own_hppw = hppw_sum_own - hppw,
     iv_BLP_own_FuelEfficiency = FuelEfficiency_sum_own - FuelEfficiency,
@@ -218,8 +180,7 @@ data <-
   ) 
 
 # 続いて、Differentiation IVを構築する。
-data <- 
-  data %>% 
+data <- data %>% 
   dplyr::mutate(
     iv_GH_own_hppw = (group_n - 1) * hppw^2 + (hppw_sqr_sum_own - hppw^2) - 2 * hppw * (hppw_sum_own - hppw),
     iv_GH_own_FuelEfficiency = (group_n - 1) * FuelEfficiency^2 +
@@ -241,44 +202,40 @@ data <-
 ```
 
 # Logitモデルにおける価格弾力性
-
 ## イントロダクションの日評自動車
 
 まず前回同様、日評自動車のデータセットを用意する。
 
-
 ```{r}
-# 日評自動車のデータセットを作成する。
-data_NIPPYO <-
-  data %>% 
+# 日評自動車のデータセットを作成する
+data_NIPPYO <- data %>% 
   dplyr::filter(Nippyo == 1) %>% 
   dplyr::select(year, share, NameID, Sales, price, hppw, FuelEfficiency, size, Name) %>% 
-  dplyr::mutate(log_sales = log(Sales),
-                log_price = log(price))
+  dplyr::mutate(
+    log_sales = log(Sales),
+    log_price = log(price)
+  )
 ```
 
 
 ## 価格弾力性行列を作成する
 
 ```{r}
-data <-
-  data %>%
+data <- data %>%
   dplyr::mutate(logit_share = log(share) - log(share0))
 
 # Differentiation IVを用いた結果
-iv_GH <-
-  fixest::feols(
-    logit_share ~ hppw + FuelEfficiency + size + 
-      capacity_d + FuelRegular_d + Foreign_d | year |
-      price ~ iv_GH_own_hppw + iv_GH_own_FuelEfficiency + iv_GH_own_size +
-      iv_GH_other_hppw + iv_GH_other_FuelEfficiency + iv_GH_other_size,
-    data = data
-  )
+iv_GH <- fixest::feols(
+  logit_share ~ hppw + FuelEfficiency + size | 0 |
+    price ~ iv_GH_own_hppw + iv_GH_own_FuelEfficiency + iv_GH_own_size +
+    iv_GH_other_hppw + iv_GH_other_FuelEfficiency + iv_GH_other_size,
+  data = data
+)
 
-data_NIPPYO %>% 
+dt2016 <- data_NIPPYO %>% 
   dplyr::filter(year == 2016) %>% 
   dplyr::select(price, share, NameID, Name) %>% 
-  dplyr::arrange(NameID) -> dt2016
+  dplyr::arrange(NameID)
 
 price <- dt2016$price
 share <- dt2016$share
@@ -300,20 +257,20 @@ diag(elas_mat) <- own_elas
 
 ```{r}
 betard <- dt2016 %>%
-  filter(Name == "アルファード") %>%
-  pull(NameID)
+  dplyr::filter(Name == "アルファード") %>%
+  dplyr::pull(NameID)
 
 sedan <- dt2016 %>%
-  filter(Name == "カローラ") %>%
-  pull(NameID)
+  dplyr::filter(Name == "カローラ") %>%
+  dplyr::pull(NameID)
 
 suv <- dt2016 %>%
-  filter(Name == "ジューク") %>%
-  pull(NameID)
+  dplyr::filter(Name == "ジューク") %>%
+  dplyr::pull(NameID)
 
 kei <- dt2016 %>%
-  filter(Name == "タント") %>%
-  pull(NameID)
+  dplyr::filter(Name == "タント") %>%
+  dplyr::pull(NameID)
 
 elas_mat_restricted <- elas_mat[NameID %in% c(betard, sedan, suv, kei), NameID %in% c(betard, sedan, suv, kei)]
 Name <- c("ベータード", "セダン(A)", "SUV(B)", "軽自動車(C)")
@@ -321,28 +278,33 @@ colnames(elas_mat_restricted) <- Name
 rownames(elas_mat_restricted) <- Name
 
 elas_mat_restricted %>%
-  kable(align = rep("c", 4),
-        digits = 4,
-        booktabs = FALSE, format = "html") %>%
-  kable_styling(full_width = FALSE)
+  knitr::kable(
+    align = rep("c", 4),
+    digits = 4,
+    booktabs = FALSE,
+    format = "html"
+  ) %>%
+  kableExtra::kable_styling(full_width = FALSE)
 
 # 表の保存
 elas_mat_restricted %>%
-  kable(align = rep("c", 4),
-        digits = 4,
-        booktabs = FALSE, format = "latex") %>%
-  kable_styling(full_width = FALSE) %>%
-  save_kable("output/chap4_elas_mat_logit.tex")
+  knitr::kable(
+    align = rep("c", 4),
+    digits = 4,
+    booktabs = FALSE,
+    format = "latex"
+  ) %>%
+  kableExtra::kable_styling(full_width = FALSE) %>%
+  kableExtra::save_kable("output/chap4_elas_mat_logit.tex")
 ```
 
 
 # 入れ子型ロジット推定のためのBLP操作変数の作成
 
 ```{r}
-# まず、マーケット・企業レベルにおける、各製品属性の和と自乗和を計算する。
-# ここでacross関数は、最初に文字列ベクトルで指定した変数について、後ろにリスト内で定義した操作を適用している。
-data <-
-  data %>%
+# まず、マーケット・企業レベルにおける、各製品属性の和と自乗和を計算する
+# ここでacross関数は、最初に文字列ベクトルで指定した変数について、後ろにリスト内で定義した操作を適用している
+data <- data %>%
   dplyr::group_by(year, Maker, Type) %>%
   dplyr::mutate(
     dplyr::across(c("hppw", "FuelEfficiency", "size"),
@@ -353,9 +315,8 @@ data <-
   ) %>%
   dplyr::ungroup()
 
-# 次に、マーケットレベルでの、各製品属性の和を計算する。
-data <- 
-  data %>% 
+# 次に、マーケットレベルでの、各製品属性の和を計算する
+data <- data %>% 
   dplyr::group_by(year, Type) %>%
   dplyr::mutate( 
     dplyr::across(c("hppw", "FuelEfficiency", "size"),
@@ -366,9 +327,21 @@ data <-
   ) %>%
   dplyr::ungroup() 
 
+# 以上で定義した変数を利用して、まずBLP操作変数を構築する。
+data <- data %>% 
+  dplyr::mutate(
+    iv_BLP_own_hppw_nest = hppw_sum_own - hppw,
+    iv_BLP_own_FuelEfficiency_nest = FuelEfficiency_sum_own - FuelEfficiency,
+    iv_BLP_own_size_nest = size_sum_own - size,
+    iv_BLP_other_hppw_nest = hppw_sum_mkt - hppw_sum_own,
+    iv_BLP_other_FuelEfficiency_nest = FuelEfficiency_sum_mkt - FuelEfficiency_sum_own,
+    iv_BLP_other_size_nest = size_sum_mkt - size_sum_own, 
+    iv_BLP_own_num_nest = group_n - 1, 
+    iv_BLP_other_num_nest = mkt_n - group_n
+  ) 
+
 # 続いて、Differentiation IVを構築する。
-data <- 
-  data %>% 
+data <- data %>% 
   dplyr::mutate(
     iv_GH_own_hppw_nest = (group_n - 1) * hppw^2 + (hppw_sqr_sum_own - hppw^2) - 2 * hppw * (hppw_sum_own - hppw),
     iv_GH_own_FuelEfficiency_nest = (group_n - 1) * FuelEfficiency^2 + 
@@ -401,78 +374,85 @@ $$
 
 ```{r}
 # まず被説明変数を定義する。
-data <-
-  data %>%
+data <- data %>%
   dplyr::mutate(logit_share = log(share) - log(share0))
 
 # インサイドシェアを定義する。
-data <- 
-  data %>% 
+data <- data %>% 
   dplyr::group_by(year, Type) %>% 
   dplyr::mutate(sum_year_body = sum(Sales)) %>% 
   dplyr::ungroup() %>% 
-  dplyr::mutate(inside_share = Sales / sum_year_body, 
-                log_inside_share = log(Sales / sum_year_body))
-
-# ダミー変数を最後の列に移動
-data <- data %>%
-  relocate(ends_with("_d"), starts_with("year_"), .after = last_col())
+  dplyr::mutate(
+    inside_share = Sales / sum_year_body, 
+    log_inside_share = log(Sales / sum_year_body)
+  )
 
 # データの保存(第５章で使用)
-readr::write_csv(data, "intermediate/chap4_data.csv")
+readr::write_csv(data, "intermediate/chap5_data.csv")
 ```
 
 ```{r}
-# 入れ子型ロジットでは、外国車ダミー(Foreign_d)を除いている。
-
 # OLSの結果
-ols <-
-  fixest::feols(
-    logit_share ~ price + log_inside_share + hppw + FuelEfficiency + size + 
-      capacity_d + FuelRegular_d | year,
-    data = data
-  )
+ols <- fixest::feols(
+  logit_share ~ price + log_inside_share + hppw + FuelEfficiency + size | 0,
+  data = data
+)
 
 # GH操作変数を用いた結果
 iv_GH <-
   fixest::feols(
-    logit_share ~ hppw + FuelEfficiency + size + FuelRegular_d + capacity_d | year |
+    logit_share ~ hppw + FuelEfficiency + size | 0 |
       price + log_inside_share ~ iv_GH_own_hppw_nest + iv_GH_own_FuelEfficiency_nest +
       iv_GH_own_size_nest + iv_GH_other_hppw_nest + iv_GH_other_FuelEfficiency_nest +
       iv_GH_other_size_nest,
     data = data
   )
 
+# BLP操作変数を用いた結果
+iv_BLP_nest <-
+  fixest::feols(
+    logit_share ~ hppw + FuelEfficiency + size | 0 |
+      price + log_inside_share ~ iv_BLP_own_hppw_nest + iv_BLP_own_FuelEfficiency_nest + iv_BLP_own_size_nest +
+      iv_BLP_other_hppw_nest + iv_BLP_other_FuelEfficiency_nest + iv_BLP_other_size_nest + iv_BLP_own_num_nest +  iv_BLP_other_num_nest,
+    data = data
+  )
+
+
 # 推定結果をレポートする。
 tbl_nest_iv <- fixest::etable(
-  list("OLS" = ols, "IV_GH" = iv_GH),  
+  list("OLS" = ols, "IV_BLP" = iv_BLP_nest),  
   se = "hetero",
   fitstat = c("r2", "n", "ivf"), 
   signif.code = NA, 
-  dict = c(price = "自動車価格",
-           hppw = "馬力／重量",
-           FuelEfficiency = "燃費 (キロメートル／ 1 リットル)",
-           size = "サイズ",
-           capacity_d = "キャパシティダミー(5以上)",
-           FuelRegular_d = "レギュラータイプダミー",
-           Foreign_d = "外国車ダミー",
-           `(Intercept)` = "定数項"),
+  dict = c(
+    price = "自動車価格",
+    hppw = "馬力／重量",
+    FuelEfficiency = "燃費 (キロメートル／ 1 リットル)",
+    size = "サイズ",
+    `(Intercept)` = "定数項"
+  ),
   digits = 2,
   digits.stats = 2,
   depvar = FALSE
 )
 
 tbl_nest_iv %>%
-  kable(align = c("l", "c", "c"),
-        booktabs = FALSE, format = "html") %>%
-  kable_styling(full_width = FALSE)
+  knitr::kable(
+    align = c("l", "c", "c"),
+    booktabs = FALSE,
+    format = "html"
+  ) %>%
+  kableExtra::kable_styling(full_width = FALSE)
 
 # 表の保存
 tbl_nest_iv %>%
-  kable(align = c("l", "c", "c"),
-        booktabs = FALSE, format = "latex") %>%
-  kable_styling(full_width = FALSE) %>%
-  save_kable("output/chap4_nest_iv.tex")
+  knitr::kable(
+    align = c("l", "c", "c"),
+    booktabs = FALSE,
+    format = "latex"
+  ) %>%
+  kableExtra::kable_styling(full_width = FALSE) %>%
+  kableExtra::save_kable("output/chap4_nest_iv.tex")
 ```
 
 
@@ -485,14 +465,14 @@ tbl_nest_iv %>%
 alpha1 <- ols$coefficients["price"]
 sigma1 <- ols$coefficients["log_inside_share"]
 
-alpha2 <- iv_GH$coefficients["fit_price"]
-sigma2 <- iv_GH$coefficients["fit_log_inside_share"]
+alpha2 <- iv_BLP_nest$coefficients["fit_price"]
+sigma2 <- iv_BLP_nest$coefficients["fit_log_inside_share"]
 
-data %>% 
+data_elas <- data %>% 
   dplyr::mutate(
     own_elas_ols = alpha1 * price * (1 - sigma1 * inside_share - (1 - sigma1) * share) / (1 - sigma1),
-    own_elas_ivgh = alpha2 * price * (1 - sigma2 * inside_share - (1 - sigma2) * share) / (1 - sigma2)
-  ) -> data_elas
+    own_elas_ivblp = alpha2 * price * (1 - sigma2 * inside_share - (1 - sigma2) * share) / (1 - sigma2)
+  )
 
 tbl_nest_own_elas <- data_elas %>% 
   dplyr::select(starts_with("own_elas")) %>% 
@@ -506,11 +486,14 @@ print(tbl_nest_own_elas)
 
 # 表の保存
 tbl_nest_own_elas %>%
-  kable(align = rep("l", 5),
-        digits = 2,
-        booktabs = FALSE, format = "latex") %>%
-  kable_styling(full_width = FALSE) %>%
-  save_kable("output/chap4_nest_own_elas.tex")
+  knitr::kable(
+    align = rep("l", 5),
+    digits = 2,
+    booktabs = FALSE,
+    format = "latex"
+  ) %>%
+  kableExtra::kable_styling(full_width = FALSE) %>%
+  kableExtra::save_kable("output/chap4_nest_own_elas.tex")
 ```
 
 
@@ -518,17 +501,18 @@ tbl_nest_own_elas %>%
 価格弾力性行列を作る。
 
 ```{r}
-data_NIPPYO <-
-  data %>% 
-  filter(Nippyo == 1) %>%
-  select(year, share, Type, inside_share, NameID, Sales, price, hppw, FuelEfficiency, size) %>% 
-  mutate(log_sales = log(Sales),
-         log_price = log(price)) 
+data_NIPPYO <- data %>% 
+  dplyr::filter(Nippyo == 1) %>%
+  dplyr::select(year, share, Type, inside_share, NameID, Sales, price, hppw, FuelEfficiency, size) %>% 
+  dplyr::mutate(
+    log_sales = log(Sales),
+    log_price = log(price)
+  ) 
 
-data_NIPPYO %>% 
-  filter(year == 2016) %>% 
-  select(price, Type, share, inside_share, NameID) %>% 
-  arrange(NameID) -> dt2016
+dt2016 <- data_NIPPYO %>% 
+  dplyr::filter(year == 2016) %>% 
+  dplyr::select(price, Type, share, inside_share, NameID) %>% 
+  dplyr::arrange(NameID)
 
 price <- dt2016$price
 share <- dt2016$share
@@ -566,38 +550,41 @@ colnames(elas_mat_nl_restricted) <- Name
 rownames(elas_mat_nl_restricted) <- Name
 
 elas_mat_nl_restricted %>%
-  kable(align = rep("c", 4),
-        digits = 4,
-        booktabs = FALSE, format = "html") %>%
-  kable_styling(full_width = FALSE)
+  knitr::kable(
+    align = rep("c", 4),
+    digits = 4,
+    booktabs = FALSE,
+    format = "html"
+  ) %>%
+  kableExtra::kable_styling(full_width = FALSE)
 
 # 表の保存
 elas_mat_nl_restricted %>%
-  kable(align = rep("c", 4),
-        digits = 4,
-        booktabs = FALSE, format = "latex") %>%
-  kable_styling(full_width = FALSE) %>%
-  save_kable("output/chap4_elas_mat_nest.tex")
+  knitr::kable(
+    align = rep("c", 4),
+    digits = 4,
+    booktabs = FALSE,
+    format = "latex"
+  ) %>%
+  kableExtra::kable_styling(full_width = FALSE) %>%
+  kableExtra::save_kable("output/chap4_elas_mat_nest.tex")
 ```
 
 
 # ランダム係数ロジットモデルの推定
-
 ## 定式化
 
 以下の定式化を考える。
 
-
 $$
 \begin{eqnarray}
-u_{i j t}=& \beta^{0}+\beta^{size}{size}_{j t}+\beta^{\textit{fuelefficiency}}\textit{fuelefficiency}_{jt} 
-+\beta^{h p p w} h p p w_{j t}+\beta^{capacity\_d}{capacity\_d_{j t}}\\
-&+\beta^{FuelRegular\_d}{FuelRegular\_d_{jt}}+\beta^{Foreign\_d}{Foreign\_d_{jt}}
--\alpha_{i} p_{j t}+\xi_{j t}+\xi_t+\epsilon_{i j t}
+u_{i j t}=& \beta_{i}^{0}+\beta_{i}^{size}{size}_{j t}+\beta^{\textit{fuelefficiency}}\textit{fuelefficiency}_{jt} 
++\beta^{h p p w} h p p w_{j t}
+-\alpha_{i} p_{j t}+\xi_{j t}+\epsilon_{i j t}
 \end{eqnarray}
 $$
 
-ここで、$\alpha_i$は正規分布に従うランダム係数である。
+ここで、$\beta_{i}^{0}, \beta_{i}^{size}, \alpha_i$は正規分布に従うランダム係数である。
 
 ## 推定のOverview
 
@@ -621,49 +608,41 @@ Step 5では推定したパラメタの標準誤差の計算を行う。最後�
 
 ```{r}
 # まずデータをソートする。マーケット順かつモデル順
-data %>% 
-    arrange(year, NameID) -> data
+data <- data %>% 
+    dplyr::arrange(year, NameID)
 
 # マーケットとモデルの情報をGET
-data %>% 
-    select(year, NameID) -> Info
+Info <- data %>% 
+    dplyr::select(year, NameID)
 
 N <- length(Info$year)
 T <- length(unique(Info$year))
 
 # 平均効用に入ってくる部分。内生性がある価格を含んでいる。
-X1 <-
-  data %>%
-  mutate(cons = 1) %>%
-  select(cons, price, FuelEfficiency, hppw, size,
-         capacity_d, FuelRegular_d, Foreign_d,
-         starts_with("year_")
-  ) %>%
+X1 <- data %>%
+  dplyr::mutate(cons = 1) %>%
+  dplyr::select(cons, price, FuelEfficiency, hppw, size) %>%
   as.matrix()
 
 # ランダム係数とInteractする部分。
-X2 <-
-  data %>%
-  select(price) %>%
+X2 <- data %>%
+  dplyr::mutate(cons = 1) %>%
+  dplyr::select(price, cons, size) %>%
   as.matrix()
 
 # 操作変数行列。ここは外生変数と追加的な操作変数を含む
-Z <-
-  data %>%
-  mutate(cons = 1) %>%
-  select(
+Z <- data %>%
+  dplyr::mutate(cons = 1) %>%
+  dplyr::select(
     cons, FuelEfficiency, hppw, size,
-    capacity_d, FuelRegular_d, Foreign_d,
-    starts_with("year_"),
     starts_with("iv_GH"),
     -ends_with("nest")
   ) %>%
   as.matrix()
 
 # 市場シェア
-ShareVec <-
-  data %>%
-  select(share) %>%
+ShareVec <- data %>%
+  dplyr::select(share) %>%
   as.matrix()
 
 datalist <- list()
@@ -680,7 +659,7 @@ datalist$logitshare <- data$logit_share
 ```{r}
 set.seed(111)
 
-Nsim <- 1000
+Nsim <- 500
 
 draw_vec <- rnorm(Nsim * ncol(X2))
 
@@ -690,6 +669,7 @@ parameter <- list()
 parameter$Nsim <- Nsim
 parameter$T <- T 
 parameter$N <- N
+parameter$theta2 = c(0.001, 0.001)
 
 marketindex <- datalist$marketindex
 uniquemarketindex <- sort(unique(marketindex))
@@ -714,11 +694,9 @@ f_mktshare <- function(datalist, parameter, delta) {
     
     draw_vec <- datalist$draw_vec
     
-    # 20210331 theta2とK2をunpackする位置がずれて回らなかったので修正しました．
     theta2 <- parameter$theta2
     K2 <- length(theta2)
     
-    # 20210331 X2が複数の場合，nsのみが認識するので括弧(ns*K2)を付けました．
     draw_vec <- datalist$draw_vec[1:(ns * K2)]
     
     marketindex <- datalist$marketindex
@@ -726,10 +704,7 @@ f_mktshare <- function(datalist, parameter, delta) {
     # Nonlinear component. mu (N, ns) matrix.
     mu <- X2 %*% diag(x = theta2, nrow = length(theta2)) %*% matrix(draw_vec, nrow = K2)
     
-    
     denom_outside <- exp(matrix(0, T, ns))
-    
-    #delta = matrix(0, N,1)
     
     delta_mu <-  delta %*% matrix(1, nrow = 1, ncol = ns) + mu
     exp_delta_mu <- exp(delta_mu)
@@ -780,7 +755,7 @@ f_contraction <- function(datalist, parameter, delta_ini) {
         norm <- max(t)
         
         # Update
-        #exp_delta_old <- 0.95*exp_delta + 0.05*exp_delta_old
+        # exp_delta_old <- 0.95 * exp_delta + 0.05 * exp_delta_old
         exp_delta_old <- exp_delta 
         
         delta_old <- log(exp_delta)
@@ -796,8 +771,7 @@ f_contraction <- function(datalist, parameter, delta_ini) {
 
 
 1. 以下では変数`delta_global`をグローバル変数として扱っており、関数`f_GMMobj`を評価するたびに、`delta_global`もアップデートするようになっている。この変数は、`f_GMMobj`を評価する際に必要となる縮小写像アルゴリズムの初期値である。最適化が進むにつれて`f_GMMobj`が評価するパラメタが徐々に変化するが、その評価の際に必要な縮小写像アルゴリズムの初期値もなるべく近いパラメタの元で得られた平均効用を用いる方が、計算速度上望ましい。なおここでは、永続代入演算子`delta_global <<- delta`を利用しているが、その詳細については後述する。
-2. GMM目的関数のインプットは非線形パラメタ`theta2`のみである。これは、平均効用に線形の形で入ってくるパラメタ$\theta_1$は、非線形パラメタを所与とすると線形GMMで解析的に求まるためである。この点についてはウェブ付録・第４章のページにアップされた補足資料を参照されたい。
-
+2. GMM目的関数のインプットは非線形パラメタ`theta2`のみである。これは、平均効用に線形の形で入ってくるパラメタ$\theta_1$は、非線形パラメタを所与とすると線形GMMで解析的に求まるためである。
 
 ```{r}
 f_GMMobj <- function(theta2, parameter, datalist, option) {
@@ -823,8 +797,6 @@ f_GMMobj <- function(theta2, parameter, datalist, option) {
 
   # IV matrix
   Z <- datalist$Z
-
-  # Z <- Z[, 1:8] / 1000
 
   # Weight matrix W
   if (datalist$weight_mat_option == "2SLS") {
@@ -871,14 +843,15 @@ datalist$weight_mat_option <- "2SLS"
 delta_global <- data$logit_share
 
 # 最適化
-result <-
-  optim(par = c(0.5),
-        fn = f_GMMobj,
-        method = "L-BFGS-B",
-        lower = c(0),
-        parameter = parameter,
-        datalist = datalist,
-        option = 0)
+result <- stats::optim(
+  par = c(0.3, 18, 0.01),
+  fn = f_GMMobj,
+  method = "L-BFGS-B",
+  lower = c(0, 0, 0),
+  parameter = parameter,
+  datalist = datalist,
+  option = 0
+)
 ```
 
 ### 技術的な補足：永続代入演算子とグローバル変数
@@ -941,10 +914,10 @@ f_SE <- function(theta2, parameter, datalist) {
   }
 
   G <- (parameter$N^(-1)) * t(Z) %*% cbind(-X1, Ddelta)
-  #G <-  t(Z) %*% cbind(-X1, Ddelta)
 
   # Asymptotic Var-Cov Matrix
   AsyVarMat <- solve(t(G) %*% W %*% G) %*% t(G) %*% W %*% Omega_hat %*% W %*% G %*% solve(t(G) %*% W %*% G)
+  
   # Asymptotic Standard Errors.
   Ase <- sqrt(diag(AsyVarMat) / parameter$N)
 
@@ -968,31 +941,39 @@ se <- f_SE(theta2 = result$par, parameter = parameter, datalist = datalist)
 ## ランダム係数ロジットの推定結果
 
 ```{r}
-beta_hat <- rbind(result2$beta_hat, result$par)
-
+beta_hat <- rbind(result2$beta_hat, result$par[1], result$par[2], result$par[3])
 rownames(beta_hat)[length(result2$beta_hat) + 1] <- "random_price"
+rownames(beta_hat)[length(result2$beta_hat) + 2] <- "random_constant"
+rownames(beta_hat)[length(result2$beta_hat) + 3] <- "random_size"
 colnames(beta_hat) <- "coeff"
 names(se)[length(result2$beta_hat) + 1] <- "random_price"
+names(se)[length(result2$beta_hat) + 2] <- "random_constant"
+names(se)[length(result2$beta_hat) + 3] <- "random_size"
 
 result_table <-
   as.data.frame(beta_hat) %>%
-  mutate(se = se)
+  dplyr::mutate(se = se)
 
 result_table %>%
-  kable(align = c("l", rep("c", 2)),
-        digits = 2, 
-        booktabs = FALSE, format = "html",
-        caption = "Estimates of The Parameters") %>%
-  kable_styling(full_width = FALSE)
+  knitr::kable(
+    align = c("l", rep("c", 2)),
+    digits = 2, 
+    booktabs = FALSE, 
+    format = "html",
+    caption = "Estimates of The Parameters"
+  ) %>%
+  kableExtra::kable_styling(full_width = FALSE)
 
 # 表の保存
 result_table %>%
-  kable(align = c("l", rep("c", 2)),
-        digits = 2, 
-        booktabs = FALSE, format = "latex",
-        caption = "Estimates of The Parameters") %>%
-  kable_styling(full_width = FALSE) %>%
-  save_kable("output/chap4_blp.tex")
+  knitr::kable(
+    align = c("l", rep("c", 2)),
+    digits = 2, 
+    booktabs = FALSE, format = "latex",
+    caption = "Estimates of The Parameters"
+  ) %>%
+  kableExtra::kable_styling(full_width = FALSE) %>%
+  kableExtra::save_kable("output/chap4_blp.tex")
 ```
 
 
@@ -1012,9 +993,6 @@ f_elasticity <- function(datalist, parameter, beta_hat, delta) {
   K2 <- length(theta2)
   draw_vec <- datalist$draw_vec[1:(ns * K2)]
   uniquemarketindex <- datalist$uniquemarketindex
-  
-  # 製品を示す行列を取り出す
-  # tempmat2 <- datalist$tempmat2
   
   # 以下マーケットシェアの関数とほぼ同じ
   # Nonlinear component. mu (N, ns) matrix.
@@ -1080,8 +1058,6 @@ f_elasticity <- function(datalist, parameter, beta_hat, delta) {
   }
   return(elaslist)
 }
-
-
 ```
 
 早速、価格弾力性行列を示そう。
@@ -1093,9 +1069,9 @@ parameter$theta2 <- result$par
 elasticity <- f_elasticity(datalist = datalist, parameter = parameter, beta_hat = beta_hat, delta = delta)
 
 NameID2016 <- data %>% 
-  filter(year == 2016) %>%
-  select(NameID) %>% 
-  pull()
+  dplyr::filter(year == 2016) %>%
+  dplyr::select(NameID) %>% 
+  dplyr::pull()
 
 elas_mat_blp_restricted <- elasticity$elasmat_2016[NameID2016 %in% c(betard, sedan, suv, kei), NameID2016 %in% c(betard, sedan, suv, kei)]
 
@@ -1104,18 +1080,24 @@ colnames(elas_mat_blp_restricted) <- Name
 rownames(elas_mat_blp_restricted) <- Name
 
 elas_mat_blp_restricted %>%
-  kable(align = rep("c", 4),
-        digits = 4,
-        booktabs = FALSE, format = "html") %>%
-  kable_styling(full_width = FALSE)
+  knitr::kable(
+    align = rep("c", 4),
+    digits = 4,
+    booktabs = FALSE,
+    format = "html"
+  ) %>%
+  kableExtra::kable_styling(full_width = FALSE)
 
 # 表の保存
 elas_mat_blp_restricted %>%
-  kable(align = rep("c", 4),
-        digits = 4,
-        booktabs = FALSE, format = "latex") %>%
-  kable_styling(full_width = FALSE) %>%
-  save_kable("output/chap4_elas_mat_blp.tex")
+  knitr::kable(
+    align = rep("c", 4),
+    digits = 4,
+    booktabs = FALSE, 
+    format = "latex"
+  ) %>%
+  kableExtra::kable_styling(full_width = FALSE) %>%
+  kableExtra::save_kable("output/chap4_elas_mat_blp.tex")
 ```
 
 
@@ -1136,8 +1118,8 @@ elas_mat_blp_restricted %>%
 
 ```{r}
 NIPPYOautoIDvec <- data_NIPPYO %>%
-  distinct(NameID) %>%
-  pull()
+  dplyr::distinct(NameID) %>%
+  dplyr::pull()
 
 f_revenue <- function(price_cand, data , datalist , datalist_temp, result2, parameter, option) {
   
@@ -1191,7 +1173,6 @@ f_revenue <- function(price_cand, data , datalist , datalist_temp, result2, para
 ```{r}
 NameID_target <- betard
 
-# 価格の範囲として、0.5(50万円)から5(500万円)を考える。なお、もとの価格は3.198 (319.8万円)
 pricevec <- seq(from = 1.73, to = 4, by = 0.01)
 pivec <- numeric(length(pricevec))
 pivec2 <- numeric(length(pricevec))
@@ -1205,26 +1186,36 @@ for (i in 1:length(pricevec)) {
 }
 
 # ベータードのみ
-dt_fig1 <- tibble(price = pricevec * 100, 
-                  pi1 = pivec * 100 / 10000) %>% 
-  pivot_longer( -price, names_to = "name")
+dt_fig1 <- dplyr::tibble(
+  price = pricevec * 100, 
+  pi1 = pivec * 100 / 10000
+) %>% 
+  tidyr::pivot_longer(-price, names_to = "name")
 
-fig_pi1 <- ggplot(dt_fig1, aes(price, value)) + 
-  geom_point() +
-  theme_bw(base_family = "HiraKakuPro-W3") +
+fig_pi1 <- ggplot2::ggplot(dt_fig1, aes(price, value)) + 
+  ggplot2::geom_point() +
+  ggplot2::theme_bw(base_family = "HiraKakuPro-W3") +
   ggplot2::theme(
     axis.title.y = element_text(angle = 0, vjust = 0.5),
-    panel.grid.major.y = element_line(color = "grey",
-                                      linewidth = 0.3, linetype = "dotted"),
-    panel.grid.minor.y = element_line(color = "grey",
-                                      linewidth = 0.3, linetype = "dotted"),
+    panel.grid.major.y = element_line(
+      color = "grey",
+      linewidth = 0.3,
+      linetype = "dotted"
+    ),
+    panel.grid.minor.y = element_line(
+      color = "grey",
+      linewidth = 0.3,
+      linetype = "dotted"
+    ),
     panel.grid.minor = element_blank(),
     panel.grid.major.x = element_blank(),
     panel.border = element_blank(),
     axis.line = element_line(colour = "black", linewidth = 0.2)) + 
-  scale_x_continuous(breaks = seq(0, 500, 50)) + 
-  ggplot2::labs(y = "収入(億円)",
-                x = "価格(万円)") 
+  ggplot2::scale_x_continuous(breaks = seq(0, 500, 50)) + 
+  ggplot2::labs(
+    y = "収入(億円)",
+    x = "価格(万円)"
+  ) 
 
 plot(fig_pi1)
 
@@ -1232,26 +1223,36 @@ ggsave(fig_pi1, file = "output/chap4_revenue_betard.png", width = 9, height = 6)
 ggsave(fig_pi1, file = "output/chap4_revenue_betard.pdf", width = 9, height = 6, device = cairo_pdf)
 
 # ベータードのみの利潤+日評自動車の他の車種の収入
-dt_fig2 <- tibble(price = pricevec * 100, 
-                  pi2 = pivec2 * 100 / 10000) %>% 
-  pivot_longer(-price, names_to = "name")
+dt_fig2 <- dplyr::tibble(
+  price = pricevec * 100, 
+  pi2 = pivec2 * 100 / 10000
+) %>% 
+  tidyr::pivot_longer(-price, names_to = "name")
 
-fig_pi2 <- ggplot(dt_fig2, aes(price, value)) + 
-  geom_point() +
-  theme_bw(base_family = "HiraKakuPro-W3") +
+fig_pi2 <- ggplot2::ggplot(dt_fig2, aes(price, value)) + 
+  ggplot2::geom_point() +
+  ggplot2::theme_bw(base_family = "HiraKakuPro-W3") +
   ggplot2::theme(
     axis.title.y = element_text(angle = 0, vjust = 0.5),
-    panel.grid.major.y = element_line(color = "grey",
-                                      linewidth = 0.3, linetype = "dotted"),
-    panel.grid.minor.y = element_line(color = "grey",
-                                      linewidth = 0.3, linetype = "dotted"),
+    panel.grid.major.y = element_line(
+      color = "grey",
+      linewidth = 0.3,
+      linetype = "dotted"
+    ),
+    panel.grid.minor.y = element_line(
+      color = "grey",
+      linewidth = 0.3,
+      linetype = "dotted"
+    ),
     panel.grid.minor = element_blank(),
     panel.grid.major.x = element_blank(),
     panel.border = element_blank(),
     axis.line = element_line(colour = "black", linewidth = 0.2)) +
-  scale_x_continuous(breaks = seq(0, 500, 50)) + 
-  ggplot2::labs(y = "収入(億円)",
-                x = "価格(万円)") 
+  ggplot2::scale_x_continuous(breaks = seq(0, 500, 50)) + 
+  ggplot2::labs(
+    y = "収入(億円)",
+    x = "価格(万円)"
+  ) 
 
 plot(fig_pi2)
 
@@ -1264,25 +1265,32 @@ ggsave(fig_pi2, file = "output/chap4_revenue_all.pdf", width = 9, height = 6, de
 まずベータードのみ
 ```{r}
 # ベータードのみ
-optimprice3 <- optimise(f_revenue, interval = c(0.3, 5), maximum = TRUE, 
-                        data = data, datalist = datalist, result2 = result2,
-                        parameter = parameter, option = "ownpi")
+optimprice3 <- stats::optimise(
+  f_revenue, interval = c(0.3, 5), maximum = TRUE, 
+  data = data, datalist = datalist, result2 = result2,
+  parameter = parameter, option = "ownpi"
+)
+
 print(optimprice3)
 ```
 
 つづいてベータードのみの利潤+日評自動車の他の車種の収入
 
 ```{r}
-optimprice4 <- optimise(f_revenue, interval = c(0.3, 5), maximum = TRUE, 
-                        data = data, datalist = datalist, result2 = result2,
-                        parameter = parameter, option = "totalpi")
+optimprice4 <- stats::optimise(
+  f_revenue, interval = c(0.3, 5), maximum = TRUE, 
+  data = data, datalist = datalist, result2 = result2,
+  parameter = parameter, option = "totalpi"
+)
 print(optimprice4)
 ```
 
 ベータードのみの利潤を最大にするような価格における、「ベータードのみの利潤+日評自動車の他の車種の収入」はどうなるか？
 
 ```{r}
-f_revenue(price = optimprice3$maximum,
-          data = data, datalist = datalist, result2 = result2,
-          parameter = parameter, option = "totalpi")
+f_revenue(
+  price = optimprice3$maximum,
+  data = data, datalist = datalist, result2 = result2,
+  parameter = parameter, option = "totalpi"
+)
 ```
