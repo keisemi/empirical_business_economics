@@ -27,7 +27,6 @@ knitr::opts_chunk$set(echo = TRUE)
 
 今回のプログラムの作成に際して、島本幸典さん・牧野圭吾さん・山田雅広さん(東京大学大学院経済学研究科)にご尽力頂きました。
 
-
 # Rに関する下準備
 
 今回は`tictoc`を新たに利用する。
@@ -63,9 +62,36 @@ tictoc::tic()
 第４章の「6 入れ子型ロジットモデルの推定とその応用」までで作成したデータを読み込む
 
 ```{r message = FALSE}
-data <- readr::read_csv(file = "intermediate/chap4_data.csv")
-```
+data <- readr::read_csv(file = "intermediate/chap5_data.csv")
 
+# ダミー変数の作成
+# 外国車ダミー
+data <- data %>%
+  dplyr::mutate(Foreign_d = if_else(Type=="Foreign", 1, 0))
+
+# FuelType=レギュラーのダミー
+data <- data %>%
+  dplyr::mutate(FuelRegular_d = if_else(FuelType=="レギュラー", 1, 0))
+
+# 年ダミー
+data <- data %>%
+  dplyr::mutate(year = as.factor(year)) %>%
+  sjmisc::to_dummy(year, suffix = "label") %>%
+  dplyr::bind_cols(data) %>%
+  dplyr::mutate(year = as.numeric(year))
+
+# year 2006を基準に
+data <- data %>%
+  dplyr::select(-year_2006)
+
+# capacity ダミー(4以下と5以上で分ける)
+data <- data %>%
+  dplyr::mutate(capacity_d = if_else(capacity > 4, 1, 0))
+
+# ダミー変数を最後の列に移動
+data <- data %>%
+  dplyr::relocate(ends_with("_d"), starts_with("year_"), .after = last_col())
+```
 # ランダム係数ロジットモデルの推定
 
 第４章に従って、ランダム係数ロジットモデルを推定する。
@@ -86,43 +112,40 @@ $$
 
 ここで、$\alpha_i$は正規分布に従うランダム係数である。
 
-
 ## データの下準備
 
 まずは、データセットから、行列を抽出する。
 
 ```{r}
 # まずデータをソートする。マーケット順、メーカー順かつ価格順
-data %>% 
-  arrange(year, Maker, price) -> data
+data <- data %>% 
+  dplyr::arrange(year, Maker, price)
 
 # データセットより抽出した行列等をdatalistに格納する
 datalist <- list()
 
 # 平均効用に入ってくる部分。内生性がある価格を含んでいる。
-datalist$X1 <-
-  data %>%
-  mutate(cons = 1) %>%
+datalist$X1 <- data %>%
+  dplyr::mutate(cons = 1) %>%
   # 価格を必ず2つ目にする
-  select(cons, price, FuelEfficiency, hppw, size, 
-         capacity_d, FuelRegular_d, Foreign_d,
-         starts_with("year_")
+  dplyr::select(
+    cons, price, FuelEfficiency, hppw, size, 
+    capacity_d, FuelRegular_d, Foreign_d,
+    starts_with("year_")
   ) %>% 
   as.matrix()
 
 # ランダム係数とInteractする部分。
-datalist$X2 <-
-  data %>%
-  mutate(cons = 1) %>%
+datalist$X2 <- data %>%
+  dplyr::mutate(cons = 1) %>%
   # 価格を必ず1つ目にする
-  select(price) %>% 
+  dplyr::select(price) %>% 
   as.matrix()
 
 # 操作変数行列。ここは外生変数と追加的な操作変数を含む
-datalist$Z <-
-  data %>%
-  mutate(cons = 1) %>%
-  select(
+datalist$Z <- data %>%
+  dplyr::mutate(cons = 1) %>%
+  dplyr::select(
     cons, FuelEfficiency, hppw, size,
     capacity_d, FuelRegular_d, Foreign_d,
     starts_with("year_"),
@@ -132,9 +155,8 @@ datalist$Z <-
   as.matrix()
 
 # 市場シェア
-datalist$ShareVec <-
-  data %>%
-  select(share) %>%
+datalist$ShareVec <- data %>%
+  dplyr::select(share) %>%
   as.matrix()
 
 datalist$marketindex <- data$year
@@ -145,9 +167,7 @@ N <- length(datalist$marketindex)
 T <- length(unique(datalist$marketindex))
 ```
 
-
 次に、乱数を用意しておく。
-
 ```{r}
 set.seed(111)
 Nsim <- 1000
@@ -164,7 +184,6 @@ temp2 <- matrix(rep(marketindex, T), N, T)
 mkt_denom_d <- (temp1 == temp2) * 1
 datalist$mkt_denom_d <- mkt_denom_d
 ```
-
 
 ## 各種関数の定義
 
@@ -219,7 +238,6 @@ f_mktshare <- function(datalist, parameter, delta, theta2) {
 ### 縮小写像によるBerryインバージョンのコード
 
 ここでは、Berryインバージョンによる平均効用の計算を行う関数を定義する。なお、関数の内部でStep2で定義した`f_mktshare`を利用している。
-
 ```{r}
 f_contraction <- function(datalist, parameter, delta_ini, theta2) {
   
@@ -301,7 +319,6 @@ f_GMMobj <- function(theta2, parameter, datalist, option) {
 
 ### 標準誤差の計算
 
-
 ```{r}
 f_SE <- function(theta2, parameter, datalist) {
   param <- parameter
@@ -352,7 +369,6 @@ f_SE <- function(theta2, parameter, datalist) {
   }
   
   G <- (parameter$N^(-1)) * t(Z) %*% cbind(-X1, Ddelta)
-  #G <-  t(Z) %*% cbind(-X1, Ddelta)
   
   # Asymptotic Var-Cov Matrix
   AsyVarMat <- solve(t(G) %*% W %*% G) %*% t(G) %*% W %*% Omega_hat %*% W %*% G %*% solve(t(G) %*% W %*% G)
@@ -362,7 +378,6 @@ f_SE <- function(theta2, parameter, datalist) {
   return(Ase)
 }
 ```
-
 
 ### 価格弾力性を計算する関数
 
@@ -442,7 +457,6 @@ f_elasticity <- function(datalist, parameter, theta1, theta2, delta) {
 }
 ```
 
-
 ## パラメタ推定及び標準誤差の計算
 
 上で定義した関数を用いてGMM推定を行う。
@@ -454,14 +468,15 @@ datalist$weight_mat_option <- "2SLS"
 # グローバル変数としてアップデートする平均効用
 delta_global <- data$logit_share
 # 最適化
-GMM_nonlinear <- 
-  optim(par = c(0.7), 
-        fn = f_GMMobj,
-        method = "L-BFGS-B",
-        lower = c(0), 
-        parameter = parameter,
-        datalist = datalist,
-        option = 0)
+GMM_nonlinear <- stats::optim(
+  par = c(0.7), 
+  fn = f_GMMobj,
+  method = "L-BFGS-B",
+  lower = c(0), 
+  parameter = parameter,
+  datalist = datalist,
+  option = 0
+)
 
 # nonlinear parameter estimates
 theta2_hat <- GMM_nonlinear$par
@@ -477,7 +492,7 @@ delta <- GMM_linear$delta
 Xi <- GMM_linear$Xi
 
 data <- data %>%
-  mutate(Xi = Xi, delta = delta)
+  dplyr::mutate(Xi = Xi, delta = delta)
 
 # linear parameter estimates
 theta1_hatmat <- GMM_linear$theta1
@@ -497,22 +512,27 @@ names(se)[length(GMM_linear$theta1) + 1] <- "random_price"
 
 est_table <- as.data.frame(cbind(beta_hat, se))
 est_table %>%
-  kable(align = c("l", rep("c", 2)),
-        digits = 2, 
-        booktabs = FALSE, format = "html",
-        caption = "Estimates of The Parameters") %>%
-  kable_styling(full_width = FALSE)
+  knitr::kable(
+    align = c("l", rep("c", 2)),
+    digits = 2, 
+    booktabs = FALSE, 
+    format = "html",
+    caption = "Estimates of The Parameters"
+  ) %>%
+  kableExtra::kable_styling(full_width = FALSE)
 
 # 表の保存
 est_table %>%
-  kable(align = c("l", rep("c", 2)),
-        digits = 2, 
-        booktabs = FALSE, format = "latex",
-        caption = "Estimates of The Parameters") %>%
-  kable_styling(full_width = FALSE) %>%
-  save_kable("output/chap5_blp.tex")
+  knitr::kable(
+    align = c("l", rep("c", 2)),
+    digits = 2, 
+    booktabs = FALSE,
+    format = "latex",
+    caption = "Estimates of The Parameters"
+  ) %>%
+  kableExtra::kable_styling(full_width = FALSE) %>%
+  kableExtra::save_kable("output/chap5_blp.tex")
 ```
-
 
 # 限界費用の推定
 
@@ -532,7 +552,6 @@ $$\Delta^{pre}_{jr}(p) = \left\{
 これは需要推定値から求めることができる。詳しくは本誌を参照されたい。
 
 以上の考え方に基づいて、限界費用を推定する関数を作成する。
-
 
 ```{r}
 f_Merginal_Cost_Est <- function(data, marketindex, elasticity) {
@@ -592,13 +611,14 @@ f_Merginal_Cost_Est <- function(data, marketindex, elasticity) {
 }
 ```
 
-
 作成した関数を使って限界費用を計算する。加えて価格費用マージンを計算してその分布を確認する。
 
 ```{r}
 # 価格弾力性行列の計算。限界費用推定において用いる。
-elasticity <- f_elasticity(datalist = datalist, parameter = parameter,
-                           theta1 = theta1_hat, theta2 = theta2_hat, delta = delta)
+elasticity <- f_elasticity(
+  datalist = datalist, parameter = parameter,
+  theta1 = theta1_hat, theta2 = theta2_hat, delta = delta
+)
 
 # 作成した関数を実行する
 marketindex <- datalist$marketindex
@@ -614,35 +634,46 @@ Marginal_Cost_2016_Est <- Marginal_Cost_Est$Marginal_Cost_2016
 
 # Nevo (2000) Table 4
 Table_4dt <-  Marginal_Cost_2016_Est %>%
-  select(Maker, Name, price, mc, margin) %>%
+  dplyr::select(Maker, Name, price, mc, margin) %>%
   # この後の表記に合わせて企業名を、Honda=Nippyo, Nissan=Brand A, Subaru=Brand B, Toyota=Brand Cとする
-  mutate(Maker = recode(Maker, Honda = "Nippyo", Nissan = "Brand_A", Subaru = "Brand_B", Toyota = "Brand_C"))
+  dplyr::mutate(
+    Maker = recode(Maker, Honda = "Nippyo", Nissan = "Brand_A", Subaru = "Brand_B", Toyota = "Brand_C")
+  )
   
 colnames(Table_4dt) <- c("Maker", "Name", "Price", "Marginal Cost", "Margin (p-mc)/p")
 
 Table_4dt %>% 
-  kable(align = rep("c", 5),
-        digits = 3,
-        booktabs = FALSE, format = "html",
-        caption = "Predicted Marginal Costs") %>%
-  kable_styling(full_width = FALSE)
+  knitr::kable(
+    align = rep("c", 5),
+    digits = 3,
+    booktabs = FALSE,
+    format = "html",
+    caption = "Predicted Marginal Costs"
+  ) %>%
+  kableExtra::kable_styling(full_width = FALSE)
 
 # 表の保存
 Table_4dt %>%
-  kable(align = rep("c", 5),
-        digits = 3,
-        booktabs = FALSE, format = "latex",
-        caption = "Predicted Marginal Costs") %>%
-  kable_styling(full_width = FALSE) %>%
-  save_kable("output/chap5_mc_2016.tex")
+  knitr::kable(
+    align = rep("c", 5),
+    digits = 3,
+    booktabs = FALSE, 
+    format = "latex",
+    caption = "Predicted Marginal Costs"
+  ) %>%
+  kableExtra::kable_styling(full_width = FALSE) %>%
+  kableExtra::save_kable("output/chap5_mc_2016.tex")
 ```
 
 ```{r}
 # distribution of margin
-g <- ggplot(Marginal_Cost_2016_Est, aes(x = margin)) + 
-  geom_histogram(binwidth = 0.01) +
-  theme_bw()
+g <- Marginal_Cost_2016_Est %>%
+  ggplot2::ggplot(aes(x = margin)) + 
+  ggplot2::geom_histogram(binwidth = 0.01) +
+  ggplot2::theme_bw()
+
 plot(g)
+
 ggsave(g, file = "output/chap5_margin.png", width = 9, height = 6)
 ggsave(g, file = "output/chap5_margin.pdf", width = 9, height = 6, device = cairo_pdf)
 ```
@@ -653,28 +684,29 @@ ggsave(g, file = "output/chap5_margin.pdf", width = 9, height = 6, device = cair
 
 **留意点**: 今回第５章では、日評自動車はホンダの車種を生産・販売する企業として扱う。
 
-
 ## 準備
 
 2016年のみを取り出し、日評自動車（ホンダを日評自動車とする）と国内ブランドA社（日産を国内ブランドA社とする）、日評自動車と国内ブランドB社（スバルを国内ブランドB社とする）を合併した場合を考える。加えて比較のため国内ブランドC社を用意する（トヨタを国内ブランドC社とする）。
 
 ```{r}
 # 最新の2016年のみ使用
-data_2016 <-
-  data %>%
-  filter(year == 2016) %>%
-  left_join(Marginal_Cost_2016_Est, by = c("NameID", "Maker", "Name", "price")) %>%
+data_2016 <- data %>%
+  dplyr::filter(year == 2016) %>%
+  dplyr::left_join(Marginal_Cost_2016_Est, by = c("NameID", "Maker", "Name", "price")) %>%
   # 企業名を変更する
-  mutate(Maker = recode(Maker, Honda = "Nippyo", Nissan = "Brand_A", Subaru = "Brand_B", Toyota = "Brand_C")) %>%
+  dplyr::mutate(
+    Maker = recode(Maker, Honda = "Nippyo", Nissan = "Brand_A", Subaru = "Brand_B", Toyota = "Brand_C")
+  ) %>%
   # 合併後の企業
-  mutate(MakerNippyoA = recode(Maker, Nippyo = "Nippyo_A", Brand_A = "Nippyo_A"), 
-         MakerNippyoB = recode(Maker, Nippyo = "Nippyo_B", Brand_B = "Nippyo_B"))
+  dplyr::mutate(
+    MakerNippyoA = recode(Maker, Nippyo = "Nippyo_A", Brand_A = "Nippyo_A"), 
+    MakerNippyoB = recode(Maker, Nippyo = "Nippyo_B", Brand_B = "Nippyo_B")
+  )
 ```
 
 ## 所有構造行列を作成する
 
 日評自動車とブランドA社、日評自動車とブランドB社が合併した場合の所有構造行列を作成する。
-
 
 ```{r}
 # ownership matrix
@@ -710,29 +742,28 @@ T <- length(unique(data_2016$year))
 
 # 平均効用に入ってくる部分。内生性がある価格を含んでいる。
 datalist_2016$X1 <- as.data.frame(datalist$X1) %>%
-  mutate(year = datalist$marketindex) %>%
-  filter(year == 2016) %>%
-  select(-year) %>%
+  dplyr::mutate(year = datalist$marketindex) %>%
+  dplyr::filter(year == 2016) %>%
+  dplyr::select(-year) %>%
   as.matrix()
 
 # ランダム係数とInteractする部分。
 datalist_2016$X2 <- as.data.frame(datalist$X2) %>%
-  mutate(year = datalist$marketindex) %>%
-  filter(year == 2016) %>%
-  select(-year) %>%
+  dplyr::mutate(year = datalist$marketindex) %>%
+  dplyr::filter(year == 2016) %>%
+  dplyr::select(-year) %>%
   as.matrix()
 
 # 操作変数行列。ここは外生変数と追加的な操作変数を含む
 datalist_2016$Z <-  as.data.frame(datalist$Z) %>%
-  mutate(year = datalist$marketindex) %>%
-  filter(year == 2016) %>%
-  select(-year) %>%
+  dplyr::mutate(year = datalist$marketindex) %>%
+  dplyr::filter(year == 2016) %>%
+  dplyr::select(-year) %>%
   as.matrix()
 
 # 市場シェア
-datalist_2016$ShareVec <-
-  data_2016 %>%
-  select(share) %>%
+datalist_2016$ShareVec <- data_2016 %>%
+  dplyr::select(share) %>%
   as.matrix()
 
 datalist_2016$marketindex <- data_2016$year
@@ -758,7 +789,6 @@ mkt_denom_d <- (temp1 == temp2) * 1
 datalist_2016$mkt_denom_d <- mkt_denom_d
 ```
 
-
 ## 反実仮想シミュレーションにおける均衡計算コード
 
 合併後の価格を計算する。
@@ -777,7 +807,6 @@ Xi <- as.matrix(data_2016$Xi)
 2. その価格のもとでの、各製品の最適反応価格を求める(この作業が以下の`f_update`関数)
 3. その最適反応価格を新たな価格(p_new)とする。そのp_newに基づいて上のプロセスを再び行う。
 4. 上記手順２と３を繰り返し、価格のアップデートがほとんど起きなくなったら、プロセスを止める。この作業が以下の`f_eqprice`で行われている。
-
 
 ```{r}
 # 均衡を求める
@@ -822,7 +851,6 @@ f_eqprice <- function(datalist, p_ini, Ownership, parameter, theta1, theta2, mc,
 }
 ```
 
-
 ## 合併シミュレーション
 
 まず、日評自動車とA社が合併したケースのシミュレーションを行う。
@@ -833,11 +861,10 @@ f_eqprice <- function(datalist, p_ini, Ownership, parameter, theta1, theta2, mc,
 p_ini <- data_2016$price
 p_NippyoA <- f_eqprice(datalist_2016, p_ini, Ownership_NippyoA, parameter, theta1_hat, theta2_hat, mc, Xi)
 data_2016 <- data_2016 %>%
-  mutate(p_NippyoA = p_NippyoA[, 1])
+  dplyr::mutate(p_NippyoA = p_NippyoA[, 1])
 ```
 
 つづいて、日評自動車とB社が合併したケースのシミュレーションを行う
-
 
 ```{r}
 # Nippyo-Brand B Simulation
@@ -845,7 +872,7 @@ data_2016 <- data_2016 %>%
 p_ini <- data_2016$price
 p_NippyoB <- f_eqprice(datalist_2016, p_ini, Ownership_NippyoB, parameter, theta1_hat, theta2_hat, mc, Xi)
 data_2016 <- data_2016 %>%
-  mutate(p_NippyoB = p_NippyoB[, 1])
+  dplyr::mutate(p_NippyoB = p_NippyoB[, 1])
 ```
 
 ```{r}
@@ -873,7 +900,10 @@ share_NippyoA <- f_mktshare_sim(datalist_2016, data_2016$p_NippyoA, parameter, t
 share_NippyoB <- f_mktshare_sim(datalist_2016, data_2016$p_NippyoB, parameter, theta1_hat, theta2_hat, Xi)
 
 data_2016 <- data_2016 %>%
-  mutate(share_NippyoA = share_NippyoA, share_NippyoB = share_NippyoB)
+  dplyr::mutate(
+    share_NippyoA = share_NippyoA,
+    share_NippyoB = share_NippyoB
+  )
 ```
 
 # シミュレーション結果のまとめ
@@ -885,37 +915,46 @@ data_2016 <- data_2016 %>%
 ```{r}
 # 表を作るために専用のデータフレームを作る
 Table_5dt <- data_2016 %>%
-  mutate(p_NippyoA_PPC = (p_NippyoA - price) / price * 100,
-         share_NippyoA_PPC = (share_NippyoA - share) / share * 100,
-         p_NippyoB_PPC = (p_NippyoB - price) / price * 100,
-         share_NippyoB_PPC = (share_NippyoB - share) / share * 100) %>%
-  select(Maker, Name, p_NippyoA_PPC, share_NippyoA_PPC, p_NippyoB_PPC,
-         share_NippyoB_PPC) %>%
-  filter(Maker %in% c("Nippyo","Brand_A","Brand_B","Brand_C"))
+  dplyr::mutate(
+    p_NippyoA_PPC = (p_NippyoA - price) / price * 100,
+    share_NippyoA_PPC = (share_NippyoA - share) / share * 100,
+    p_NippyoB_PPC = (p_NippyoB - price) / price * 100,
+    share_NippyoB_PPC = (share_NippyoB - share) / share * 100
+  ) %>%
+  dplyr::select(
+    Maker, Name, p_NippyoA_PPC,
+    share_NippyoA_PPC, p_NippyoB_PPC, share_NippyoB_PPC
+  ) %>%
+  dplyr::filter(Maker %in% c("Nippyo","Brand_A","Brand_B","Brand_C"))
 
 # 名前を付けなおす
 colnames(Table_5dt) <- c("Maker", "Name", "p", "q", "p", "q")
 
 # 表を作る
 Table_5dt %>%
-  kable(align = rep("c", 6),
-        digits = 3,
-        booktabs = FALSE, format = "html", 
-        caption = "Predicted Percent Change in Prices and Quantities as a Result of Mergers") %>%
-  add_header_above(c(" ", " ", "Nippyo and Brand A" = 2, "Nippyo and Brand B" = 2)) %>%
-  kable_styling(full_width = FALSE)
+  knitr::kable(
+    align = rep("c", 6),
+    digits = 3,
+    booktabs = FALSE,
+    format = "html", 
+    caption = "Predicted Percent Change in Prices and Quantities as a Result of Mergers"
+  ) %>%
+  kableExtra::add_header_above(c(" ", " ", "Nippyo and Brand A" = 2, "Nippyo and Brand B" = 2)) %>%
+  kableExtra::kable_styling(full_width = FALSE)
 
 # 表の保存
 Table_5dt %>%
-  kable(align = rep("c", 6),
-        digits = 3,
-        booktabs = FALSE, format = "latex", 
-        caption = "Predicted Percent Change in Prices and Quantities as a Result of Mergers") %>%
-  add_header_above(c(" ", " ", "Nippyo and Brand A" = 2, "Nippyo and Brand B" = 2)) %>%
-  kable_styling(full_width = FALSE) %>%
-  save_kable("output/chap5_merger_change_p_q.tex")
+  knitr::kable(
+    align = rep("c", 6),
+    digits = 3,
+    booktabs = FALSE,
+    format = "latex", 
+    caption = "Predicted Percent Change in Prices and Quantities as a Result of Mergers"
+  ) %>%
+  kableExtra::add_header_above(c(" ", " ", "Nippyo and Brand A" = 2, "Nippyo and Brand B" = 2)) %>%
+  kableExtra::kable_styling(full_width = FALSE) %>%
+  kableExtra::save_kable("output/chap5_merger_change_p_q.tex")
 ```
-
 
 ## 日評自動車とブランドAの合併後に価格が変化しないような限界費用を計算する
 
@@ -923,21 +962,20 @@ Table_5dt %>%
 
 このようにして得られた限界費用の元では、「日評自動車とA社」が合併した場合に利潤最大化するような価格というものは、データ上の価格と一致（すなわち価格が変化しない）することとなる。
 
-
 ```{r}
 # 合併前の弾力性行列
 elasmat_2016 <- list(elasticity$elasmat_2016)
 
 # 日評自動車とブランドA社の名前を同じにする（所有構造を変更）
 data_2016_NippyoA <- data_2016 %>%
-  mutate(Maker = MakerNippyoA) %>%
-  select(year, Maker, Name, NameID, price, share)
+  dplyr::mutate(Maker = MakerNippyoA) %>%
+  dplyr::select(year, Maker, Name, NameID, price, share)
 
 # 限界費用を計算（シェアと価格、弾力性は合併以前のものを使用）
 mc_NippyoA_pfix <- f_Merginal_Cost_Est(data_2016_NippyoA, marketindex, elasmat_2016)
 mc_NippyoA_pfix_2016 <- mc_NippyoA_pfix$Marginal_Cost_2016
 data_2016 <- data_2016 %>%
-  mutate(mc_NippyoA_pfix = mc_NippyoA_pfix_2016$mc)
+  dplyr::mutate(mc_NippyoA_pfix = mc_NippyoA_pfix_2016$mc)
 ```
 
 ## 日評自動車とブランドBの合併後に価格が変化しないような限界費用を計算する
@@ -947,14 +985,14 @@ data_2016 <- data_2016 %>%
 ```{r}
 # 日評自動車とブランドB社の名前を同じにする（所有構造を変更）
 data_2016_NippyoB <- data_2016 %>%
-  mutate(Maker = MakerNippyoB) %>%
-  select(year, Maker, Name, NameID, price, share)
+  dplyr::mutate(Maker = MakerNippyoB) %>%
+  dplyr::select(year, Maker, Name, NameID, price, share)
 
 # 限界費用を計算（シェアと価格、弾力性は合併以前のものを使用）
 mc_NippyoB_pfix <- f_Merginal_Cost_Est(data_2016_NippyoB, marketindex, elasmat_2016)
 mc_NippyoB_pfix_2016 <- mc_NippyoB_pfix$Marginal_Cost_2016
 data_2016 <- data_2016 %>%
-  mutate(mc_NippyoB_pfix = mc_NippyoB_pfix_2016$mc)
+  dplyr::mutate(mc_NippyoB_pfix = mc_NippyoB_pfix_2016$mc)
 ```
 
 以上の結果に基づき、合併による価格上昇を打ち消すのに必要な限界費用変化を求めることができる。
@@ -962,31 +1000,38 @@ data_2016 <- data_2016 %>%
 ```{r}
 # 表を作るために専用のデータフレームを作る
 Table_6dt <- data_2016 %>%
-  mutate(mc_NippyoA_PPC = (mc_NippyoA_pfix - mc) / mc * 100,
-         mc_NippyoB_PPC = (mc_NippyoB_pfix - mc) / mc * 100) %>%
-  select(Maker, Name, mc_NippyoA_PPC, mc_NippyoB_PPC) %>%
-  filter(Maker %in% c("Nippyo","Brand_A","Brand_B","Brand_C"))
+  dplyr::mutate(
+    mc_NippyoA_PPC = (mc_NippyoA_pfix - mc) / mc * 100,
+    mc_NippyoB_PPC = (mc_NippyoB_pfix - mc) / mc * 100
+  ) %>%
+  dplyr::select(Maker, Name, mc_NippyoA_PPC, mc_NippyoB_PPC) %>%
+  dplyr::filter(Maker %in% c("Nippyo","Brand_A","Brand_B","Brand_C"))
 
 # 名前を付けなおす
-colnames(Table_6dt) <- c("Origin Maker", "Name", "Nippyo and Brand A",
-                         "Nippyo and Brand B")
+colnames(Table_6dt) <- c("Origin Maker", "Name", "Nippyo and Brand A", "Nippyo and Brand B")
 
 # 表を作る
 Table_6dt %>%
-  kable(align = rep("c", 4),
-        digits = 3,
-        booktabs = FALSE, format = "html", 
-        caption = "Percent Reduction in Marginal Costs Required for No Change in Predicted Postmerger Prices") %>%
-  kable_styling(full_width = FALSE)
+  knitr::kable(
+    align = rep("c", 4),
+    digits = 3,
+    booktabs = FALSE,
+    format = "html", 
+    caption = "Percent Reduction in Marginal Costs Required for No Change in Predicted Postmerger Prices"
+  ) %>%
+  kableExtra::kable_styling(full_width = FALSE)
 
 # 表の保存
 Table_6dt %>%
-  kable(align = rep("c", 4),
-        digits = 3,
-        booktabs = FALSE, format = "latex", 
-        caption = "Percent Reduction in Marginal Costs Required for No Change in Predicted Postmerger Prices") %>%
-  kable_styling(full_width = FALSE) %>%
-  save_kable("output/chap5_merger_change_mc.tex")
+  knitr::kable(
+    align = rep("c", 4),
+    digits = 3,
+    booktabs = FALSE,
+    format = "latex", 
+    caption = "Percent Reduction in Marginal Costs Required for No Change in Predicted Postmerger Prices"
+  ) %>%
+  kableExtra::kable_styling(full_width = FALSE) %>%
+  kableExtra::save_kable("output/chap5_merger_change_mc.tex")
 ```
 
 ## 合併シミュレーションの厚生分析
@@ -1061,17 +1106,19 @@ CV_NippyoB <- CS_NippyoB - CS_2016
 $$ \sum_{j \in \mathcal{F}_f} (p_j - mc_j)q_j(\mathbf{p}) $$
 である。ここでpは価格、mcは限界費用、qは数量（ここではシェアに家計の数を掛けることで求める）である。
 
-
 ```{r}
 # Profit and Revenue
 f_profit <- function(Maker, price, mc, share, HH) {
-  pro_rev_dt <- data.frame(Maker, 
-                           profit_each = (price - mc) * share * HH,
-                           revenue_each = price * share * HH)
+  pro_rev_dt <- data.frame(
+    Maker, 
+    profit_each = (price - mc) * share * HH,
+    revenue_each = price * share * HH
+  )
+  
   pro_rev <- pro_rev_dt %>%
-    group_by(Maker) %>%
-    summarise(profit = sum(profit_each), revenue = sum(revenue_each)) %>%
-    ungroup() %>%
+    dplyr::group_by(Maker) %>%
+    dplyr::summarise(profit = sum(profit_each), revenue = sum(revenue_each)) %>%
+    dplyr::ungroup() %>%
     as.data.frame()
   return(pro_rev)
 }
@@ -1080,13 +1127,17 @@ f_profit <- function(Maker, price, mc, share, HH) {
 総余剰の変化を導出する。
 
 ```{r}
-pro_rev_2016 <- f_profit(data_2016$Maker, data_2016$price, data_2016$mc, data_2016$share, HH_2016)  
+pro_rev_2016 <- f_profit(
+  data_2016$Maker, data_2016$price, data_2016$mc, data_2016$share, HH_2016
+)  
 
-pro_rev_NippyoA <- f_profit(data_2016$Maker, data_2016$p_NippyoA, data_2016$mc,
-                            data_2016$share_NippyoA, HH_2016) 
+pro_rev_NippyoA <- f_profit(
+  data_2016$Maker, data_2016$p_NippyoA, data_2016$mc, data_2016$share_NippyoA, HH_2016
+) 
 
-pro_rev_NippyoB <- f_profit(data_2016$Maker, data_2016$p_NippyoB, data_2016$mc,
-                            data_2016$share_NippyoB, HH_2016) 
+pro_rev_NippyoB <- f_profit(
+  data_2016$Maker, data_2016$p_NippyoB, data_2016$mc, data_2016$share_NippyoB, HH_2016
+) 
 
 # Total Surplus Change
 TS_Chage_NippyoA <- CV_NippyoA + sum(pro_rev_NippyoA$profit - pro_rev_2016$profit)
@@ -1096,48 +1147,56 @@ TS_Chage_NippyoB <- CV_NippyoB + sum(pro_rev_NippyoB$profit - pro_rev_2016$profi
 消費者余剰と総余剰の変化の表を作成
 
 ```{r}
-Table_7dt1 <- tibble(
+Table_7dt1 <- dplyr::tibble(
   clo1 = c("Consumer surplus", "Total Welfare"),
   col2 = c(CV_NippyoA, TS_Chage_NippyoA),
   col3 = c(CV_NippyoB, TS_Chage_NippyoB)
 )
 
-colnames(Table_7dt1) <- c("Measure", "Nippyo and Brand A",
-                          "Nippyo and Brand B")
+colnames(Table_7dt1) <- c("Measure", "Nippyo and Brand A", "Nippyo and Brand B")
+
 Table_7dt1 %>%
-  kable(align = rep("c", 3), 
-        digits = 1,
-        booktabs = FALSE, format = "html",
-        caption = "Consumer Surplus and Welfare") %>%
-  kable_styling(full_width = FALSE)
+  knitr::kable(
+    align = rep("c", 3), 
+    digits = 1,
+    booktabs = FALSE, 
+    format = "html",
+    caption = "Consumer Surplus and Welfare"
+  ) %>%
+  kableExtra::kable_styling(full_width = FALSE)
 
 # 表の保存
 Table_7dt1 %>%
-  kable(align = rep("c", 3), 
-        digits = 1,
-        booktabs = FALSE, format = "latex",
-        caption = "Consumer Surplus and Welfare") %>%
-  kable_styling(full_width = FALSE) %>%
-  save_kable("output/chap5_merger_welfare.tex")
+  knitr::kable(
+    align = rep("c", 3), 
+    digits = 1,
+    booktabs = FALSE, 
+    format = "latex",
+    caption = "Consumer Surplus and Welfare"
+  ) %>%
+  kableExtra::kable_styling(full_width = FALSE) %>%
+  kableExtra::save_kable("output/chap5_merger_welfare.tex")
 ```
 
 表を作る前の下準備をする関数を作成
 
 ```{r}
 gen_pro_rev_table <- function(pro_rev_2016, pro_rev_NippyoA, pro_rev_NippyoB) {
-  result_df <- tibble(
+  result_df <- dplyr::tibble(
     Maker = pro_rev_2016$Maker,
     col2 = pro_rev_NippyoA$profit - pro_rev_2016$profit,
     col3 = pro_rev_NippyoA$revenue - pro_rev_2016$revenue,
     col4 = pro_rev_NippyoB$profit - pro_rev_2016$profit,
     col5 = pro_rev_NippyoB$revenue - pro_rev_2016$revenue
-    ) 
+  ) 
   
-  Total <- tibble(Maker = "Total",
-                  col2 = sum(result_df$col2),
-                  col3 = sum(result_df$col3),
-                  col4 = sum(result_df$col4),
-                  col5 = sum(result_df$col5))
+  Total <- dplyr::tibble(
+    Maker = "Total",
+    col2 = sum(result_df$col2),
+    col3 = sum(result_df$col3),
+    col4 = sum(result_df$col4),
+    col5 = sum(result_df$col5)
+  )
   result_df <- rbind(result_df, Total)
   
   colnames(result_df) <- c("Maker", "Profits", "Revenues", "Profits", "Revenues")
@@ -1154,23 +1213,29 @@ Table_7dt2 <- gen_pro_rev_table(pro_rev_2016, pro_rev_NippyoA, pro_rev_NippyoB)
 
 # 表を作る
 Table_7dt2 %>%
-  kable(align = rep("c", 5),
-        digits = 1,
-        booktabs = FALSE, format = "html",
-        caption = "Change in Profits and Revenues") %>%
-  add_header_above(c(" ", "Nippyo and Brand A" = 2, "Nippyo and Brand B" = 2)) %>%
-  kable_styling(full_width = FALSE)
+  knitr::kable(
+    align = rep("c", 5),
+    digits = 1,
+    booktabs = FALSE, 
+    format = "html",
+    caption = "Change in Profits and Revenues"
+  ) %>%
+  kableExtra::add_header_above(c(" ", "Nippyo and Brand A" = 2, "Nippyo and Brand B" = 2)) %>%
+  kableExtra::kable_styling(full_width = FALSE)
+
 # 表の保存
 Table_7dt2 %>%
-  kable(align = rep("c", 5),
-        digits = 1,
-        booktabs = FALSE, format = "latex",
-        caption = "Change in Profits and Revenues") %>%
-  add_header_above(c(" ", "Nippyo and Brand A" = 2, "Nippyo and Brand B" = 2)) %>%
-  kable_styling(full_width = FALSE) %>%
-  save_kable("output/chap5_merger_revenue.tex")
+  knitr::kable(
+    align = rep("c", 5),
+    digits = 1,
+    booktabs = FALSE, 
+    format = "latex",
+    caption = "Change in Profits and Revenues"
+  ) %>%
+  kableExtra::add_header_above(c(" ", "Nippyo and Brand A" = 2, "Nippyo and Brand B" = 2)) %>%
+  kableExtra::kable_styling(full_width = FALSE) %>%
+  kableExtra::save_kable("output/chap5_merger_revenue.tex")
 ```
-
 
 ## シミュレーションに関する計算時間
 
@@ -1179,9 +1244,6 @@ Table_7dt2 %>%
 ```{r}
 tictoc::toc()
 ```
-
-
-
 
 # Appendix 1: 追加的なシミュレーション
 
@@ -1194,7 +1256,6 @@ tictoc::toc()
 tictoc::tic()
 ```
 
-
 ## 関数の定義：総余剰が変化しないような限界費用削減
 
 ```{r}
@@ -1203,7 +1264,7 @@ f_effect_cost_reduction <- function(cost_red, cost_red_firm, Ownership, data, da
                                     parameter, theta1, theta2, HH, p_pre, pro_rev_pre, CS_pre) {
   # 特定の企業のみ、限界費用を一律に係数倍
   data <- data %>%
-    mutate(mc = if_else(Maker %in% cost_red_firm, mc * cost_red, mc))
+    dplyr::mutate(mc = if_else(Maker %in% cost_red_firm, mc * cost_red, mc))
   mc <- data$mc
   
   # 均衡価格
@@ -1211,6 +1272,7 @@ f_effect_cost_reduction <- function(cost_red, cost_red_firm, Ownership, data, da
   
   # CVの計算
   CV <- (f_CS(datalist, p_post, parameter, theta1, theta2, Xi, HH) - CS_pre)
+  
   # 利益と売上の計算
   share_post <- f_mktshare_sim(datalist, p_post, parameter, theta1, theta2, Xi)
   pro_rev_post <- f_profit(data$Maker, p_post, data$mc, share_post, HH) 
@@ -1218,6 +1280,7 @@ f_effect_cost_reduction <- function(cost_red, cost_red_firm, Ownership, data, da
   # 総余剰の変化
   TS_Chage <- CV + sum(pro_rev_post$profit - pro_rev_pre$profit)
   obj <- TS_Chage
+  
   return(obj)
 }
 ```
@@ -1252,7 +1315,8 @@ while (distance > lambda) {
     HH = HH_2016, 
     p_pre = data_2016$p_NippyoA,
     pro_rev_pre = pro_rev_2016,
-    CS_pre = CS_2016)
+    CS_pre = CS_2016
+  )
 
   if (mid_eval > 0) {
     min_cost_red <- mid_cost_red
@@ -1267,13 +1331,17 @@ while (distance > lambda) {
 cost_red_NippyoA <- mid_cost_red
 
 data_2016 <- data_2016 %>%
-  mutate(mc_NippyoA_TSfix = if_else(Maker %in% cost_red_firm, mc * cost_red_NippyoA, mc))
+  dplyr::mutate(mc_NippyoA_TSfix = if_else(Maker %in% cost_red_firm, mc * cost_red_NippyoA, mc))
 
-p_NippyoA_TSfix <- f_eqprice(datalist_2016,data_2016$p_NippyoA,Ownership_NippyoA,
-                             parameter, theta1_hat, theta2_hat, data_2016$mc_NippyoA_TSfix, Xi)
+p_NippyoA_TSfix <- f_eqprice(
+  datalist_2016,data_2016$p_NippyoA,Ownership_NippyoA,
+  parameter, theta1_hat, theta2_hat, data_2016$mc_NippyoA_TSfix, Xi
+)
+
 share_NippyoA_TSfix <- f_mktshare_sim(datalist_2016, p_NippyoA_TSfix, parameter, theta1_hat, theta2_hat, Xi)
+
 data_2016 <- data_2016 %>%
-  mutate(p_NippyoA_TSfix = p_NippyoA_TSfix, share_NippyoA_TSfix = share_NippyoA_TSfix)
+  dplyr::mutate(p_NippyoA_TSfix = p_NippyoA_TSfix, share_NippyoA_TSfix = share_NippyoA_TSfix)
 ```
 
 ## 日評自動車とブランドBについて限界費用削減を計算
@@ -1305,7 +1373,8 @@ while (distance > lambda){
     HH = HH_2016, 
     p_pre = data_2016$p_NippyoB,
     pro_rev_pre = pro_rev_2016,
-    CS_pre = CS_2016)
+    CS_pre = CS_2016
+  )
   
   if (mid_eval > 0) {
     min_cost_red <- mid_cost_red
@@ -1320,15 +1389,17 @@ while (distance > lambda){
 cost_red_NippyoB <- mid_cost_red
 
 data_2016 <- data_2016 %>%
-  mutate(mc_NippyoB_TSfix = if_else(Maker %in% cost_red_firm, mc * cost_red_NippyoB, mc))
+  dplyr::mutate(mc_NippyoB_TSfix = if_else(Maker %in% cost_red_firm, mc * cost_red_NippyoB, mc))
 
-p_NippyoB_TSfix <- f_eqprice(datalist_2016, data_2016$p_NippyoB, Ownership_NippyoB,
-                             parameter, theta1_hat, theta2_hat, data_2016$mc_NippyoB_TSfix, Xi)
+p_NippyoB_TSfix <- f_eqprice(
+  datalist_2016, data_2016$p_NippyoB, Ownership_NippyoB,
+  parameter, theta1_hat, theta2_hat, data_2016$mc_NippyoB_TSfix, Xi
+)
 
 share_NippyoB_TSfix <- f_mktshare_sim(datalist_2016, p_NippyoB_TSfix, parameter, theta1_hat, theta2_hat, Xi)
 
 data_2016 <- data_2016 %>%
-  mutate(p_NippyoB_TSfix = p_NippyoB_TSfix, share_NippyoB_TSfix = share_NippyoB_TSfix)
+  dplyr::mutate(p_NippyoB_TSfix = p_NippyoB_TSfix, share_NippyoB_TSfix = share_NippyoB_TSfix)
 
 print(cost_red_NippyoB)
 ```
@@ -1336,30 +1407,35 @@ print(cost_red_NippyoB)
 ## 限界費用削減の表を作成
 
 ```{r}
-Table_7dt3 <- tibble(
+Table_7dt3 <- dplyr::tibble(
   col1 = c("Cost reduction"),
   col2 = (1 - cost_red_NippyoA) * 100,
   col3 = (1 - cost_red_NippyoB) * 100
   )
 
-colnames(Table_7dt3) <- c("Measure", "Nippyo and Brand A",
-                          "Nippyo and Brand B")
+colnames(Table_7dt3) <- c("Measure", "Nippyo and Brand A", "Nippyo and Brand B")
 
 Table_7dt3 %>%
-  kable(align = rep("c", 3),
-        digits = 2,
-        booktabs = FALSE, format = "html",
-        caption = "Cost Reduction (Percent)") %>% 
-  kable_styling(full_width = FALSE)
+  knitr::kable(
+    align = rep("c", 3),
+    digits = 2,
+    booktabs = FALSE, 
+    format = "html",
+    caption = "Cost Reduction (Percent)"
+  ) %>% 
+  kableExtra::kable_styling(full_width = FALSE)
 
 # 表の保存
 Table_7dt3 %>%
-  kable(align = rep("c", 3),
-        digits = 2,
-        booktabs = FALSE, format = "latex",
-        caption = "Cost Reduction (Percent)") %>% 
-  kable_styling(full_width = FALSE) %>%
-  save_kable("output/chap5_appendix_merger_mc.tex")
+  knitr::kable(
+    align = rep("c", 3),
+    digits = 2,
+    booktabs = FALSE, 
+    format = "latex",
+    caption = "Cost Reduction (Percent)"
+  ) %>% 
+  kableExtra::kable_styling(full_width = FALSE) %>%
+  kableExtra::save_kable("output/chap5_appendix_merger_mc.tex")
 ```
 
 ## 限界費用削減をした場合の利潤と収入の変化
@@ -1367,37 +1443,46 @@ Table_7dt3 %>%
 
 ```{r}
 # 日評自動車とブランドA社が合併した場合の利益の導出
-pro_rev_NippyoA_rc <- f_profit(data_2016$Maker, data_2016$p_NippyoA_TSfix, data_2016$mc_NippyoA_TSfix,
-                               data_2016$share_NippyoA_TSfix, HH_2016) 
+pro_rev_NippyoA_rc <- f_profit(
+  data_2016$Maker, data_2016$p_NippyoA_TSfix, data_2016$mc_NippyoA_TSfix,
+  data_2016$share_NippyoA_TSfix, HH_2016
+) 
 
 # 日評自動車とブランドB社が合併した場合の利益の導出
-pro_rev_NippyoB_rc <- f_profit(data_2016$Maker, data_2016$p_NippyoB_TSfix, data_2016$mc_NippyoB_TSfix,
-                               data_2016$share_NippyoB_TSfix, HH_2016) 
+pro_rev_NippyoB_rc <- f_profit(
+  data_2016$Maker, data_2016$p_NippyoB_TSfix, data_2016$mc_NippyoB_TSfix,
+  data_2016$share_NippyoB_TSfix, HH_2016
+) 
 
 Table_7dt4 <- gen_pro_rev_table(pro_rev_2016, pro_rev_NippyoA_rc, pro_rev_NippyoB_rc)
 
 # 表を作る
 Table_7dt4 %>%
-  kable(align = rep("c", 5),
-        digits = 2,
-        booktabs = FALSE, format = "html",
-        caption = "Change in Profits and Revenues") %>% 
-  add_header_above(c(" ", "Nippyo and Brand A" = 2, "Nippyo and Brand B" = 2)) %>%
-  kable_styling(full_width = FALSE)
+  knitr::kable(
+    align = rep("c", 5),
+    digits = 2,
+    booktabs = FALSE, 
+    format = "html",
+    caption = "Change in Profits and Revenues"
+  ) %>% 
+  kableExtra::add_header_above(c(" ", "Nippyo and Brand A" = 2, "Nippyo and Brand B" = 2)) %>%
+  kableExtra::kable_styling(full_width = FALSE)
 
 # 表の保存
 Table_7dt4 %>%
-  kable(align = rep("c", 5),
-        digits = 2,
-        booktabs = FALSE, format = "latex",
-        caption = "Change in Profits and Revenues") %>% 
-  add_header_above(c(" ", "Nippyo and Brand A" = 2, "Nippyo and Brand B" = 2)) %>%
-  kable_styling(full_width = FALSE) %>%
-  save_kable("output/chap5_appendix_merger_revenue.tex")
+  knitr::kable(
+    align = rep("c", 5),
+    digits = 2,
+    booktabs = FALSE, 
+    format = "latex",
+    caption = "Change in Profits and Revenues"
+  ) %>% 
+  kableExtra::add_header_above(c(" ", "Nippyo and Brand A" = 2, "Nippyo and Brand B" = 2)) %>%
+  kableExtra::kable_styling(full_width = FALSE) %>%
+  kableExtra::save_kable("output/chap5_appendix_merger_revenue.tex")
 ```
 
 ## 限界費用削減をした場合の全体の利潤と収入の変化率
-
 ```{r}
 print((sum(pro_rev_NippyoA_rc$profit) - sum(pro_rev_2016$profit)) / sum(pro_rev_2016$profit) * 100)
 print((sum(pro_rev_NippyoA_rc$revenue) - sum(pro_rev_2016$revenue)) / sum(pro_rev_2016$revenue) * 100)
@@ -1408,7 +1493,6 @@ print((sum(pro_rev_NippyoB_rc$revenue) - sum(pro_rev_2016$revenue)) / sum(pro_re
 ## 計算時間レポート
 
 Appendix 1にかかった合計計算時間をレポートする。
-
 ```{r}
 tictoc::toc()
 ```
