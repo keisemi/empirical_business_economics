@@ -30,13 +30,13 @@
 # 2. 疑似データの生成 (第10回の内容に相当)
 # 3. 推定 Step 1: CCPとTransition
 # 4. 推定 Step 2-1: 推定したCCPの元でのForward Simulation
-# 5. Forward Simulationを用いたPesendorer and Schmidt-Dengler (以下P-SD) 
+# 5. Forward Simulationを用いたPesendorer and Schmidt-Dengler (以下P-SD)
 # 6. BBLの不等式推定量
 # 7. BBLの不等式推定量におけるBootstrap
 
 # また、以下のRコードを実行にあたっては計算時間が多々かかる箇所があります。
 # 以下でレポートされている計算時間は以下の環境で行ったものになります。
-# CPU: "Intel(R) Core(TM) i9-9980XE CPU @ 3.00GHz 3.00 GHz". 
+# CPU: "Intel(R) Core(TM) i9-9980XE CPU @ 3.00GHz 3.00 GHz".
 # OS: Windows 10 Pro version 22H2.
 # メモリー：64GB
 
@@ -81,9 +81,10 @@ pacman::p_load(
 )
 
 # 必要な関数の読み込み
-functionlt <- list.files("./functions", 
-                         pattern="*.R$", full.names=TRUE, 
-                         ignore.case=TRUE)
+functionlt <- list.files("./functions",
+  pattern = "*.R$", full.names = TRUE,
+  ignore.case = TRUE
+)
 # sapply(functionlt[-20], source)
 sapply(functionlt, source)
 
@@ -96,7 +97,7 @@ source("sub_1_prepare.R")
 source("sub_2_DGP.R")
 
 # Matlabの再現: Fakedata 読み込み
-if (option_matlab == TRUE){
+if (option_matlab == TRUE) {
   FakeData <- read.csv("data_from_matlab/FakeData_Matlab.csv", header = FALSE) %>% as.matrix()
 }
 
@@ -107,23 +108,23 @@ EstimatedCCP1 <- matrix(0, 8, 1)
 EstimatedCCP2 <- matrix(0, 8, 1)
 
 for (s in 1:8) {
-  SubData <- FakeData[FakeData[,3]==s,]
-  Subseta1iszero <- SubData[SubData[,7]==0, ]
-  Subseta2iszero <- SubData[SubData[,8]==0, ]
-  EstimatedCCP1[s] <- nrow(Subseta1iszero)/nrow(SubData)
-  EstimatedCCP2[s] <- nrow(Subseta2iszero)/nrow(SubData)
+  SubData <- FakeData[FakeData[, 3] == s, ]
+  Subseta1iszero <- SubData[SubData[, 7] == 0, ]
+  Subseta2iszero <- SubData[SubData[, 8] == 0, ]
+  EstimatedCCP1[s] <- nrow(Subseta1iszero) / nrow(SubData)
+  EstimatedCCP2[s] <- nrow(Subseta2iszero) / nrow(SubData)
 }
 
 EstimatedTransition <- matrix(0, 2, 2)
 
-DataLag1 <- matrix(c(0, FakeData[1:nrow(FakeData)-1, 4])) # １期前のデータ
+DataLag1 <- matrix(c(0, FakeData[1:nrow(FakeData) - 1, 4])) # １期前のデータ
 SubData <- cbind(FakeData, DataLag1)
-SubData <- SubData[SubData[,2]!=1,] # t=1からt=2、t=2から・・・という遷移
+SubData <- SubData[SubData[, 2] != 1, ] # t=1からt=2、t=2から・・・という遷移
 for (z in 1:2) {
-  SubDataZ <- SubData[SubData[,4]==z,]
-  SubDataZnext <- SubDataZ[SubDataZ[,9]==z,]
-  EstimatedTransition[z,z] <- nrow(SubDataZnext)/nrow(SubDataZ)
-  EstimatedTransition[z,3-z] <- 1 - EstimatedTransition[z,z] 
+  SubDataZ <- SubData[SubData[, 4] == z, ]
+  SubDataZnext <- SubDataZ[SubDataZ[, 9] == z, ]
+  EstimatedTransition[z, z] <- nrow(SubDataZnext) / nrow(SubDataZ)
+  EstimatedTransition[z, 3 - z] <- 1 - EstimatedTransition[z, z]
 }
 
 # 確認
@@ -133,24 +134,24 @@ print(EstimatedTransition) # 推定されたZの遷移確率行列
 # 4. 推定 Step 2-1: 推定したCCPの元でのForward Simulation----
 
 # Note: State index and its corresponding values
-# 1: G(1) 0 0 
-# 2: G(1) 0 1  
+# 1: G(1) 0 0
+# 2: G(1) 0 1
 # 3: G(1) 1 0
-# 4: G(1) 1 1 
-# 5: B(2) 0 0 
-# 6: B(2) 0 1  
+# 4: G(1) 1 1
+# 5: B(2) 0 0
+# 6: B(2) 0 1
 # 7: B(2) 1 0
-# 8: B(2) 1 1 
+# 8: B(2) 1 1
 
 # Forward simulationのパラメタ設定
 
-NumSimPeriods  <- 100
-NumSimFirms    <- 2
+NumSimPeriods <- 100
+NumSimFirms <- 2
 NumSimulations <- 1000
 
 #  Forward simulationにおけるInitialのStateを設定。
 # 今回は状態変数が取りうる値が８通りなので、その８通りをInitialとする。
-InitialState <- array(1:8, dim=c(8,2))
+InitialState <- array(1:8, dim = c(8, 2))
 NumSimMarkets <- 8
 
 # Forward simulationで用いるランダムショックを準備する。
@@ -163,17 +164,19 @@ set.seed(2023)
 # F(x) = exp(-exp(-x)) を使う。
 # -log(-log(F(x)) ) = x となるので、F(x)の部分を0-1一様分布から引き、そのInversionを取る。
 # 逆関数法により目的の確率分布を得られる
-EVrandom <- 
+EVrandom <-
   array(
     -log(-log(runif(NumSimMarkets * NumSimPeriods * NumSimFirms * NumSimulations * 8 * 3))),
-    dim = c(NumSimMarkets, NumSimPeriods, NumSimFirms, NumSimulations, 8, 3))
+    dim = c(NumSimMarkets, NumSimPeriods, NumSimFirms, NumSimulations, 8, 3)
+  )
 
 # 景気のtransitionのシミュレーションに用いるドローを用意する。
 UNIrandom <- array(runif(NumSimMarkets * NumSimPeriods * NumSimulations),
-                   dim=c(NumSimMarkets,NumSimPeriods,NumSimulations))
+  dim = c(NumSimMarkets, NumSimPeriods, NumSimulations)
+)
 
 # Matlabの再現: 乱数 読み込み
-if (option_matlab == TRUE){
+if (option_matlab == TRUE) {
   fa <- readMat("data_from_matlab/random_number_matlab_PSD.mat")
   EVrandom <- fa$EVrandom
   UNIrandom <- fa$UNIrandom
@@ -184,10 +187,12 @@ if (option_matlab == TRUE){
 
 # DGPにおける CCP と Transition の元でForward Simulationする。
 tic()
-(Wstar <- 
-  VSigmaGeneration(CCP1UpdatedMat[,2], CCP2UpdatedMat[,2], TransitionMat, EVrandom,
-                   UNIrandom, InitialState, NumSimMarkets, NumSimulations,
-                   NumSimPeriods, beta))
+(Wstar <-
+  VSigmaGeneration(
+    CCP1UpdatedMat[, 2], CCP2UpdatedMat[, 2], TransitionMat, EVrandom,
+    UNIrandom, InitialState, NumSimMarkets, NumSimulations,
+    NumSimPeriods, beta
+  ))
 toc()
 W1star <- Wstar[[1]]
 W2star <- Wstar[[2]]
@@ -203,16 +208,17 @@ fa2 # True, Simulated, and Diff
 
 # Check value after considering normalization a la Agg-Suzuki
 Normalized_TrueParam <-
-  matrix(c(Parameters[1] - ((1-beta)/beta)*Parameters[5], # 企業1のベース利潤
-           Parameters[3], # 企業2の店舗数の企業1への影響 ;顧客収奪効果
-           Parameters[4], # 景気が良い時の企業1の追加的利潤
-           0, # 企業１の退出のためのコスト; 0に標準化
-           Parameters[6] + Parameters[5], # 企業1の参入のためのコスト
-           Parameters[2] - ((1-beta)/beta)*Parameters[5], # 企業2のベース利潤
-           Parameters[3], # 企業1の店舗数の企業2への影響 ;顧客収奪効果
-           Parameters[4], # 景気が良い時の企業2の追加的利潤
-           0, # 企業2の退出のためのコスト; 0に標準化
-           Parameters[6] + Parameters[5] # 企業2の参入のためのコスト
+  matrix(c(
+    Parameters[1] - ((1 - beta) / beta) * Parameters[5], # 企業1のベース利潤
+    Parameters[3], # 企業2の店舗数の企業1への影響 ;顧客収奪効果
+    Parameters[4], # 景気が良い時の企業1の追加的利潤
+    0, # 企業１の退出のためのコスト; 0に標準化
+    Parameters[6] + Parameters[5], # 企業1の参入のためのコスト
+    Parameters[2] - ((1 - beta) / beta) * Parameters[5], # 企業2のベース利潤
+    Parameters[3], # 企業1の店舗数の企業2への影響 ;顧客収奪効果
+    Parameters[4], # 景気が良い時の企業2の追加的利潤
+    0, # 企業2の退出のためのコスト; 0に標準化
+    Parameters[6] + Parameters[5] # 企業2の参入のためのコスト
   ))
 normparam1 <- matrix(c(Normalized_TrueParam[1:5], 1))
 normparam2 <- matrix(c(Normalized_TrueParam[6:10], 1))
@@ -228,15 +234,17 @@ t(W1star) %*% param1 - t(W1star) %*% normparam1 # diff b/w bfr & aft normalizati
 t(W2star) %*% param2 - t(W2star) %*% normparam2 # diff b/w bfr & aft normalization
 
 # 著者メモ：各企業が店舗を開いている(n=1)のStateにおいて、
-# -0.1875 * 0.8 (discount factor) = - 0.15 
+# -0.1875 * 0.8 (discount factor) = - 0.15
 # という差が生じている。
 # これは、Closing costをゼロに基準化していることに起因する。
 
 # 推定したCCPのもとで、Forward Simulationを行い、Value functionの基底を出す
-Wstar <- 
-    VSigmaGeneration(EstimatedCCP1, EstimatedCCP2, EstimatedTransition, EVrandom,
-                     UNIrandom, InitialState, NumSimMarkets, NumSimulations,
-                     NumSimPeriods, beta)
+Wstar <-
+  VSigmaGeneration(
+    EstimatedCCP1, EstimatedCCP2, EstimatedTransition, EVrandom,
+    UNIrandom, InitialState, NumSimMarkets, NumSimulations,
+    NumSimPeriods, beta
+  )
 W1star <- Wstar[[1]]
 W2star <- Wstar[[2]]
 
@@ -245,10 +253,14 @@ W2star <- Wstar[[2]]
 # Forward simulation したValueを用いて、P-SD流に推定を行う。
 
 # まず目的関数の定義
-obj_forward_PSD <- 
-  function(x){Estimation_forward_PSD(c(x[1], x[3:4], 0, x[5], x[2],x[3:4], 0, x[5]),
-                                     W1star, W2star, EstimatedTransition, 
-                                     EstimatedCCP1, EstimatedCCP2, beta)}
+obj_forward_PSD <-
+  function(x) {
+    Estimation_forward_PSD(
+      c(x[1], x[3:4], 0, x[5], x[2], x[3:4], 0, x[5]),
+      W1star, W2star, EstimatedTransition,
+      EstimatedCCP1, EstimatedCCP2, beta
+    )
+  }
 
 # 初期値はTrueにしておく。
 initial <- c(0.3375, 0.2375, -0.27, 0.45, -2.25)
@@ -273,17 +285,19 @@ NumSimPeriods <- 30
 set.seed(2023)
 
 # Idiosyncratic shock (ロジットショック)のドローを準備する。
-EVrandom <- 
+EVrandom <-
   array(
     -log(-log(runif(NumSimMarkets * NumSimPeriods * NumSimFirms * NumSimulations * 8 * 3))),
-    dim = c(NumSimMarkets, NumSimPeriods, NumSimFirms, NumSimulations, 8, 3))
+    dim = c(NumSimMarkets, NumSimPeriods, NumSimFirms, NumSimulations, 8, 3)
+  )
 
 # 景気のtransitionのシミュレーションに用いるドローを用意する。
 UNIrandom <- array(runif(NumSimMarkets * NumSimPeriods * NumSimulations),
-                   dim=c(NumSimMarkets,NumSimPeriods,NumSimulations))
+  dim = c(NumSimMarkets, NumSimPeriods, NumSimulations)
+)
 
 # Matlabの再現: 乱数 読み込み
-if (option_matlab == TRUE){
+if (option_matlab == TRUE) {
   # PerturbedCCP / UNIrandom / EVrandomを呼び出す
   fa <- readMat("data_from_matlab/random_number_matlab_BBL.mat")
   UNIrandom <- fa$UNIrandom
@@ -291,55 +305,61 @@ if (option_matlab == TRUE){
 }
 
 # 推定したCCPのもとで、Forward Simulationを行い、Value functionの基底を出す
-Wstar <- 
-  VSigmaGeneration(EstimatedCCP1, EstimatedCCP2, EstimatedTransition, EVrandom,
-                   UNIrandom, InitialState, NumSimMarkets, NumSimulations,
-                   NumSimPeriods, beta)
+Wstar <-
+  VSigmaGeneration(
+    EstimatedCCP1, EstimatedCCP2, EstimatedTransition, EVrandom,
+    UNIrandom, InitialState, NumSimMarkets, NumSimulations,
+    NumSimPeriods, beta
+  )
 W1star <- Wstar[[1]]
 W2star <- Wstar[[2]]
 
 # CCPのPertubationを行う。
 NumPerturbations <- 200
-PerturbedCCP1 <- 
-  rep(EstimatedCCP1, NumPerturbations) + 
-  matrix(rnorm(8*NumPerturbations, mean = 0, sd = .1),nrow = 8)
-PerturbedCCP2 <- 
-  rep(EstimatedCCP2, NumPerturbations) + 
-  matrix(rnorm(8*NumPerturbations, mean = 0, sd = .1),nrow = 8)
+PerturbedCCP1 <-
+  rep(EstimatedCCP1, NumPerturbations) +
+  matrix(rnorm(8 * NumPerturbations, mean = 0, sd = .1), nrow = 8)
+PerturbedCCP2 <-
+  rep(EstimatedCCP2, NumPerturbations) +
+  matrix(rnorm(8 * NumPerturbations, mean = 0, sd = .1), nrow = 8)
 
 # To make CCP be inside of [0,1] with some buffer
-for (i in 1:8){
-  for (j in 1:NumPerturbations){
-    PerturbedCCP1[i,j] <- max(PerturbedCCP1[i,j], 0.001)
-    PerturbedCCP1[i,j] <- min(PerturbedCCP1[i,j], 0.999)
+for (i in 1:8) {
+  for (j in 1:NumPerturbations) {
+    PerturbedCCP1[i, j] <- max(PerturbedCCP1[i, j], 0.001)
+    PerturbedCCP1[i, j] <- min(PerturbedCCP1[i, j], 0.999)
 
-    PerturbedCCP2[i,j] <- max(PerturbedCCP2[i,j], 0.001)
-    PerturbedCCP2[i,j] <- min(PerturbedCCP2[i,j], 0.999)
+    PerturbedCCP2[i, j] <- max(PerturbedCCP2[i, j], 0.001)
+    PerturbedCCP2[i, j] <- min(PerturbedCCP2[i, j], 0.999)
   }
 }
 
 # Matlabの再現: 乱数 読み込み
-if (option_matlab == TRUE){
+if (option_matlab == TRUE) {
   # PerturbedCCP を呼び出す。
   PerturbedCCP1 <- fa$PerturbedCCP1
   PerturbedCCP2 <- fa$PerturbedCCP2
 }
 
-W1_all <- array(rep(0,6*NumSimMarkets*NumPerturbations),dim = c(6,NumSimMarkets,NumPerturbations))
-W2_all <- array(rep(0,6*NumSimMarkets*NumPerturbations),dim = c(6,NumSimMarkets,NumPerturbations))
+W1_all <- array(rep(0, 6 * NumSimMarkets * NumPerturbations), dim = c(6, NumSimMarkets, NumPerturbations))
+W2_all <- array(rep(0, 6 * NumSimMarkets * NumPerturbations), dim = c(6, NumSimMarkets, NumPerturbations))
 
 # PertubationしたCCPを用いてForward simulationを行う
 # 筆者の環境では20分程度かかった。
 tic()
-for (per in 1:NumPerturbations){
-  cat(per, '')
-  W1_p  <- VSigmaGeneration(PerturbedCCP1[,per], EstimatedCCP2, EstimatedTransition,
-                                EVrandom, UNIrandom, InitialState, NumSimMarkets, NumSimulations, NumSimPeriods, beta)
-  W1_all[ , ,per] <- W1_p[[1]]
+for (per in 1:NumPerturbations) {
+  cat(per, "")
+  W1_p <- VSigmaGeneration(
+    PerturbedCCP1[, per], EstimatedCCP2, EstimatedTransition,
+    EVrandom, UNIrandom, InitialState, NumSimMarkets, NumSimulations, NumSimPeriods, beta
+  )
+  W1_all[, , per] <- W1_p[[1]]
 
-  W2_p  <- VSigmaGeneration(EstimatedCCP1, PerturbedCCP2[ ,per], EstimatedTransition,
-                                EVrandom, UNIrandom, InitialState, NumSimMarkets, NumSimulations, NumSimPeriods, beta)
-  W2_all[ , ,per] <- W2_p[[2]]
+  W2_p <- VSigmaGeneration(
+    EstimatedCCP1, PerturbedCCP2[, per], EstimatedTransition,
+    EVrandom, UNIrandom, InitialState, NumSimMarkets, NumSimulations, NumSimPeriods, beta
+  )
+  W2_all[, , per] <- W2_p[[2]]
 }
 toc()
 
@@ -356,23 +376,39 @@ initial <- c(0.3, 0.2, -0.27, 0.45, -2.1)
 # これを非線形最小二乗法の最適化アルゴリズムを用いて推定を行っていた。
 # Rコードではこのステップを省いて、BBLobjective_NLSも通常の関数（値を返すもの）として定義し、
 # optim関数で最適化を行っている。
-obj_forward_BBL_NLS <- 
-  function(x){BBLobjective_NLS(c(x[1], x[3:4], 0, x[5], x[2],x[3:4], 0, x[5]),
-                               NumPerturbations, W1star, W2star, W1_all, W2_all)}
+obj_forward_BBL_NLS <-
+  function(x) {
+    BBLobjective_NLS(
+      c(x[1], x[3:4], 0, x[5], x[2], x[3:4], 0, x[5]),
+      NumPerturbations, W1star, W2star, W1_all, W2_all
+    )
+  }
 
-opt <- optim(par = initial, fn = obj_forward_BBL_NLS,
-      control = list(maxit = 1e4,
-                     abstol = 1e-10,
-                     reltol = 1e-10))
+opt <- optim(
+  par = initial, fn = obj_forward_BBL_NLS,
+  control = list(
+    maxit = 1e4,
+    abstol = 1e-10,
+    reltol = 1e-10
+  )
+)
 
-#参考：同じ結果が得られる。
+# 参考：同じ結果が得られる。
 obj_forward_BBL <-
-  function(x){BBLobjective(c(x[1], x[3:4], 0, x[5], x[2],x[3:4], 0, x[5]),
-                             NumPerturbations, W1star, W2star, W1_all, W2_all)}
-(opt <- optim(par = initial, fn = obj_forward_BBL,
-              control = list(maxit = 1e4,
-                             abstol = 1e-10,
-                             reltol = 1e-10)))
+  function(x) {
+    BBLobjective(
+      c(x[1], x[3:4], 0, x[5], x[2], x[3:4], 0, x[5]),
+      NumPerturbations, W1star, W2star, W1_all, W2_all
+    )
+  }
+(opt <- optim(
+  par = initial, fn = obj_forward_BBL,
+  control = list(
+    maxit = 1e4,
+    abstol = 1e-10,
+    reltol = 1e-10
+  )
+))
 
 # 推定結果を保存する
 saveRDS(opt, file = "result/result_BBL_pointestimate.RDS")
@@ -395,15 +431,15 @@ numBootSample <- 100
 
 # 各Bootstrap sampleで用いるマーケットのインデックスを乱数から発生させる。
 # 市場が500個であるため、１から５００の整数について、重複を許して５００個ドローする。
-bootindex <- array(sample(1:500, 500*numBootSample, replace = TRUE), dim = c(500, numBootSample))
+bootindex <- array(sample(1:500, 500 * numBootSample, replace = TRUE), dim = c(500, numBootSample))
 
 # 結果を保存するための行列
-bootresult_payoff <- matrix(rep(0,5*numBootSample),ncol = numBootSample)
+bootresult_payoff <- matrix(rep(0, 5 * numBootSample), ncol = numBootSample)
 
 # 乱数の発生が必要なため、乱数発生のためのシードを設定する
 set.seed(2023)
-noise_CCP1 <- matrix(rnorm(8*NumPerturbations, mean = 0, sd = .1),nrow = 8)
-noise_CCP2 <- matrix(rnorm(8*NumPerturbations, mean = 0, sd = .1),nrow = 8)
+noise_CCP1 <- matrix(rnorm(8 * NumPerturbations, mean = 0, sd = .1), nrow = 8)
+noise_CCP2 <- matrix(rnorm(8 * NumPerturbations, mean = 0, sd = .1), nrow = 8)
 
 # Bootstrap を実行するループ
 
@@ -411,79 +447,76 @@ noise_CCP2 <- matrix(rnorm(8*NumPerturbations, mean = 0, sd = .1),nrow = 8)
 # 筆者の環境では、コア数10の並列計算において、XXX秒かかった。
 # なお、Bootstrapの結果については、result/result_BBL_boot_XX.rds ファイルに格納されている。
 
-if (option_parallel == FALSE){
+if (option_parallel == FALSE) {
   # 並列計算なし
 
   for (b in 1:numBootSample) {
     # Bootstrap sampleを構築する。
-    bootsample <- matrix(rep(0,500*50*8),ncol = 8)
-    for (m in 1:500){
-      temp <- FakeData[FakeData[ ,1] == bootindex[m,b] , ]
-      bootsample[ (1+50*(m-1)):(50*m) , ] <- temp
+    bootsample <- matrix(rep(0, 500 * 50 * 8), ncol = 8)
+    for (m in 1:500) {
+      temp <- FakeData[FakeData[, 1] == bootindex[m, b], ]
+      bootsample[(1 + 50 * (m - 1)):(50 * m), ] <- temp
     }
     tic()
-    
+
     # 構築したBootstrap sampleを用いて推定を行う。
-    
+
     # 留意点：Matlabコードの方では、Bootstrap_BBL関数の内部で
     # EVrandom, UNIrandom、CCPのPertubationなどの乱数を発生させている。
     # 一方、Rコードの方では、必要となる乱数は関数の外で発生させており、引数として渡している。
-    output <- Bootstrap_BBL(bootsample, beta, 
-                            EVrandom, UNIrandom, InitialState, 
-                            NumSimMarkets, NumSimulations, NumSimPeriods,
-                            NumPerturbations, noise_CCP1, noise_CCP2)
-    
+    output <- Bootstrap_BBL(
+      bootsample, beta,
+      EVrandom, UNIrandom, InitialState,
+      NumSimMarkets, NumSimulations, NumSimPeriods,
+      NumPerturbations, noise_CCP1, noise_CCP2
+    )
+
     # 推定結果を保存する。
     output_param <- output[[1]]$par
-    bootresult_payoff[ ,b] <- output_param
+    bootresult_payoff[, b] <- output_param
     toc()
-    cat(b, '')
+    cat(b, "")
   }
-  
-} else if (option_parallel == TRUE){
-  
+} else if (option_parallel == TRUE) {
   # コア数の設定
   cores <- 10
-  cl <- makeCluster(cores, outfile="")
+  cl <- makeCluster(cores, outfile = "")
   registerDoParallel(cl)
-  
+
   tic()
-  foreach (b = 1:numBootSample, .verbose = TRUE) %dopar% {
-    
+  foreach(b = 1:numBootSample, .verbose = TRUE) %dopar% {
     # Bootstrap sampleを構築する。
-    bootsample <- matrix(rep(0,500*50*8),ncol = 8)
-    for (m in 1:500){
-      temp <- FakeData[FakeData[ ,1] == bootindex[m,b] , ]
-      bootsample[ (1+50*(m-1)):(50*m) , ] <- temp
+    bootsample <- matrix(rep(0, 500 * 50 * 8), ncol = 8)
+    for (m in 1:500) {
+      temp <- FakeData[FakeData[, 1] == bootindex[m, b], ]
+      bootsample[(1 + 50 * (m - 1)):(50 * m), ] <- temp
     }
 
     # 構築したBootstrap sampleを用いて推定を行う。
-    
+
     # 留意点：Matlabコードの方では、Bootstrap_BBL関数の内部で
     # EVrandom, UNIrandom、CCPのPertubationなどの乱数を発生させている。
     # 一方、Rコードの方では、必要となる乱数は関数の外で発生させており、引数として渡している。
-    result <- Bootstrap_BBL(bootsample, beta, 
-                            EVrandom, UNIrandom, InitialState, 
-                            NumSimMarkets, NumSimulations, NumSimPeriods,
-                            NumPerturbations, noise_CCP1, noise_CCP2)
-    
+    result <- Bootstrap_BBL(
+      bootsample, beta,
+      EVrandom, UNIrandom, InitialState,
+      NumSimMarkets, NumSimulations, NumSimPeriods,
+      NumPerturbations, noise_CCP1, noise_CCP2
+    )
+
     # 推定結果を保存する。
     output <- list()
     output$param <- result[[1]]$par
-    
+
     # 推定結果はRDSファイルとして保存している。
     saveRDS(output, file = paste("result/result_BBL_boot_", b, ".RDS", sep = ""))
-    
   }
   toc()
-  
-  for (b in 1:numBootSample){
-    
-    output <- readRDS(paste("result/result_BBL_boot_", b, ".RDS", sep = ""))
-    bootresult_payoff[ ,b] <- output$param
 
+  for (b in 1:numBootSample) {
+    output <- readRDS(paste("result/result_BBL_boot_", b, ".RDS", sep = ""))
+    bootresult_payoff[, b] <- output$param
   }
-  
 }
 
 # 推定結果のまとめ
@@ -491,5 +524,5 @@ if (option_parallel == FALSE){
 # ブートストラップの結果と点推定値がそれぞれ保存されている。
 true <- c(0.3, 0.2, -0.27, 0.45, -2.1)
 print("Payoff parameter: True, Normalized true, Estimated, SE ")
-normalized_param <- c( 0.3 - (1-beta)/beta*(-0.15), 0.2 - (1-beta)/beta*(-0.15),-0.27, 0.45, -2.1 + (-0.15))
-print(matrix(c(true, normalized_param, opt$par, apply(bootresult_payoff,1,sd)),nrow = 5 ))
+normalized_param <- c(0.3 - (1 - beta) / beta * (-0.15), 0.2 - (1 - beta) / beta * (-0.15), -0.27, 0.45, -2.1 + (-0.15))
+print(matrix(c(true, normalized_param, opt$par, apply(bootresult_payoff, 1, sd)), nrow = 5))

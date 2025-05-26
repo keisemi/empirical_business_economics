@@ -1,6 +1,7 @@
 # R関連の一時ファイルと設定ファイル
 .Rhistory
 .RData
+.RDataTmp
 .Ruserdata
 .Rproj.user/
 
