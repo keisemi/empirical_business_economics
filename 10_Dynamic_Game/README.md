@@ -19,6 +19,8 @@
         -   `obj_lik.R`: 目的関数として疑似対数尤度関数を定義した関数。
 -   `KS12_R`: 経済セミナー第12回に基づく反実仮想分析
     -   概ね経済セミナー第12回の[サポートコード](https://sites.google.com/view/keisemi-ebiz/%E7%AC%AC12%E5%9B%9E?authuser=0)と同内容
+    - `main1_Estimation.R`の内容はMatLab版データで実行されている（本誌サポートコードではRで生成したデータを用いていた）。
+    - `main2_Policy_Simulation.R`は本誌とは異なるパラメターのもとで反実仮想分析のプロットを生成している。
     -   `result`内にはCounter Factualで出力された店舗存在確率のグラフが格納されている。
         -   `ProbEntry.png`: 何の意味もなさないファイル
         -   `ProbEntry1.png`: 新パラメターに基づく企業1のCounter Factual
