@@ -1,0 +1,1004 @@
+---
+title: "KinokoTakenoko_2024_logit"
+author: "YumaIshino"
+output:
+  html_document:
+    toc: yes
+    toc_depth: '2'
+    df_print: paged
+    code_folding: hide
+    number_section: true
+date: "2024-07-03"
+---
+
+　このファイルは、2024年度のきのこの山・たけのこの里アンケートについての分析用のコード及びその結果をまとめたものである。
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
+```
+
+```{r}
+library("tidyverse")
+library("knitr")
+library("magrittr")
+library("mlogit") # ロジットモデル推定のためのパッケージ
+library("stargazer")# 推定結果の表作成
+library("kableExtra")
+library("optimx") # 最適化
+```
+
+# データの整理
+```{r}
+
+
+KT_2024 <- read_csv("KinokoTakenokoSurvey_raw.csv")
+
+new_col_name <- c("ID","experience", "Q1", "Q2", "Q3", "Q4", "Q5", "age", "gender", "region", "familyhouse") # 列名変更用
+
+KT_2024 <- KT_2024 %>%
+  mutate(ID = row_number()) %>%　# 適当にIDを定義
+  select(ID, c(8:17)) %>% # 必要な変数のみ選択
+  set_colnames(new_col_name) %>% #列名を変更
+  filter(experience != "4 : 食べたことがない" & gender != "3 : 回答したくない") %>% # 分析上扱いにくいデータを除外
+  drop_na() # NA(未回答？)の行を除外
+```
+# 記述統計
+　以下は提示された価格の組み合わせに対してきのこの山とたけのこの里のどちらを選択したか、あるいはどちらも選択しなかったかの比率を表したものである。比較的たけのこの里のほうが買われやすいことや、価格が高いと購入しない確率が高くなることなどが見て取れる。
+```{r}
+N <- length(KT_2024$ID)
+
+# 回答数の比率を表にするためのデータ整形
+KT_2024 %>%
+  select(ID, Q1, Q2, Q3, Q4, Q5)  %>% # IDと回答のみ抽出
+  gather(key = Q, value  = choice, Q1, Q2, Q3, Q4, Q5) -> datafig
+
+datafig %>% 
+    mutate( Q = ifelse(Q == "Q1", "Q1: (200円, 200円)" ,Q),  
+            Q = ifelse(Q == "Q2", "Q2: (180円, 200円)" ,Q),  
+            Q = ifelse(Q == "Q3", "Q3: (200円, 170円)" ,Q),  
+            Q = ifelse(Q == "Q4", "Q4: (220円, 200円)" ,Q),  
+            Q = ifelse(Q == "Q5", "Q5: (190円, 210円)" ,Q) ) -> datafig # 対応する選択肢に置き換える
+
+datafig %>% 
+    group_by(Q, choice) %>% 
+    tally() %>% 
+    mutate( n = n/N) %>% 
+    pivot_wider( id_cols = "Q", names_from = "choice", values_from = "n") %>%
+    knitr::kable( digits = 2) -> tab_choice # 表作成
+
+tab_choice
+
+datafig %>% 
+    group_by(Q, choice) %>% 
+    tally() %>% 
+    mutate( n = n/N) %>% 
+    pivot_wider( id_cols = "Q", names_from = "choice", values_from = "n") %>%
+    knitr::kable( digits = 2, "latex") %>%
+    save_kable("output/choice_table.tex") # tex形式で保存
+```
+
+
+以下は回答者の属性の比率である。
+```{r}
+
+# 回答者の属性の比率を表にするためのデータ整形
+data_atr <- KT_2024 %>%
+  mutate(gender =　case_when(gender == "1 : 男性" ~ "男性", 
+                             gender == "2 : 女性" ~ "女性" ),
+          exp    =  case_when(experience == "1 : 過去半年以内" ~ "過去半年以内", 
+                              experience == "2 : 過去半年から１年以内" ~ "過去半年から１年以内", 
+                              experience == "3 : １年以上前" ~ "１年以上前"),
+          adult = if_else(age>=20, "成人", "未成年"),
+    region =  case_when(region == "1 : 北海道地方" ~ "関東", 
+                              region == "2 : 東北地方" ~ "関東", 
+                              region == "3 : 関東地方" ~ "関東" ,
+                              region == "4 : 中部地方" ~ "関東",
+                              region == "5 : 近畿地方" ~ "関西",
+                              region == "6 : 中国地方" ~ "関西",
+                              region == "7 : 四国地方" ~ "関西",
+                              region == "8 : 九州地方(沖縄含む)" ~ "関西",
+                              region == "9 : 海外" ~ "海外"),
+    familyhouse = if_else(familyhouse==1,"実家暮らし","実家暮らしでない"))
+
+
+data_atr %>%
+  group_by(region) %>%
+  tally() %>%
+  mutate(割合 = n/N) %>% 
+  select (-n) %>%
+  mutate(変数 = c("出身地方","","")) %>%
+  rename(属性 = region) %>%
+  select(変数, everything()) ->region_fig
+
+
+
+# data_atr %>%
+#   group_by(exp) %>%
+#   tally() %>%
+#   mutate( "割合" = n/N) %>% 
+#   pivot_wider(  names_from = "exp", values_from = "n") %>% 
+#   mutate("食事経験" = " ") %>%
+#   select("食事経験", everything()) ->exp_fig
+
+data_atr %>%
+  group_by(gender) %>%
+  tally() %>%
+  mutate( 割合 = n/N) %>% 
+  select(-n) %>%
+  mutate(変数 = c("性別","")) %>%
+  rename(属性 = gender) %>%
+  select(変数, everything()) ->gender_fig
+data_atr %>%
+  group_by(familyhouse) %>%
+  tally() %>%
+  mutate( "割合" = n/N) %>% 
+  select(-n) %>%
+  mutate("変数" = c("実家暮らしかどうか","")) %>%
+  rename(属性 = familyhouse) %>%
+  select(変数, everything(),) ->　fam_fig
+
+data_atr %>%
+  group_by(adult) %>%
+  tally() %>%
+  mutate( 割合 = n/N) %>% 
+  select(-n) %>%
+  mutate(変数 = c("成人かどうか","")) %>%
+  rename(属性 = adult) %>%
+  select(変数, everything()) ->adult_fig
+
+rbind(gender_fig,adult_fig, fam_fig, region_fig)  %>%
+  knitr::kable( digits = 2) -> tab_atr
+
+tab_atr
+
+rbind(gender_fig,adult_fig, fam_fig, region_fig)  %>%
+  knitr::kable( digits = 2, "latex",linesep = c("", "\\addlinespace","", "\\addlinespace","","\\addlinespace","","","\\addlinespace"),
+                booktabs = TRUE) %>%
+  save_kable("output/characteristics_table.tex")
+```
+# 分析
+```{r}
+# 分析用のデータ整形
+KT_2024 %>% 
+  gather(key = "occasion", value = choice, starts_with("Q")) -> data_for_estimation
+
+pricedata <- 
+  data.frame( occasion = c("Q1","Q2", "Q3", "Q4", "Q5" ), 
+              price_0 = numeric(5), 
+              price_1 = c(200, 180, 200, 220, 190 ), 
+              price_2 = c(200, 200, 170, 200, 210 ) ) # 提示される価格の組み合わせ
+pricedata <- as_tibble(pricedata)
+
+data_for_estimation %>% 
+  left_join(pricedata) %>%
+  arrange(ID, occasion) -> data_for_estimation
+
+data_for_estimation %>% 
+  mutate( Kinoko_0 = 0, 
+          Kinoko_1 = 1, 
+          Kinoko_2 = 0, 
+          Takenoko_0 = 0, 
+          Takenoko_1 = 0, 
+          Takenoko_2 = 1   ) %>%
+  arrange(ID, occasion) -> data_for_estimation
+
+data_for_estimation %>% 
+  mutate( choice =  case_when(choice == "1 : きのこの山を買う" ~ 1, 
+                              choice == "2 : たけのこの里を買う" ~ 2, 
+                              choice == "3 : どちらも買わない" ~ 0 ),
+          gender =　case_when(gender == "1 : 男性" ~ "0", 
+                              gender == "2 : 女性" ~ "female" ),
+          exp    =  case_when(experience == "1 : 過去半年以内" ~ "halfyear", 
+                              experience == "2 : 過去半年から１年以内" ~ "half_to_1year", 
+                              experience == "3 : １年以上前" ~ "0" ),
+          adult = if_else(age>=20, 1, 0),
+          region =  case_when(region == "1 : 北海道地方" ~ "_Kanto", 
+                              region == "2 : 東北地方" ~ "_Kanto", 
+                              region == "3 : 関東地方" ~ "_Kanto" ,
+                              region == "4 : 中部地方" ~ "_Kanto",
+                              region == "5 : 近畿地方" ~ "Kansai",
+                              region == "6 : 中国地方" ~ "Kansai",
+                              region == "7 : 四国地方" ~ "Kansai",
+                              region == "8 : 九州地方(沖縄含む)" ~ "Kansai",
+                              region == "9 : 海外" ~ "Oversea",
+          )
+  ) -> data_for_estimation
+
+data_for_estimation$choiceid <- 1:nrow(data_for_estimation)
+
+datalogit <- dfidx(data = as.data.frame(data_for_estimation),
+                   choice = "choice", 
+                   varying = c(9:17), 
+                   sep = "_",
+                   idx = list(c("choiceid", "ID")), 
+                   idnames = c("chid", "alt"),
+                   opposite = c("price")) # 分析用のデータフレーム作成
+
+no_atr <- formula(choice ~ price + Kinoko+ Takenoko | 0)
+with_atr <- formula(choice ~price+Kinoko+Takenoko+ price:gender+Takenoko:gender+Kinoko:gender+price:familyhouse+Takenoko:familyhouse+Kinoko:familyhouse+price:adult+Takenoko:adult+Kinoko:adult+price:region+Takenoko:region+Kinoko:region | 0 | 0) # 式が長いので事前に格納
+
+# 分析
+ml <- mlogit(formula = no_atr,
+             reflevel = '0',
+             data = datalogit)
+rcdc <- mlogit(formula = no_atr, 
+               data = datalogit, 
+               panel = TRUE, 
+               rpar = c(price = "n", Kinoko = "n", Takenoko = "n") , 
+               R = 2000, 
+               correlation = FALSE)
+ml_consumer_atr <- mlogit(formula = with_atr, 
+                          data = datalogit,reflevel = '0')
+rcdc_consumer_atr <- mlogit(formula = with_atr, 
+                            data = datalogit, 
+                            panel = TRUE, 
+                            rpar = c(price = "n", Kinoko = "n", Takenoko = "n") , 
+                            R = 2000, 
+                            correlation = FALSE) 
+
+```
+　以下に、(1):消費者属性を入れない多項ロジット、(2):消費者属性を入れないランダム係数ロジット、(3):消費者属性を入れた多項ロジット、(4):消費者属性を入れたランダム係数ロジットのそれぞれの分析結果を並べた表を示す。
+
+```{r, results = "asis"}
+# 表
+stargazer::stargazer(ml,rcdc,ml_consumer_atr,rcdc_consumer_atr,column.labels=c("mlogit","rcdc","mlogit","rcdc"),single.row=TRUE,type="html",align = TRUE)
+
+```
+　20歳以上であると19歳に比べて価格に反応しやすいことや、購入確率が低い傾向にあることが示唆される。また、女性である場合は男性に比べて価格に反応しにくいことや、購入確率が高い傾向にあることもわかる。
+
+
+
+　また、参考までに以下に2023年のデータで同様の分析を実行した際の結果を示しておく。概ね結果は同じであるが、女性ダミーの交差項の係数に関しては結果が異なるので確認されたい。
+![](2023_KT_table.png){width=75%}
+
+
+# ランダム係数とWTPの分布
+　次に、きのこの山、たけのこの里、価格係数の分布を作成していく。
+
+
+```{r}
+
+# 消費者属性を考慮して選好パラメタおよびWTPの分布の計算
+
+# 全部ダミー変数にする
+data_for_param <- KT_2024 %>%
+  mutate(gender =　case_when(gender == "1 : 男性" ~ 0,
+                            gender == "2 : 女性" ~ 1 ),
+         adult = if_else(age>=20, 1, 0),
+         kansai =  case_when(region == "1 : 北海道地方" ~ 0,
+                             region == "2 : 東北地方" ~ 0,
+                             region == "3 : 関東地方" ~ 0 ,
+                             region == "4 : 中部地方" ~ 0,
+                             region == "5 : 近畿地方" ~ 1,
+                             region == "6 : 中国地方" ~ 1,
+                             region == "7 : 四国地方" ~ 1,
+                             region == "8 : 九州地方(沖縄含む)" ~ 1,
+                             region == "9 : 海外" ~ 0),
+         oversea =  case_when(region == "1 : 北海道地方" ~ 0,
+                             region == "2 : 東北地方" ~ 0,
+                             region == "3 : 関東地方" ~ 0 ,
+                             region == "4 : 中部地方" ~ 0,
+                             region == "5 : 近畿地方" ~ 0,
+                             region == "6 : 中国地方" ~ 0,
+                             region == "7 : 四国地方" ~ 0,
+                             region == "8 : 九州地方(沖縄含む)" ~ 0,
+                             region == "9 : 海外" ~ 1))
+
+dist_Kinoko <- rpar(rcdc_consumer_atr,'Kinoko')
+dist_Takenoko <- rpar(rcdc_consumer_atr,'Takenoko')
+dist_price <- rpar(rcdc_consumer_atr,'price')
+# 各個人の属性のパラメタを計算する→その値と選好パラメタの平均(消費者属性を考慮していない)との和を取り、消費者属性を考慮する。
+param_Takenoko <- dist_Takenoko$mean +data_for_param$gender*rcdc_consumer_atr$coefficients[5]+data_for_param$familyhouse*rcdc_consumer_atr$coefficients[8]+data_for_param$adult*rcdc_consumer_atr$coefficients[11]+data_for_param$kansai*rcdc_consumer_atr$coefficients[15]+data_for_param$oversea*rcdc_consumer_atr$coefficients[16]
+
+
+param_Kinoko <- dist_Kinoko$mean+ data_for_param$gender*rcdc_consumer_atr$coefficients[6]+data_for_param$familyhouse*rcdc_consumer_atr$coefficients[9]+data_for_param$adult*rcdc_consumer_atr$coefficients[12]+data_for_param$kansai*rcdc_consumer_atr$coefficients[17]+data_for_param$oversea*rcdc_consumer_atr$coefficients[18]
+
+
+
+param_price <- dist_price$mean + data_for_param$gender*rcdc_consumer_atr$coefficients[4]+data_for_param$familyhouse*rcdc_consumer_atr$coefficients[7]+data_for_param$adult*rcdc_consumer_atr$coefficients[10]+data_for_param$kansai*rcdc_consumer_atr$coefficients[13]+data_for_param$oversea*rcdc_consumer_atr$coefficients[14]
+
+```
+
+
+
+```{r}
+
+
+# 各個人について1000回ドローして、計236000個の個人選好パラメタのドローを得る
+
+# 格納用
+alpha_Kinoko_vec <- numeric(236000)
+alpha_Takenoko_vec <- numeric(236000)
+beta_vec <- numeric(236000)
+
+# ループ(各個人の観察されない異質性を考慮する)
+for(i in 1:length(param_Kinoko)){
+ set.seed(100+i)
+ 
+ alpha_Kinoko_draw = dist_Kinoko$sigma*rnorm(1000, mean = 0, sd = 1)+param_Kinoko[i]
+ alpha_Kinoko_vec[(1000*(i-1)+1) : (1000*i)] = alpha_Kinoko_draw
+ 
+ alpha_Takenoko_draw = dist_Takenoko$sigma*rnorm(1000, mean = 0, sd = 1)+param_Takenoko[i]
+ alpha_Takenoko_vec[(1000*(i-1)+1) : (1000*i)] = alpha_Takenoko_draw
+ 
+ beta_price_draw = dist_price$sigma*rnorm(1000, mean = 0, sd = 1)+param_price[i]
+ beta_vec[(1000*(i-1)+1) : (1000*i)] = beta_price_draw
+ }
+```
+
+　きのこの山とたけのこの里の係数の差の分布(ヒストグラムと密度)は以下のようになる。きのこよりもたけのこがより好まれていることが見て取れる。
+```{r}
+data_for_distribution =
+  tibble( alpha_Kinoko_vec , 
+          alpha_Takenoko_vec ,  
+          beta_vec) 
+# きのことたけのこの係数の差の分布
+KT_dist_hist <- ggplot(data = data_for_distribution,aes(x = alpha_Kinoko_vec - alpha_Takenoko_vec)) +
+  geom_histogram(binwidth = 0.75) +
+  ylab("frequency") + xlab("Kinoko - Takenoko") +
+  ggtitle("Preference Kinoko over Takenoko")
+plot(KT_dist_hist)
+ggsave(filename = "output/fig_hist_preference_KT.pdf", plot = KT_dist_hist, width = 6, height = 6)
+KT_dist_density <- ggplot(data = data_for_distribution,aes(x = alpha_Kinoko_vec - alpha_Takenoko_vec)) +
+  geom_density() +
+  ylab("density") + xlab("Kinoko - Takenoko") +
+  ggtitle("Preference Kinoko over Takenoko")
+plot(KT_dist_density)
+ggsave(filename = "output/fig_dist_preference_KT.pdf", plot = KT_dist_density, width = 6, height = 6)
+```
+　続いて、以下が価格係数の分布(ヒストグラムと密度)である。
+```{r}
+# 価格係数の分布
+p_coef_dist_hist <- ggplot(data = data_for_distribution, aes(beta_vec)) +
+  geom_histogram(binwidth = 0.0075)+
+  ylab("frequency") + xlab("beta") +
+  ggtitle("Beta (price coefficient)")
+plot(p_coef_dist_hist)
+ggsave(filename = "output/fig_hist_price_coef.pdf", plot = p_coef_dist_hist, width = 6, height = 6)
+p_coef_dist_density <- ggplot(data = data_for_distribution, aes(beta_vec)) +
+  geom_density()+
+  ylab("density") + xlab("beta") + ggtitle("Beta (price coefficient)")
+plot(p_coef_dist_density)
+ggsave(filename = "output/fig_dist_price_coef.pdf", plot = p_coef_dist_density, width = 6, height = 6)
+```
+
+　次に、WTPの分布を作成する。
+```{r}
+# WTPを求める
+
+# 支払い意思額の計算
+data_for_distribution %>%
+  mutate( brand_Kinoko = alpha_Kinoko_vec / beta_vec, 
+          brand_Takenoko = alpha_Takenoko_vec / beta_vec,
+          love_Kinoko = ifelse(alpha_Kinoko_vec > alpha_Takenoko_vec, 1, 0 )) -> data_for_distribution 
+
+
+data_for_distribution %>% 
+  select( brand_Kinoko, brand_Takenoko) %>% 
+  rename( WTP_Kinoko = brand_Kinoko, 
+          WTP_Takenoko = brand_Takenoko) %>% 
+  pivot_longer( cols = everything(), names_to = "Name", values_to = "WTP") -> dt
+```
+
+　以下がWTPの分布となる。相対的に見て安い場合はきのこのほうが買われやすいことが示唆される。
+```{r}
+# WTPの分布
+dt %>% 
+  ggplot( aes(x = WTP, colour  = Name)) + theme_bw() + 
+  geom_density() +
+  xlim(c(0,500))-> fig_brand
+plot(fig_brand)
+ggsave(filename = "output/brand_value.pdf", plot = fig_brand, width = 12, height = 6)
+
+```
+# 需要曲線と収入曲線を求める
+
+　以下では需要関数の推定を行う。
+```{r}
+# ある個人についての選択確率の算出用の関数
+f_logit_prob <- function(alpha_Kinoko, alpha_Takenoko, beta, price_Kinoko, price_Takenoko){
+# きのこ、たけのこから得られるそれぞれの効用の算出
+  util_Kinoko <- alpha_Kinoko - beta*price_Kinoko
+  util_Takenoko <- alpha_Takenoko - beta*price_Takenoko
+# 選択確率の算出
+  prob_Kinoko <- exp( util_Kinoko ) / ( 1 + exp( util_Kinoko ) + exp( util_Takenoko ))
+  prob_Takenoko <- exp( util_Takenoko ) / ( 1 + exp( util_Kinoko ) + exp( util_Takenoko ))
+  prob_Other <- 1 - (prob_Kinoko + prob_Takenoko)
+
+  return( cbind(prob_Kinoko, prob_Takenoko, prob_Other))
+}
+```
+```{r}
+# 各個人の選択確率を全て計算した後に、足し合わせて需要を得る関数
+f_demand <- function( alpha_Kinoko_vec, alpha_Takenoko_vec, beta_vec, price_Kinoko, price_Takenoko ){
+    
+    R = length(alpha_Kinoko_vec)  # 設定する消費者数(236人のそれぞれの消費者属性を代表として、観察されない異質性を1000回ずつドローして得られた潜在消費者236000人)
+    
+    # 結果を保存するベクトルを事前に準備
+    prob_Kinoko = numeric(R)
+    prob_Takenoko = numeric(R)
+    prob_Other = numeric(R)
+
+    for (r in 1:R){
+      result = f_logit_prob( alpha_Kinoko_vec[r], alpha_Takenoko_vec[r], beta_vec[r], price_Kinoko, price_Takenoko)
+      prob_Kinoko[r] = result[1]
+      prob_Takenoko[r] = result[2]
+      prob_Other[r] = result[3]
+    }
+
+    # 選択確率をすべての消費者について足し合わせて、各オプションの需要を得る。
+    return( c(sum(prob_Kinoko), sum(prob_Takenoko), sum(prob_Other)))
+}
+```
+```{r}
+# たけのこの価格を200円で固定する
+price_Takenoko = 200 
+
+# きのこの価格を100円から250円まで5円ずつ動かす
+price_vec = seq(from = 100, to = 250, by = 5)
+kinoko_vec = numeric(length(price_vec))
+
+# きのこの価格に対応する各オプションの需要を計算する
+for ( i in 1:length(price_vec)){
+    result <- f_demand( alpha_Kinoko_vec, alpha_Takenoko_vec, 
+                        beta_vec, price_vec[i], price_Takenoko = 200 )
+    kinoko_vec[i] <- result[1]
+}
+
+# データフレームに結果を保存
+data_demand_kinoko = tibble( price = price_vec, 
+                             demand = kinoko_vec,
+                             revenue = price_vec*kinoko_vec)
+```
+　きのこの山の需要曲線をプロットする。
+```{r}
+fig_demand <- ggplot(data = data_demand_kinoko, aes(x = demand, y = price) ) +
+  geom_line() + 
+  xlab("Demand of Kinoko") + 
+  ylab("Price of Kinoko in JPY") + 
+  ggtitle("Demand Curve of Kinoko when Takenoko's price = JPY 200")
+```
+　
+```{r}
+plot(fig_demand)
+ggsave(filename = "output/demand_Kinoko.pdf", plot = fig_demand, width = 8, height = 6)
+```
+また、以下は見やすさのためにx軸をシェアにした図である。
+```{r}
+fig_share <- ggplot(data = data_demand_kinoko, aes(x = demand/236000, y = price) ) +
+  geom_line() + 
+  xlab("Share of Kinoko") + 
+  ylab("Price of Kinoko in JPY") + 
+  ggtitle("Demand Curve(Share) of Kinoko when Takenoko's price = JPY 200")
+```
+```{r}
+plot(fig_share)
+ggsave(filename = "output/share_kinoko.pdf", plot = fig_share, width = 8, height = 6)
+```
+
+　収入曲線も以下にプロットする。
+```{r}
+
+fig_rev <- ggplot(data = data_demand_kinoko, aes(x = price, y = revenue/10000) ) +
+ geom_line() + 
+xlab("Price of Kinoko in JPY") + 
+ylab("Revenue of Kinoko in 10000 JPY") + 
+ggtitle("Revenue Curve of Kinoko when Takenoko's price = JPY 200")
+plot(fig_rev)
+ggsave(filename = "output/Revenue_Kinoko.pdf", plot = fig_rev, width = 8, height = 6)
+```
+ 
+# スクラッチで推定 
+ 以下では、ロジット、消費者属性を考慮したロジット、ランダム係数ロジットモデルを、それぞれスクラッチで推定する。手始めにロジットモデルを推定する。
+
+
+## ロジットモデル
+　尤度関数は以下で定義する。
+```{r}
+# 尤度関数
+
+f_likelihood_logit <- function(param, data){
+
+  alpha_Kinoko <- param[1]
+  alpha_Takenoko <- param[2]
+  beta   <- param[3]
+# 各選択フェーズでの選択確率を予測
+  P1 <- f_logit_prob(alpha_Kinoko, alpha_Takenoko, beta, 200, 200)
+  P2 <- f_logit_prob(alpha_Kinoko, alpha_Takenoko, beta, 180, 200)
+  P3 <- f_logit_prob(alpha_Kinoko, alpha_Takenoko, beta, 200, 170)
+  P4 <- f_logit_prob(alpha_Kinoko, alpha_Takenoko, beta, 220, 200)
+  P5 <- f_logit_prob(alpha_Kinoko, alpha_Takenoko, beta, 190, 210)
+
+  pred <- rbind(P1, P2, P3, P4, P5)
+  pred <- as_tibble(pred)
+  pred$occasion <- c("Q1", "Q2", "Q3", "Q4", "Q5")
+  #　各選択フェーズに対する実際の選択と、予測された選択確率を対応させる
+  data %>%
+    left_join(pred, by = "occasion") %>%
+    mutate( choice_prob = case_when( choice == 0 ~ prob_Other,
+                                     choice == 1 ~ prob_Kinoko,
+                                     choice == 2 ~ prob_Takenoko) ) %>%
+    mutate(log_choice_prob = log(choice_prob)) %>%
+    select(log_choice_prob) -> result
+　# 和を取って対数尤度を計算する
+  likelihood <- sum(result)
+
+  return(likelihood)
+
+}
+```
+　初期値を与えて最適化を行う。
+```{r}
+# 初期パラメタ
+ini <- c(5,5, -0.01)
+
+# 最適化
+result <- optimx( par = ini, 
+                  fn = f_likelihood_logit, 
+                  method="Nelder-Mead", 
+                  data = data_for_estimation, 
+                  control = list(fnscale=-1), 
+                  hessian = TRUE  )
+
+# 推定値の取得
+est_vec <- as.numeric(result[1,1:3])
+```
+　以下が推定されたパラメタである。パッケージによる推定に近い値となっていることがわかる。
+```{r}
+# パッケージの推定値
+est_vec_package <- ml$coefficients
+names(est_vec) <- c(attr(ml$coefficients, "names"))
+# 比較
+print(rbind(est_vec, est_vec_package ))
+```
+　また、以下が対数尤度である。こちらもほとんど変わらないことが見て取れる。
+```{r}
+loglik_ml <- result[4]$value
+loglik_ml_package <- as.numeric(ml$logLik)
+print(rbind(loglik_ml, loglik_ml_package))
+```
+
+　ヘシアンから標準誤差を得る。
+```{r}
+#　ヘシアンの計算
+Hessian <- gHgen(par = as.numeric(result[1,1:3]), 
+                 fn = f_likelihood_logit, 
+                 data = data_for_estimation)
+se_vec <- round(sqrt(diag(solve(-Hessian$Hn))), 3)
+```
+　以下に推定値と標準誤差を並べて示す。
+```{r}
+
+print(rbind(est_vec, se_vec))
+```
+## ロジットモデル(消費者属性入り)
+　次に、消費者属性を考慮したロジットモデルを推定する。初めに推定したロジットでは消費者間での属性による選択確率の差異がなかったが、今回はそれを許す。
+　はじめに、扱いやすくするためにデータの一部変数をダミー変数に直しておく。
+```{r}
+# ダミー変数に直す
+data_for_estimation_with_atr <- data_for_estimation %>%
+  mutate(gender = case_when(gender == "female"~ 1,
+                           gender == "0" ~ 0),
+         kansai =  case_when(region == "_Kanto" ~ 0,
+                             region == "Oversea" ~ 0,
+                             region == "Kansai" ~ 1),
+         oversea =  case_when(region == "_Kanto" ~ 0,
+                             region == "Oversea" ~ 1,
+                             region == "Kansai" ~ 0))
+```
+　方針:各選択フェーズでの選択確率を予測する際に、通常のロジットでは個人間の属性の差異を考慮しなかったので実質的には単に5設問分の選択確率を算出するだけで済んだが、消費者属性を含める場合は236人×5フェーズぶんを算出する必要がある。まず、f_logit_probの中身を書き換える。
+```{r}
+
+f_logit_prob_with_atr <- function(alpha_Kinoko, alpha_Takenoko, beta, price_Kinoko, price_Takenoko, param_atr_Kinoko,param_atr_Takenoko, param_atr_price,atr){
+# きのこ、たけのこから得られるそれぞれの効用の算出
+# (param_atr_〇〇が各属性との交差項の係数のベクトル、atrが消費者属性のベクトル)
+  util_Kinoko <- alpha_Kinoko + sum(param_atr_Kinoko*atr) - price_Kinoko*(beta +  sum(param_atr_price*atr))
+  util_Takenoko <- alpha_Takenoko + sum(param_atr_Takenoko*atr) - price_Takenoko*(beta +  sum(param_atr_price*atr))
+# 選択確率の算出
+  prob_Kinoko <- exp( util_Kinoko ) / ( 1 + exp( util_Kinoko ) + exp( util_Takenoko ))
+  prob_Takenoko <- exp( util_Takenoko ) / ( 1 + exp( util_Kinoko ) + exp( util_Takenoko ))
+  prob_Other <- 1 - (prob_Kinoko + prob_Takenoko)
+
+  return( cbind(prob_Kinoko, prob_Takenoko, prob_Other))
+}
+```
+
+　以下で尤度関数を定義する。
+```{r}
+f_likelihood_logit_with_atr <- function(param, data){
+  # 空のデータフレーム
+  pred <- matrix(ncol = 3, nrow = 1180)
+  colnames(pred) <- c("prob_Kinoko", "prob_Takenoko","prob_Other")
+  ID <- numeric(236)
+  atr <- numeric(5)
+  beta <- param[1]
+  alpha_Kinoko <- param[2]
+  alpha_Takenoko <- param[3]
+  param_atr_Kinoko <- param[c(6, 9, 12, 17, 18)]
+  param_atr_Takenoko <- param[c(5, 8, 11, 15, 16)]
+  param_atr_price <- param[c(4, 7, 10, 13, 14)]
+
+# 各回答者の選択確率を予測する
+  for(i in 1:236){
+    # 消費者属性を取得
+  gender <- data$gender[(5*(i-1)+1)]
+  familyhouse <- data$familyhouse[(5*(i-1)+1)]
+  adult <- data$adult[(5*(i-1)+1)]
+  kansai <- data$kansai[(5*(i-1)+1)]
+  oversea <- data$oversea[(5*(i-1)+1)]
+  atr[1:5] <- c(gender, familyhouse, adult, kansai, oversea)
+# 各選択フェーズでの選択確率を予測
+  P1 <- f_logit_prob_with_atr(alpha_Kinoko, alpha_Takenoko, beta, 200, 200, param_atr_Kinoko,param_atr_Takenoko, param_atr_price,atr)
+  P2 <- f_logit_prob_with_atr(alpha_Kinoko, alpha_Takenoko, beta, 180, 200, param_atr_Kinoko,param_atr_Takenoko, param_atr_price,atr)
+  P3 <- f_logit_prob_with_atr(alpha_Kinoko, alpha_Takenoko, beta, 200, 170, param_atr_Kinoko,param_atr_Takenoko, param_atr_price,atr)
+  P4 <- f_logit_prob_with_atr(alpha_Kinoko, alpha_Takenoko, beta, 220, 200, param_atr_Kinoko,param_atr_Takenoko, param_atr_price,atr)
+  P5 <- f_logit_prob_with_atr(alpha_Kinoko, alpha_Takenoko, beta, 190, 210, param_atr_Kinoko,param_atr_Takenoko, param_atr_price,atr)
+  # 格納
+  pred[(5*(i-1)+1),] <- P1
+  pred[(5*(i-1)+2),] <- P2
+  pred[(5*(i-1)+3),] <- P3
+  pred[(5*(i-1)+4),] <- P4
+  pred[(5*(i-1)+5),] <- P5
+  ID[(5*(i-1)+1):(5*(i-1)+5)] <- rep(data$ID[(5*(i-1)+1)], 5)
+  }
+  pred <- as.data.frame(pred)
+  # IDと設問(マージ用)
+  pred$ID<- ID
+  pred$occasion <- rep(c("Q1", "Q2", "Q3", "Q4", "Q5"), 236)
+  
+  # 各選択フェーズに対する実際の選択と、予測された選択確率を対応させる
+  data %>%
+    left_join(pred, by = c("ID","occasion")) %>%
+    mutate( choice_prob = case_when( choice == 0 ~ prob_Other,
+                                     choice == 1 ~ prob_Kinoko,
+                                     choice == 2 ~ prob_Takenoko) ) %>%
+    mutate(log_choice_prob = log(choice_prob)) %>%
+    select(log_choice_prob) -> result
+　# 和を取って対数尤度を計算する
+  likelihood <- sum(result)
+  
+  return(likelihood)
+
+}
+
+```
+　初期値を与えて最適化を行う。
+```{r}
+# 初期パラメタ
+# おおざっぱに決めた初期値
+ini <- c(0, 10, 10, 0, 1, 1, 0, 0, 0, 0, -1, -1, 0, 0, 1, 1, 1, 1)
+
+
+# 最適化 Nealder-Meadでは初期値にかなり依存して推定されてしまうため(おそらくパラメタの多さによるもの)、BFGSを用いる。
+result_with_atr <- optimx( par = ini, 
+                  fn = f_likelihood_logit_with_atr, 
+                  method="BFGS", 
+                  data = data_for_estimation_with_atr, 
+                  control = list(fnscale=-1), 
+                  hessian = TRUE  )
+
+# 推定値の取得
+ est_vec_ml_atr <- as.numeric(result_with_atr[1,1:18])
+
+```
+　推定された値をmlogitパッケージによる推定値と比べると以下のようになっており、概ね近い値となっている。
+```{r}
+# パッケージでの推定値:
+est_vec_package_ml_atr <- ml_consumer_atr$coefficients[1:18]
+# 比較 やや差があるが概ね同じ
+print(rbind(est_vec_ml_atr, est_vec_package_ml_atr))
+```
+
+　
+
+　対数尤度で見ても概ね等しい。
+```{r}
+# 対数尤度はそれぞれこのようになっている。
+loglik_ml_atr <- result_with_atr[19]$value
+loglik_ml_atr_package <-as.numeric(ml_consumer_atr$logLik)
+print(rbind(loglik_ml_atr, loglik_ml_atr_package))
+```
+　標準誤差を算出する。
+```{r}
+#　ヘシアンの計算
+Hessian <- gHgen(par = as.numeric(result_with_atr[1,1:18]), 
+                 fn = f_likelihood_logit_with_atr, 
+                 data = data_for_estimation_with_atr)
+se_vec_ml_atr <- round(sqrt(diag(solve(-Hessian$Hn))), 3)
+```
+　推定値と標準誤差を並べたものを以下に示す。
+```{r}
+names(est_vec_ml_atr) = c(attr(ml_consumer_atr$coefficients, "names"))
+print(rbind(est_vec_ml_atr, se_vec_ml_atr))
+```
+
+## ランダム係数ロジット(消費者属性無し)
+　続いて、ランダム係数ロジットをスクラッチで推定する。まず、以下でドロー回数分の個人の選択確率を算出する。
+　
+```{r}
+
+f_rcdclogit_prob <- function(alpha_Kinoko, alpha_Takenoko, beta, price_Kinoko, price_Takenoko, sigma_Kinoko, sigma_Takenoko, sigma_price, tau){
+# きのこ、たけのこから得られるそれぞれの効用の算出
+# sigma_〇〇は各パラメタの標準偏差、tauは標準正規分布に従う乱数を(ドロー回数)行×3列発生させたもの
+  alpha_Kinoko_draw <- alpha_Kinoko + sigma_Kinoko*tau[, 1]
+  alpha_Takenoko_draw <- alpha_Takenoko + sigma_Takenoko*tau[, 2]
+  beta_draw <- beta + sigma_price*tau[, 3]
+  util_Kinoko <- alpha_Kinoko_draw - price_Kinoko*beta_draw
+  util_Takenoko <- alpha_Takenoko_draw - price_Takenoko*beta_draw
+# 選択確率の算出
+  prob_Kinoko <- exp( util_Kinoko ) / ( 1 + exp( util_Kinoko ) + exp( util_Takenoko ))
+  prob_Takenoko <- exp( util_Takenoko ) / ( 1 + exp( util_Kinoko ) + exp( util_Takenoko ))
+  prob_Other <- 1 - (prob_Kinoko + prob_Takenoko)
+
+  return( cbind(prob_Kinoko, prob_Takenoko, prob_Other))
+}
+```
+　計算時間節約のために、以下でドローをあらかじめ用意する。
+```{r}
+# 事前にドローを用意する
+# ドロー回数
+times_draw =1000
+# 乱数の格納用
+tau<- matrix(nrow = times_draw*236, ncol = 3)
+for(i in 1:236){
+  set.seed(500+i)
+# 回答者iがドローする乱数
+  tau[(times_draw*(i-1)+1):(times_draw*i), 1] <- rnorm(times_draw, mean = 0, sd = 1)
+  tau[(times_draw*(i-1)+1):(times_draw*i), 2] <- rnorm(times_draw, mean = 0, sd = 1)
+  tau[(times_draw*(i-1)+1):(times_draw*i), 3] <- rnorm(times_draw, mean = 0, sd = 1)}
+```
+
+
+　方針:各回答者ごとの一連の選択の確率を1000ドローしたものを、平均して近似する。以下で対数尤度を算出する。
+```{r}
+f_likelihood_rcdclogit <- function(param, data){
+  # 空のデータフレーム
+  pred <- matrix(ncol = 3, nrow = 1180*times_draw)
+  colnames(pred) <- c("prob_Kinoko", "prob_Takenoko","prob_Other")
+  ID <- numeric(236*times_draw)
+  beta <- param[1]
+  alpha_Kinoko <- param[2]
+  alpha_Takenoko <- param[3]
+  sigma_price <- param[4]
+  sigma_Kinoko <- param[5]
+  sigma_Takenoko <- param[6]
+  
+  repID <- c(data$ID)
+  
+
+# 各回答者の選択確率を予測する
+  for(i in 1:236){
+  
+  
+# 各選択フェーズでのドロー回数分の選択確率を予測
+  P1 <- f_rcdclogit_prob(alpha_Kinoko, alpha_Takenoko, beta, 200, 200, sigma_Kinoko, sigma_Takenoko, sigma_price, tau[(times_draw*(i-1)+1):(times_draw*i), ])
+  P2 <- f_rcdclogit_prob(alpha_Kinoko, alpha_Takenoko, beta, 180, 200, sigma_Kinoko, sigma_Takenoko, sigma_price, tau[(times_draw*(i-1)+1):(times_draw*i), ])
+  P3 <- f_rcdclogit_prob(alpha_Kinoko, alpha_Takenoko, beta, 200, 170, sigma_Kinoko, sigma_Takenoko, sigma_price, tau[(times_draw*(i-1)+1):(times_draw*i), ])
+  P4 <- f_rcdclogit_prob(alpha_Kinoko, alpha_Takenoko, beta, 220, 200, sigma_Kinoko, sigma_Takenoko, sigma_price, tau[(times_draw*(i-1)+1):(times_draw*i), ])
+  P5 <- f_rcdclogit_prob(alpha_Kinoko, alpha_Takenoko, beta, 190, 210, sigma_Kinoko, sigma_Takenoko, sigma_price, tau[(times_draw*(i-1)+1):(times_draw*i), ])
+  # 各設問ごとのドロー回数分の選択確率を格納
+  pred[(5*(i-1)*(times_draw)+1):(5*(i-1)*(times_draw)+times_draw),] <- P1
+  pred[(5*(i-1)*(times_draw)+times_draw+1):(5*(i-1)*(times_draw)+2*times_draw),] <- P2
+  pred[(5*(i-1)*(times_draw)+2*times_draw+1):(5*(i-1)*(times_draw)+3*times_draw),] <- P3
+  pred[(5*(i-1)*(times_draw)+3*times_draw+1):(5*(i-1)*(times_draw)+4*times_draw),] <- P4
+  pred[(5*(i-1)*(times_draw)+4*times_draw+1):(5*(i-1)*(times_draw)+5*times_draw),] <- P5
+  # 各回答者の固有のIDをあらかじめ用意しておく。
+  ID[(5*(i-1)*(times_draw)+1):(5*(i-1)*(times_draw)+5*times_draw)] <- rep(repID[(5*(i-1)+1)], 5*times_draw)
+  
+  }
+  pred<- as.data.frame(pred)
+  # IDと設問、ドローフェーズ(マージ用)
+  pred$ID<- ID
+  pred$occasion <- rep(rep(c("Q1", "Q2", "Q3", "Q4", "Q5"), each = times_draw), 236)
+  pred$draw_phase <- rep(c(1:times_draw), 5*236)
+  # 各選択フェーズに対する実際の選択と、予測された選択確率を対応させる
+  data %>%
+    left_join(pred, by = c("ID","occasion")) %>%
+    mutate( choice_prob = case_when( choice == 0 ~ prob_Other,
+                                     choice == 1 ~ prob_Kinoko,
+                                     choice == 2 ~ prob_Takenoko) ) %>%
+    group_by(ID, draw_phase) %>%　# 各回答者の設問1～5への選択の組み合わせが実現する確率を各ドローフェーズごとに算出。
+    summarise(joint_by_draw = prod(choice_prob),.groups = "drop") %>%
+    group_by(ID) %>% # 算出した確率を各回答者ごとに平均する。
+    summarise(mean_joint_prob=mean(joint_by_draw), .groups = "drop") %>%　
+    mutate(log_choice_joint_prob = log(mean_joint_prob)) %>%
+    select(log_choice_joint_prob) -> result
+
+
+    # 和を取って対数尤度を計算する
+  likelihood <- sum(result)
+
+   return(likelihood)
+
+}
+```
+　推定を行う。
+```{r, cache = TRUE}
+# おおざっぱに選んだ初期値
+ini_rcdc <- c(0.6,20,20,	0.1,1,1)
+# 最大化
+result_rcdc <- optimx( par = ini_rcdc, 
+                  fn = f_likelihood_rcdclogit, 
+                  method="BFGS", 
+                  data = data_for_estimation_with_atr, 
+                  control = list(fnscale=-1), 
+                  hessian = TRUE)
+
+est_vec_rcdc <- as.numeric(result_rcdc[1,1:6])
+```
+　以下が推定されたパラメタである。パッケージによる推定に近い値となっていることがわかる。
+```{r}
+# パッケージの推定値
+est_vec_package_rcdc <- rcdc$coefficients[1:6]
+# 比較
+print(rbind(est_vec_rcdc, est_vec_package_rcdc))
+```
+　対数尤度を以下に示す。こちらも概ね同じである。
+```{r}
+loglik_rcdc <- result_rcdc[7]$value
+loglik_rcdc_package <- as.numeric(rcdc$logLik)
+print(rbind(loglik_rcdc, loglik_rcdc_package))
+```
+　標準誤差を算出する。
+```{r}
+#　ヘシアンの計算
+Hessian <- gHgen(par = as.numeric(result_rcdc[1,1:6]), 
+                 fn = f_likelihood_rcdclogit, 
+                 data = data_for_estimation_with_atr)
+se_vec_rcdc <- round(sqrt(diag(solve(-Hessian$Hn))), 3)
+```
+　推定値と標準誤差を並べたものを以下に示す。
+```{r}
+names(est_vec_rcdc) = c(attr(rcdc$coefficients, "names"))
+print(rbind(est_vec_rcdc, se_vec_rcdc))
+```
+## ランダム係数ロジット(消費者属性入り)
+　次に、消費者属性入りのランダム係数ロジットをスクラッチで推定する。消費者属性を含める以外は、先ほどの属性なしのものと変わらない。
+
+
+　まず、以下で選択確率を定義する。
+```{r}
+
+f_rcdclogit_prob_with_atr <- function(alpha_Kinoko, alpha_Takenoko, beta, price_Kinoko, price_Takenoko, param_atr_Kinoko,param_atr_Takenoko, param_atr_price, atr, sigma_Kinoko, sigma_Takenoko, sigma_price, tau){
+# きのこ、たけのこから得られるそれぞれの効用の算出
+# sigma_〇〇は各パラメタの標準偏差、tauは標準正規分布に従う乱数を(ドロー回数)行×3列発生させたもの
+  alpha_Kinoko_draw <- alpha_Kinoko + sigma_Kinoko*tau[, 1]
+  alpha_Takenoko_draw <- alpha_Takenoko + sigma_Takenoko*tau[, 2]
+  beta_draw <- beta + sigma_price*tau[, 3]
+  util_Kinoko <- alpha_Kinoko_draw + sum(param_atr_Kinoko*atr) - price_Kinoko*(beta_draw +  sum(param_atr_price*atr))
+  util_Takenoko <- alpha_Takenoko_draw + sum(param_atr_Takenoko*atr) - price_Takenoko*(beta_draw +  sum(param_atr_price*atr))
+# 選択確率の算出
+  prob_Kinoko <- exp( util_Kinoko ) / ( 1 + exp( util_Kinoko ) + exp( util_Takenoko ))
+  prob_Takenoko <- exp( util_Takenoko ) / ( 1 + exp( util_Kinoko ) + exp( util_Takenoko ))
+  prob_Other <- 1 - (prob_Kinoko + prob_Takenoko)
+
+  return( cbind(prob_Kinoko, prob_Takenoko, prob_Other))
+}
+```
+```{r}
+# ドロー回数
+times_draw =1000
+# 乱数の格納用
+tau<- matrix(nrow = times_draw*236, ncol = 3)
+for(i in 1:236){
+  set.seed(500+i)
+# 回答者iがドローする乱数
+  tau[(times_draw*(i-1)+1):(times_draw*i), 1] <- rnorm(times_draw, mean = 0, sd = 1)
+  tau[(times_draw*(i-1)+1):(times_draw*i), 2] <- rnorm(times_draw, mean = 0, sd = 1)
+  tau[(times_draw*(i-1)+1):(times_draw*i), 3] <- rnorm(times_draw, mean = 0, sd = 1)}
+```
+
+
+　以下で対数尤度を算出する。
+```{r}
+f_likelihood_rcdclogit_with_atr <- function(param, data){
+  # 空のデータフレーム
+  pred <- matrix(ncol = 3, nrow = 1180*times_draw)
+  colnames(pred) <- c("prob_Kinoko", "prob_Takenoko","prob_Other")
+  ID <- numeric(236*times_draw)
+  atr <- numeric(5)
+  beta <- param[1]
+  alpha_Kinoko <- param[2]
+  alpha_Takenoko <- param[3]
+  sigma_price <- param[4]
+  sigma_Kinoko <- param[5]
+  sigma_Takenoko <- param[6]
+  param_atr_Kinoko <- param[c(9, 12, 15, 20, 21)]
+  param_atr_Takenoko <- param[c(8, 11, 14, 18, 19)]
+  param_atr_price <- param[c(7, 10, 13, 16, 17)]
+  repID <- c(data$ID)
+  
+
+# 各回答者の選択確率を予測する
+  for(i in 1:236){
+  gender <- data$gender[(5*(i-1)+1)]
+  familyhouse <- data$familyhouse[(5*(i-1)+1)]
+  adult <- data$adult[(5*(i-1)+1)]
+  kansai <- data$kansai[(5*(i-1)+1)]
+  oversea <- data$oversea[(5*(i-1)+1)]
+  atr[1:5] <- c(gender, familyhouse, adult, kansai, oversea)
+  
+# 各選択フェーズでのドロー回数分の選択確率を予測
+  P1 <- f_rcdclogit_prob_with_atr(alpha_Kinoko, alpha_Takenoko, beta, 200, 200, param_atr_Kinoko,param_atr_Takenoko, param_atr_price, atr, sigma_Kinoko, sigma_Takenoko, sigma_price, tau[(times_draw*(i-1)+1):(times_draw*i), ])
+  P2 <- f_rcdclogit_prob_with_atr(alpha_Kinoko, alpha_Takenoko, beta, 180, 200, param_atr_Kinoko,param_atr_Takenoko, param_atr_price, atr, sigma_Kinoko, sigma_Takenoko, sigma_price, tau[(times_draw*(i-1)+1):(times_draw*i), ])
+  P3 <- f_rcdclogit_prob_with_atr(alpha_Kinoko, alpha_Takenoko, beta, 200, 170, param_atr_Kinoko,param_atr_Takenoko, param_atr_price, atr, sigma_Kinoko, sigma_Takenoko, sigma_price, tau[(times_draw*(i-1)+1):(times_draw*i), ])
+  P4 <- f_rcdclogit_prob_with_atr(alpha_Kinoko, alpha_Takenoko, beta, 220, 200, param_atr_Kinoko,param_atr_Takenoko, param_atr_price, atr, sigma_Kinoko, sigma_Takenoko, sigma_price, tau[(times_draw*(i-1)+1):(times_draw*i), ])
+  P5 <- f_rcdclogit_prob_with_atr(alpha_Kinoko, alpha_Takenoko, beta, 190, 210, param_atr_Kinoko,param_atr_Takenoko, param_atr_price, atr, sigma_Kinoko, sigma_Takenoko, sigma_price, tau[(times_draw*(i-1)+1):(times_draw*i), ])
+  # 各設問ごとのドロー回数分の選択確率を格納
+  pred[(5*(i-1)*(times_draw)+1):(5*(i-1)*(times_draw)+times_draw),] <- P1
+  pred[(5*(i-1)*(times_draw)+times_draw+1):(5*(i-1)*(times_draw)+2*times_draw),] <- P2
+  pred[(5*(i-1)*(times_draw)+2*times_draw+1):(5*(i-1)*(times_draw)+3*times_draw),] <- P3
+  pred[(5*(i-1)*(times_draw)+3*times_draw+1):(5*(i-1)*(times_draw)+4*times_draw),] <- P4
+  pred[(5*(i-1)*(times_draw)+4*times_draw+1):(5*(i-1)*(times_draw)+5*times_draw),] <- P5
+  # 各回答者の固有のIDをあらかじめ用意しておく。
+  ID[(5*(i-1)*(times_draw)+1):(5*(i-1)*(times_draw)+5*times_draw)] <- rep(repID[(5*(i-1)+1)], 5*times_draw)
+  
+  }
+  pred<- as.data.frame(pred)
+  # IDと設問、ドローフェーズ(マージ用)
+  pred$ID<- ID
+  pred$occasion <- rep(rep(c("Q1", "Q2", "Q3", "Q4", "Q5"), each = times_draw), 236)
+  pred$draw_phase <- rep(c(1:times_draw), 5*236)
+  # 各選択フェーズに対する実際の選択と、予測された選択確率を対応させる
+  data %>%
+    left_join(pred, by = c("ID","occasion")) %>%
+    mutate( choice_prob = case_when( choice == 0 ~ prob_Other,
+                                     choice == 1 ~ prob_Kinoko,
+                                     choice == 2 ~ prob_Takenoko) ) %>%
+    group_by(ID, draw_phase) %>%　# 各回答者の設問1～5への選択の組み合わせが実現する確率を各ドローフェーズごとに算出。
+    summarise(joint_by_draw = prod(choice_prob),.groups = "drop") %>%
+    group_by(ID) %>% # 算出した確率を各回答者ごとに平均する。
+    summarise(mean_joint_prob=mean(joint_by_draw), .groups = "drop") %>%　
+    mutate(log_choice_joint_prob = log(mean_joint_prob)) %>%
+    select(log_choice_joint_prob) -> result
+
+
+    # 和を取って対数尤度を計算する
+  likelihood <- sum(result)
+
+   return(likelihood)
+
+}
+```
+　対数尤度を最大化する。
+```{r}
+# おおざっぱに選んだ初期値
+ini_rcdc_with_atr <- c(0.6, 20, 20, 0.1, 1, 1, 0, 3, 3, 0, 0, 0, 0, -3, -3, 0, 0, 1, 1, 1, 1 )
+# 最大化(1時間30分)
+result_rcdc_with_atr <- optimx( par = ini_rcdc_with_atr, 
+                  fn = f_likelihood_rcdclogit_with_atr, 
+                  method="BFGS", 
+                  data = data_for_estimation_with_atr, 
+                  control = list(fnscale=-1), 
+                  hessian = TRUE)
+
+est_vec_rcdc_with_atr <- as.numeric(result_rcdc_with_atr[1,1:21])
+```
+
+
+　以下が推定されたパラメタである。パッケージによる推定に近い値となっていることがわかる。
+```{r}
+# パッケージの推定値
+est_vec_package_rcdc_with_atr <- rcdc_consumer_atr$coefficients[c(1:3,19:21,4:18)]
+names(est_vec_rcdc_with_atr) <- c(attr(rcdc_consumer_atr$coefficients, "names")[c(1:3,19:21,4:18)])
+# 比較
+print(rbind(est_vec_rcdc_with_atr, est_vec_package_rcdc_with_atr))
+```
+　対数尤度を以下に示す。
+```{r}
+loglik_rcdc_atr <- result_rcdc_with_atr[22]$value
+loglik_rcdc_atr_package <- as.numeric(rcdc_consumer_atr$logLik)
+print(rbind(loglik_rcdc_atr, loglik_rcdc_atr_package))
+```
+　標準誤差を算出する。
+```{r}
+#　ヘシアンの計算
+Hessian <- gHgen(par = as.numeric(result_rcdc_with_atr[1,1:21]), 
+                 fn = f_likelihood_rcdclogit_with_atr, 
+                 data = data_for_estimation_with_atr)
+se_vec_with_atr <- round(sqrt(diag(solve(-Hessian$Hn))), 3)
+```
+　推定値と標準誤差を並べたものを以下に示す。
+```{r}
+print(rbind(est_vec_rcdc_with_atr, se_vec_with_atr))
+```
+
