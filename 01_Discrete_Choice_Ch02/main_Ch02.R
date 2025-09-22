@@ -640,3 +640,34 @@ se_vec_with_atr <- round(sqrt(diag(solve(-Hessian$Hn))), 3)
 
 print(rbind(est_vec_rcdc_with_atr, se_vec_with_atr))
 
+# Scratchで推定した結果のまとめ
+
+dt_result_scratch1 <- t(rbind(est_vec, se_vec)) %>% 
+  as.data.frame() %>% 
+  rownames_to_column(var = "coefname")
+
+dt_result_scratch2 <- t(rbind(est_vec_ml_atr, se_vec_ml_atr)) %>% 
+  as.data.frame() %>% 
+  rownames_to_column(var = "coefname")
+
+dt_result_scratch3 <- t(rbind(est_vec_rcdc, se_vec_rcdc)) %>% 
+  as.data.frame() %>% 
+  rownames_to_column(var = "coefname")
+
+dt_result_scratch4 <- t(rbind(est_vec_rcdc_with_atr, se_vec_with_atr))  %>% 
+  as.data.frame() %>% 
+  rownames_to_column(var = "coefname")
+
+# すべてまとめる
+dt_result_scratch4 %>% 
+  left_join(dt_result_scratch3) %>% 
+  left_join(dt_result_scratch2) %>% 
+  left_join(dt_result_scratch1) %>% 
+  select(coefname, est_vec, se_vec, est_vec_ml_atr, se_vec_ml_atr,
+         est_vec_rcdc, se_vec_rcdc, est_vec_rcdc_with_atr, se_vec_with_atr) -> dt_result_scratch
+
+# CSVでdt_result_scratch1を保存する。
+write.csv(dt_result_scratch,
+          file = here("01_Discrete_Choice_Ch02/output/result_coef_scratch.csv"),
+          row.names = FALSE)
+
