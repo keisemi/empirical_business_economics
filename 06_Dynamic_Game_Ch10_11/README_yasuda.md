@@ -1,40 +1,5 @@
 # Dynamic Game
 
-
-
-## はじめに
-
-- 経済セミナー連載時にはMatlabを用いたコードを公開。
-- その後、Rを用いたコードを
-
-
-## 実行する順番
-
-- 【Skip可】Matlabでコードを実行
-- `main1_Estimation_PSD_BBL.R`
-- `main1_2_AM.R`
-- `main2_Policy_Simulation.R`
-
-### Matlabについて
-
-基本的に、連載時のコード(第12回)を若干修正したもの。
-
-- `main1_Estimation.m`
-  - 疑似データの作成、P-SDによる推定、BBLによる推定を行う。
-  - アウトプット: `result_BBL_bootstrap.mat`
-  - アウトプット: `FakeData_Matlab.csv` `random_number_matlab_BBL.mat` `random_number_matlab_PSD.mat`
-- `main2_Policy_Simulation.m`
-  - アウトプット: `ProbEntry.jpg`
-
-もし連載時のBBLのSEがほしいならば
-
-```
-data <- readMat("06_Dynamic_Game_Ch10_11/code_from_matlab/result_BBL_bootstrap.mat")
-apply(data$bootresult.payoff,2, sd)
-```
-
-## ディレクトリ構成
-
 ## 注意
 
 -   本`README.md`はあくまで一般公開を想定したものではなく、編集者向けの内容であるため、編集者向けの留意点も含むことに注意すること。
