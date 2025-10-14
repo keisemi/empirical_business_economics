@@ -1,4 +1,7 @@
 
+# 環境のクリア
+rm(list = ls())
+
 # パッケージを読み込む
 library(tidyverse)
 library(dplyr)
@@ -8,11 +11,16 @@ library(numDeriv)
 library(evd)
 library(here)
 library(ggplot2)
+library(showtext)
+
+# 画像の日本語表示のため
+showtext_auto()
 
 # plot3Dパッケージは内部で tcltk / X11 を呼び出している
 # macOSではX11が標準で入っていないため、XQuartzをインストールする必要がある
 library(plot3D)
 
+# 自作関数の読み込み
 source(here("03_Dynamic_Single_Agent_Ch06_07/function.R"))
 
 
@@ -139,9 +147,9 @@ prob_buy_true_mat
 
 # logitで計算される理論上の条件付き購入確率を図示
 # 3次元プロット
-cairo_pdf(here('03_Dynamic_Single_Agent_Ch06_07/output/CCP_true_3D.pdf'))
+cairo_pdf(here('03_Dynamic_Single_Agent_Ch06_07/output/CCP_true_3D.pdf'), 
+          family = "HiraKakuProN-W3")
 
-par(family = 'HiraKakuProN-W3')
 
 hist3D(x = mileage_states * 100,
        y = price_states * 100,
@@ -164,6 +172,8 @@ hist3D(x = mileage_states * 100,
        cex.axis = 0.8)
 
 dev.off()
+
+
 
 # logitで計算される理論上の条件付き購入確率を図示
 # 2次元プロット:価格ごとに図示
@@ -392,9 +402,8 @@ prob_buy_obs_mat <-
 prob_buy_obs_mat
 
 
-cairo_pdf(here('03_Dynamic_Single_Agent_Ch06_07/output/CCP_3D.pdf'))
-
-par(family = 'HiraKakuProN-W3')
+cairo_pdf(here('03_Dynamic_Single_Agent_Ch06_07/output/CCP_3D.pdf'),
+          family = "HiraKakuProN-W3")
 
 hist3D(x = mileage_states * 100,
        y = price_states * 100,

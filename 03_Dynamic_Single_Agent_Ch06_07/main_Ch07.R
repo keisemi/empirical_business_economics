@@ -1,3 +1,5 @@
+# 環境のクリア
+rm(list = ls())
 
 # パッケージを読み込む
 library(tidyverse)
@@ -6,7 +8,13 @@ library(fixest)
 library(numDeriv)
 library(kableExtra)
 library(here)
+library(showtext)
 
+
+# 画像の日本語出力
+showtext_auto()
+
+# 自作関数の読み込み
 source(here("03_Dynamic_Single_Agent_Ch06_07/function.R"))
 
 # データの読み込み ----
