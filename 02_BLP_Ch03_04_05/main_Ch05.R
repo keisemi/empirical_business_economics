@@ -177,7 +177,7 @@ est_table %>%
 
 est_table %>%  {
   txt <- capture.output(knitr::kable(., format = "simple"))
-  writeLines(txt, con = here("02_BLP_CH03_04_05/output/est_table.txt"), useBytes = TRUE)
+  writeLines(txt, con = here("02_BLP_CH03_04_05/output/table_estimation_result.txt"), useBytes = TRUE)
 }
 
 # 限界費用の推定 ----
@@ -225,7 +225,7 @@ Table_4dt %>%
 
 Table_4dt %>%  {
   txt <- capture.output(knitr::kable(., format = "simple"))
-  writeLines(txt, con = here("02_BLP_CH03_04_05/output/Table_4dt.txt"), useBytes = TRUE)
+  writeLines(txt, con = here("02_BLP_CH03_04_05/output/table_merginal_cost.txt"), useBytes = TRUE)
 }
 
 # distribution of margin
@@ -443,7 +443,7 @@ Table_5dt %>%
 
 Table_5dt %>%  {
   txt <- capture.output(knitr::kable(., format = "simple"))
-  writeLines(txt, con = here("02_BLP_CH03_04_05/output/Table_5dt.txt"), useBytes = TRUE)
+  writeLines(txt, con = here("02_BLP_CH03_04_05/output/tab5_1_change_rate.txt"), useBytes = TRUE)
 }
 
 
@@ -506,7 +506,7 @@ Table_6dt %>%
 
 Table_6dt %>%  {
   txt <- capture.output(knitr::kable(., format = "simple"))
-  writeLines(txt, con = here("02_BLP_CH03_04_05/output/Table_6dt.txt"), useBytes = TRUE)
+  writeLines(txt, con = here("02_BLP_CH03_04_05/output/tab5_2_merginal_cost_decrease.txt"), useBytes = TRUE)
 }
 
 ## 合併シミュレーションの厚生分析 ----
@@ -597,7 +597,7 @@ Table_7dt1 %>%
 
 Table_7dt1 %>%  {
   txt <- capture.output(knitr::kable(., format = "simple"))
-  writeLines(txt, con = here("02_BLP_CH03_04_05/output/Table_7dt1.txt"), useBytes = TRUE)
+  writeLines(txt, con = here("02_BLP_CH03_04_05/output/tab5_3_1_surplus.txt"), useBytes = TRUE)
 }
 
 
@@ -617,7 +617,7 @@ Table_7dt2 %>%
 
 Table_7dt2 %>%  {
   txt <- capture.output(knitr::kable(., format = "simple"))
-  writeLines(txt, con = here("02_BLP_CH03_04_05/output/Table_7dt2.txt"), useBytes = TRUE)
+  writeLines(txt, con = here("02_BLP_CH03_04_05/output/tab5_3_2_profit_revenue.txt"), useBytes = TRUE)
 }
 
 # シミュレーションに関する計算時間
@@ -793,7 +793,7 @@ Table_7dt3 %>%
 
 Table_7dt3 %>% {
   txt <- capture.output(knitr::kable(., format = "simple"))
-  writeLines(txt, con = here("02_BLP_CH03_04_05/output/Table_7dt3.txt"), useBytes = TRUE)
+  writeLines(txt, con = here("02_BLP_CH03_04_05/output/table_cost_reduction.txt"), useBytes = TRUE)
 }
 
 ## 限界費用削減をした場合の利潤と収入の変化 ----
@@ -832,7 +832,7 @@ Table_7dt4 %>%
 
 Table_7dt4 %>% {
   txt <- capture.output(knitr::kable(., format = "simple"))
-  writeLines(txt, con = here("02_BLP_CH03_04_05/output/Table_7dt4.txt"), useBytes = TRUE)
+  writeLines(txt, con = here("02_BLP_CH03_04_05/output/table_reduction_profit_revenue.txt"), useBytes = TRUE)
 }
 
 ## 限界費用削減をした場合の全体の利潤と収入の変化率
