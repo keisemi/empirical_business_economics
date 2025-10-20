@@ -65,7 +65,9 @@ fP_a2 <- fP_a2given(TransitionMat, CCP1)
 # の形（CCP1Updated）の両方で求めておく。この計算は一見複雑だが、需要
 # 関数の推定の時と似た計算であるため、説明は省略する。最初のブロックは企
 # 業1について、次のブロックは企業2について更新されたCCPを求めている。
-
+# fP_a1given()は出力されるものがlist形式であるに注意
+# fP_a1はlistであるため、この様にかっこをつけなければならない
+# []を一つにするとclassがlistのままで行列の積が計算できない
 NewSigmaSeed1 <- (pi1Psigma + beta * c(fP_a1[[1]] %*% ExanteV1, fP_a1[[2]] %*% ExanteV1, fP_a1[[3]] %*% ExanteV1)) * CCP1Adjuster
 NewSigmaDeno1 <- apply(exp(NewSigmaSeed1), 1, sum) - rep(1, 8)
 NewSigmaDeno1M <- rep(NewSigmaDeno1, 3)

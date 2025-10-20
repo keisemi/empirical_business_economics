@@ -125,7 +125,7 @@ n2 <- apply(transitionpath * matrix(rep(c(0, 1, 0, 1, 0, 1, 0, 1), NumSimPeriods
 
 ## 4. 反実仮想シミュレーション: 差別化戦略
 
-# シナリオ1
+# シナリオ1 ----
 # 企業1のベース利潤が上昇し、顧客奪取効果がどちらも0になった場合
 CounterfactualParameterValues1 <- matrix(c(
   0.5, # 企業1のベース利潤
@@ -195,14 +195,12 @@ dev.off()
 
 # 利潤の計算
 diff_value_1 <- V1cf - V1base
-matrix(c(V1base, V1cf, diff_value_1), ncol = 3)
 diff_value_2 <- V2cf - V2base
-matrix(c(V2base, V2cf, diff_value_2), ncol = 3)
 print("シナリオ1")
-matrix(c(V1base, V2base, V1cf, diff_value_1, V2cf), ncol = 5)
+mat_scenario1 <- matrix(c(V1base, V2base, V1cf, diff_value_1, V2cf), ncol = 5)
+print(mat_scenario1)
 
-
-# シナリオ2
+# シナリオ2 ----
 # 企業1のベース利潤が上昇し、顧客奪取効果に企業間で異質性がある場合
 CounterfactualParameterValues2 <- matrix(c(
   0.5, # 企業1のベース利潤
@@ -271,13 +269,16 @@ dev.off()
 
 # 利潤の計算
 diff_value_1 <- V1cf - V1base
-matrix(c(V1base, V1cf, diff_value_1), ncol = 3)
 diff_value_2 <- V2cf - V2base
-matrix(c(V2base, V2cf, diff_value_2), ncol = 3)
 print("シナリオ2")
-matrix(c(V1base, V2base, V1cf, diff_value_1, V2cf), ncol = 5)
+mat_scenario2 <- matrix(c(V1base, V2base, V1cf, diff_value_1, V2cf), ncol = 5)
+print(mat_scenario2)
 
-# 3プロット
+# シナリオ1・2のまとめ(表11.6)
+mat_all <- cbind(mat_scenario1, mat_scenario2[, 3:5])
+write.csv(mat_all, file = here("06_Dynamic_Game_Ch10_11/output/Tab11_6_CF_simulation.csv"))
+
+# 結果のまとめプロット ----
 png("06_Dynamic_Game_Ch10_11/output/ProbEntry3Plots.png")
 par(mfrow = c(1, 2))
 plot(1:NumSimPeriods, n1,
