@@ -1,3 +1,5 @@
+# 変数消去
+rm(list = ls())
 
 # パッケージの読み込み
 library(tidyverse)
@@ -5,6 +7,7 @@ library(sjmisc)
 library(knitr)
 library(tictoc) #時間計測に用いるパッケージ
 library(here)
+library(showtext)
 
 source(here("02_BLP_CH03_04_05/function_Ch05.R"))
 

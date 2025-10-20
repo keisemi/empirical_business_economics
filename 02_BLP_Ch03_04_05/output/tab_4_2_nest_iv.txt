@@ -10,7 +10,7 @@ log_inside_share                       0.78 (0.01)    0.60 (0.04)
 サイズ                                 0.16 (0.007)   0.23 (0.01)  
 ____________________________________   ____________   ____________ 
 S.E. type                              Hetero.-rob.   Hetero.-rob. 
-R2                                     0.86           0.24         
+R2                                     0.86           0.76         
 Observations                           1,823          1,823        
 F-test (1st stage), 自動車価格         --             86.9         
 F-test (1st stage), log_inside_share   --             100.9        

@@ -1,3 +1,5 @@
+# 変数消去
+rm(list = ls())
 
 # パッケージの読み込み
 library(tidyverse)
@@ -5,8 +7,12 @@ library(fixest)
 library(summarytools)
 library(sjmisc)
 library(here)
+library(showtext)
 
 source(here("02_BLP_CH03_04_05/function_Ch03_04.R"))
+
+# 日本語のPDF出力
+showtext_auto()
 
 # データの読み込み ----
 
