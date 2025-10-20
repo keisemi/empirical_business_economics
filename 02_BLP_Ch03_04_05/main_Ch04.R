@@ -398,6 +398,16 @@ delta_global <- data$logit_share
 
 # 最適化
 result <- stats::optim(
+  par = c(0.2, 10, 0.1),
+  fn = GMM_obj,
+  method = "L-BFGS-B",
+  lower = c(0, 0, 0),
+  parameter = parameter,
+  datalist = datalist,
+  option = 0
+)
+
+result2 <- stats::optim(
   par = c(0.3, 18, 0.01),
   fn = GMM_obj,
   method = "L-BFGS-B",
