@@ -524,9 +524,16 @@ if (option_parallel == FALSE) {
 }
 
 # 推定結果のまとめ
-# output/result_BBL_boot_XXX.RDS と output/result_BBL_pointestimate.RDS に
+# output/result_BBL_boot_XXX.RDS と 
+# output/result_BBL_Bootstrap/result_BBL_pointestimate.RDS に
 # ブートストラップの結果と点推定値がそれぞれ保存されている。
 true <- c(0.3, 0.2, -0.27, 0.45, -2.1)
 print("Payoff parameter: True, Normalized true, Estimated, SE ")
 normalized_param <- c(0.3 - (1 - beta) / beta * (-0.15), 0.2 - (1 - beta) / beta * (-0.15), -0.27, 0.45, -2.1 + (-0.15))
-print(matrix(c(true, normalized_param, opt$par, apply(bootresult_payoff, 1, sd)), nrow = 5))
+estmat_BBL <- matrix(c(true, normalized_param, opt$par, apply(bootresult_payoff, 1, sd)), nrow = 5)
+# Save in csv
+write.csv(estmat_BBL, file = here("06_Dynamic_Game_Ch10_11/output/Tab11_5_forward_BBL.csv"))
+
+
+
+
