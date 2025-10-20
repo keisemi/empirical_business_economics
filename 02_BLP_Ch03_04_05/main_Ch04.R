@@ -306,7 +306,19 @@ elas_mat_nl_restricted %>% {
 
 # ランダム係数ロジットモデルの推定 ----
 
-## 下準備 ----
+# 推定のOverview
+# Step 1はデータに関する下準備である。
+# Step 2から4では、GMM推定のために必要な関数を順番に用意していく。
+# 1. 市場シェアを計算する関数 (Step 2)
+# 2. 縮小写像によるBerryインバージョンを行う関数 (Step 3)
+# 3. GMMの目的関数 (Step 4)
+# 市場シェアを計算する関数はStep 3・4両方で使用する。また、Berryインバージョンを行う関数はGMM目的関数を評価する際に必要となる。
+# GMM目的関数を定義した後、数値最適化でGMM推定を行う。
+# Step 5では推定したパラメタの標準誤差の計算を行う。最後に推定結果をテーブルでまとめる。
+
+
+
+## Step 1: 下準備 ----
 
 # まずデータをソートする。マーケット順かつモデル順
 data <- data %>% 
@@ -376,7 +388,7 @@ temp2 <- matrix(rep(marketindex, T), N, T)
 tempmat <- (temp1 == temp2) * 1
 datalist$tempmat <- tempmat
 
-## GMM推定 ----
+## Step 2-4: GMM推定 ----
 
 # GMMの荷重行列のオプション
 datalist$weight_mat_option <- "2SLS"
@@ -395,7 +407,7 @@ result <- stats::optim(
   option = 0
 )
 
-## 標準誤差の計算 ----
+## Step 5: 標準誤差の計算 ----
 
 result2 <-GMM_obj(result$par, parameter, datalist, option = 1)
 

@@ -105,6 +105,39 @@ data <- data %>%
 # 操作変数の構築
 # ここでは、BLP型操作変数と、Gandhi-HoudeのDifferentiation IVを定義する
 
+
+#### 解説 
+#コードが若干複雑なので、構築のアイデアを先に説明しよう。
+# まず、Gandhi-HoudeのDifferentiation IVは以下のように定義される。
+#
+# $$
+# \begin{split}Z_{jtk}^{\text{Quad,Other}}(X)=\sum_{k\in J_{ft}\setminus\{j\}}d_{jkt\ell}^{2},\\
+# Z_{jtk}^{\text{Quad,Rival}}(X)=\sum_{k\notin J_{ft}}d_{jkt\ell}^{2}.
+# \end{split}
+# $$
+#
+# まず$Z_{jtk}^{\text{Quad,Other}}$の作成方法を考える．
+# 具体的なイメージを持つべく、以下のように，市場と企業でグループ化したうえで，同じ企業が生産する財$1,2,3,4$と，財の特質$X$を持ったデータ(data)を考える．
+#
+# | 市場 | 企業 | 財  | 特性$X$ | 特性の差の二乗$d^{2}$                                            |
+# |-------|-------|-------|-------|---------------------------------------------|
+# | 1    | 1    | 1   | A       | $\left(A-B\right)^{2}+\left(A-C\right)^{2}+\left(A-D\right)^{2}$ |
+# | 1    | 1    | 2   | B       | $\left(B-A\right)^{2}+\left(B-C\right)^{2}+\left(B-D\right)^{2}$ |
+# | 1    | 1    | 3   | C       | $\left(C-A\right)^{2}+\left(C-B\right)^{2}+\left(C-D\right)^{2}$ |
+# | 1    | 1    | 4   | D       | $\left(D-A\right)^{2}+\left(D-B\right)^{2}+\left(D-C\right)^{2}$ |
+#
+# ここで，財$1$についての$d^{2}$を考えると，以下のように書ける．
+# $$
+# \left(A-B\right)^{2}+\left(A-C\right)^{2}+\left(A-D\right)^{2}=3A^{2}+\left(B^{2}+C^{2}+D^{2}\right)-2A\left(B+C+D\right)
+# $$
+# これを一般化した形で書くと、
+# $$
+# d^{2}=\left(\mathrm{nrow(data)}-1\right)*X^{2}+\left(\mathrm{sum}(X^{2})-X^{2}\right)-2*X*\left(\mathrm{sum}(X)-X\right)
+# $$
+# となる。
+# 以下では、このアイデアをコードに落とし込んだものを見ていこう。
+
+
 # まず、マーケット・企業レベルにおける、各製品属性の和と自乗和を計算する。
 # ここでacross関数は、最初に文字列ベクトルで指定した変数について、後ろにリスト内で定義した操作を適用している。
 data <- data %>%
@@ -349,6 +382,14 @@ tbl_own_elas <- data_elas %>%
 # 推定結果の応用 ----
 
 ## 需要曲線と収入曲線を描く ----
+
+# 需要関数の推定結果にもとづいて、需要曲線を書こう。
+# 1.  まず、推定結果から$\xi_{jt}$をゲットする。
+# 2.  関数を作成する。
+# 3.  どこか市場を固定する。
+# 4.  製品を一つ固定する。
+# 5.  その製品の価格を変えたときに、どの製品のSalesがどう変わるかをPredictする。その際、他の製品価格はデータのものに固定しておく。
+
 
 dt_application <- data %>% 
   dplyr::select(NameID, year, Sales, price, FuelEfficiency, size, hppw, HH, share) %>% 
