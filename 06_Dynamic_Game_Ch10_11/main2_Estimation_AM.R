@@ -16,7 +16,9 @@ gc()
 pacman::p_load(
   # 必要となるパッケージ名
   matlib, # 逆行列の作成に用いる
-  pracma # matlabと同じ原理での最適化に用いる
+  R.matlab, # matlab の.matファイルの読み込みに用いる。Matlabで用いたものと同じ乱数を利用するために必要。
+  pracma, # matlabと同じ原理での最適化に用いる
+  here
 )
 
 # 必要な関数の読み込み
@@ -170,7 +172,7 @@ while (i > 0) {
 
   # CCPが収束していないか確認する
   print("収束の判定")
-  if (check_convergence(newCCP, cbind(ccp1, ccp2))) break
+  if (check_convergence(newCCP, cbind(ccp1, ccp2), tol = 1e-6) ) break
 
   # CCPが収束していない場合、新しいCCPでもとのCCPを更新する
   ccp1 <- newCCP[, 1]
@@ -194,18 +196,28 @@ print(cbind(CCP1Updated, CCP2Updated))
 
 # 5. Bootstrapによる標準誤差の計算 ----
 # マーケット単位でリサンプリングを行う。マーケットは500個
+
+
 # Bootstrapのための乱数を固定
 set.seed(2023)
 
 # Bootstrap のリサンプリング回数
-# 発散してしまうbootstrap sampleがあるため、多めに設定しておく
-numBootSample <- 110
+numBootSample <- 100
 
 # 各Bootstrap sampleで用いるマーケットのインデックスを乱数から発生させる
 # 市場がNumSimMarkets個であるため、1からNumSimMarketsの整数について、重複を許してNumSimMarkets個ドローする
 bootindex <- matrix(sample(1:NumSimMarkets, NumSimMarkets * numBootSample, replace = TRUE),
   ncol = numBootSample
 )
+
+# Matlabの再現: Bootstrap sampleで用いるマーケットのインデックス
+if (isUseMatlabData == 1) {
+  fa <- readMat(here("06_Dynamic_Game_Ch10_11/data_from_matlab/random_number_matlab_PSD.mat"))
+  bootindex <- fa$bootindex
+  numBootSample <- 100
+  rm(fa)
+}
+
 
 # 結果を保存するための行列
 bootresult_transition <- matrix(rep(0, 2 * numBootSample), ncol = numBootSample)
@@ -294,5 +306,8 @@ Summary_Payoff_param <- matrix(c(true, normalized_param, sol$par, apply(bootresu
 colnames(Summary_Payoff_param) <- c("Payoff parameter: True", "Normalized true", "Estimated", "SE")
 print(Summary_Payoff_param)
 
-
-
+# Save results
+write.csv(Summary_CCP1, file = here("06_Dynamic_Game_Ch10_11/output/Tab11_3_CCP_firm1.csv"))
+write.csv(Summary_CCP2, file = here("06_Dynamic_Game_Ch10_11/output/Tab11_3_CCP_firm2.csv"))
+write.csv(Summary_Transition, file = here("06_Dynamic_Game_Ch10_11/output/Tab11_2_Transition.csv"))
+write.csv(Summary_Payoff_param, file = here("06_Dynamic_Game_Ch10_11/output/Tab11_4_AM2007.csv"))

@@ -81,6 +81,10 @@ Estimation_AM_bootstrap <- function(FakeData, beta) {
   # パラメターの初期値
   initial <- c(InitialParameters[1:4], InitialParameters[6])
 
+  # Stack防止のためのゆらぎの乱数を準備する。
+  set.seed(123456)
+  random_draw <- runif(8*2*100, min = 0.75, max = 1.25)
+  
   # 推定
   while (i > 0) {
     # 時間がかかりすぎる場合に強制的にスキップする
@@ -115,6 +119,12 @@ Estimation_AM_bootstrap <- function(FakeData, beta) {
     # CCPが収束していない場合、新しいCCPでもとのCCPを更新する
     ccp1 <- newCCP[, 1]
     ccp2 <- newCCP[, 2]
+    
+    # Iterationが10の倍数のとき、CCPをRandomに揺らがせる。(Stack防止のため)
+    if (mod(i,10) == 0){
+      ccp1 <- ccp1*random_draw[ ((i/10 - 1)*8 + 1):((i/10 - 1)*8 + 8) ]
+      ccp2 <- ccp2*random_draw[ ((i/10 - 1)*8 + 9):((i/10 - 1)*8 + 16) ]
+    }
 
     # iを更新
     i <- i + 1
