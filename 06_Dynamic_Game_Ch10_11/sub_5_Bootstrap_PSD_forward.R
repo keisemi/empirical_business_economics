@@ -13,7 +13,7 @@ numBootSample <- 100
 bootindex <- matrix(sample(x = 1:500, size = 500 * numBootSample, replace = TRUE), ncol = numBootSample)
 
 # Matlabの再現: 乱数 読み込み
-if (option_matlab == TRUE) {
+if (isUseMatlabData == TRUE) {
   fa <- readMat(here("06_Dynamic_Game_Ch10_11/data_from_matlab/random_number_matlab_PSD.mat"))
   bootindex <- fa$bootindex
 }
@@ -55,7 +55,7 @@ if (option_parallel == FALSE) {
   }
 } else if (option_parallel == TRUE) {
   # コア数の設定。
-  cores <- 10
+  cores <- option_numcores
   cl <- makeCluster(cores, outfile = "")
   registerDoParallel(cl)
 
@@ -85,7 +85,7 @@ if (option_parallel == FALSE) {
     output$transition <- c(result[[4]][1, 1], result[[4]][2, 2])
 
     # 推定結果はRDSファイルとして保存している。
-    saveRDS(output, file = paste("06_Dynamic_Game_Ch10_11/output/result_forwardPSD_boot_", b, ".RDS", sep = ""))
+    saveRDS(output, file = paste("06_Dynamic_Game_Ch10_11/output/result_forwardPSD_Bootstrap/result_forwardPSD_boot_", b, ".RDS", sep = ""))
   }
   toc()
 
@@ -108,4 +108,10 @@ if (option_parallel == FALSE) {
 true <- c(0.3, 0.2, -0.27, 0.45, -2.1)
 print("Payoff parameter: True, Normalized true, Estimated, SE ")
 normalized_param <- c(0.3 - (1 - beta) / beta * (-0.15), 0.2 - (1 - beta) / beta * (-0.15), -0.27, 0.45, -2.1 + (-0.15))
-print(matrix(c(true, normalized_param, opt, apply(bootresult_payoff, 1, sd)), nrow = 5))
+estmat_PSD_forward <- matrix(c(true, normalized_param, opt_forwardPSD, apply(bootresult_payoff, 1, sd)), nrow = 5)
+print(estmat_PSD_forward)
+
+# Save in csv
+write.csv(estmat_PSD_forward, file = here("06_Dynamic_Game_Ch10_11/output/Tab11_5_forward_PSD.csv"))
+
+
