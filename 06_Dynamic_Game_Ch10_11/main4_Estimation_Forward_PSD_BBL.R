@@ -337,24 +337,34 @@ if (option_parallel == FALSE){
   cl <- makeCluster(cores, outfile = "")
   registerDoParallel(cl)
   
-  foreach( per = 1:NumPerturbations, .verbose = TRUE) %dopar% {
+  # foreachで結果をリストとして返す
+  results <- foreach( per = 1:NumPerturbations, .verbose = TRUE) %dopar% {
     
     cat(per, "")
     W1_p <- VSigmaGeneration(
       PerturbedCCP1[, per], EstimatedCCP2, EstimatedTransition,
       EVrandom, UNIrandom, InitialState, NumSimMarkets, NumSimulations, NumSimPeriods, beta
     )
-    W1_all[, , per] <- W1_p[[1]]
     
     W2_p <- VSigmaGeneration(
       EstimatedCCP1, PerturbedCCP2[, per], EstimatedTransition,
       EVrandom, UNIrandom, InitialState, NumSimMarkets, NumSimulations, NumSimPeriods, beta
     )
-    W2_all[, , per] <- W2_p[[2]]
+    
+    list(W1 = W1_p[[1]], W2 = W2_p[[2]])
+    
     
   }
   stopCluster(cl)
   
+  # foreachの結果（リスト）をまとめて配列に変換
+  W1_all <- array(0, dim = c(6, NumSimMarkets, NumPerturbations))
+  W2_all <- array(0, dim = c(6, NumSimMarkets, NumPerturbations))
+  
+  for (per in 1:NumPerturbations) {
+    W1_all[, , per] <- results[[per]]$W1
+    W2_all[, , per] <- results[[per]]$W2
+  }
   
 }
 toc()
@@ -442,8 +452,7 @@ noise_CCP2 <- matrix(rnorm(8 * NumPerturbations, mean = 0, sd = .1), nrow = 8)
 # Bootstrap を実行するループ
 
 # 注意：Bootstrapには非常に長い時間がかかるため注意。
-# 筆者の環境では、コア数10の並列計算において、XXX秒かかった。
-# なお、Bootstrapの結果については、result/result_BBL_boot_XX.rds ファイルに格納されている。
+# なお、Bootstrapの結果については、output/result_BBL_Bootstrap/result_BBL_boot_XX.rds ファイルに格納されている。
 
 if (option_parallel == FALSE) {
   # 並列計算なし
@@ -482,7 +491,7 @@ if (option_parallel == FALSE) {
   registerDoParallel(cl)
 
   tic()
-  foreach(b = 1:10, .verbose = TRUE) %dopar% {
+  foreach(b = 1:numBootSample, .verbose = TRUE) %dopar% {
     
     cat(b, "")
     # Bootstrap sampleを構築する。

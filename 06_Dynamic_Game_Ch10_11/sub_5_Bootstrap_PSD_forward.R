@@ -93,7 +93,7 @@ if (option_parallel == FALSE) {
 
   # 結果のSummary
   for (b in 1:numBootSample) {
-    output <- readRDS(paste("06_Dynamic_Game_Ch10_11/output/result_forwardPSD_boot_", b, ".RDS", sep = ""))
+    output <- readRDS(paste("06_Dynamic_Game_Ch10_11/output/result_forwardPSD_Bootstrap/result_forwardPSD_boot_", b, ".RDS", sep = ""))
     bootresult_payoff[, b] <- output$payoff
     bootresult_CCP1[, b] <- output$CCP1
     bootresult_CCP2[, b] <- output$CCP2
