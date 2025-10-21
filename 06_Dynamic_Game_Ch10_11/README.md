@@ -1,97 +1,73 @@
-# Dynamic Game
-
-
+# 動学ゲームの推定コードについて
 
 ## はじめに
 
-- 経済セミナー連載時にはMatlabを用いたコードを公開。
-- その後、Rを用いたコードを
+- 第10章・11章の「動学ゲームの推定」については、Matlab及びRでコードを提供している。経済セミナー連載時(第9回から第12回)にはMatlabを用いて数値計算を行っていたが、書籍化にあたってRでコードを作成した。
+- しかしながら、連載時の結果と同じ結果を得るために、Matlabで生成したデータ(乱数を含む)をRで読み込んで用いる形にしている。
+- それでもなお、一部の結果については、連載時の結果と異なる場合があることに注意されたい。  
+  
+## ディレクトリの構成
 
+- `code_from_matlab`: 連載時に使用したMatlabのコード。説明は後述
+- `data_from_matlan`: 連載時にMatlabで生成したデータ。Rコードで読み込んで使用する。
+- `functions_R`: Rで作成した関数群
+- `output`: Rコードのアウトプットを保存するディレクトリ
+- `mainX_YYYY.R`: Rで作成したメインコード群。説明は後述
+- `sub_X_YYYY.R`: Rで作成したサブコード群。上述のメインコードから呼び出しされる。 
 
 ## 実行する順番
 
-- 【Skip可】Matlabでコードを実行
-- `main1_Estimation_PSD_BBL.R`
-- `main1_2_AM.R`
-- `main2_Policy_Simulation.R`
+1. `data_from_matlab`に以下のファイルがあること確認する。
+  - `FakeData_Matlab.csv`: 疑似データ. これはGithub上にも保存されている。
+  - `random_number_matlab_BBL.mat`: BBLの推定に用いる乱数。ファイルサイズから別場所にアップロードされている。
+  - `random_number_matlab_PSD.mat`: P-SDの推定に用いる乱数。ファイルサイズから別場所にアップロードされている。
+2. `main1_Computation_Equilibrium.R`: 均衡計算を行うコード
+3. `main2_Estimation_AM.R`: Aguirregabiria and Mira (2007)の方法による推定を行うコード。
+4. `main3_Estimation_PSD.R`: P-SDによる推定を行うコード
+5. `main4_Estimation_Forward_PSD_BBL.R`: Forward simulation を用いたP-SDとBBLによる推定を行うコード
+6. `main5_Policy_Simulation.R`: 反実仮想分析を行うコード
 
-### Matlabについて
+## 計算時間
 
-基本的に、連載時のコード(第12回)を若干修正したもの。
+- デフォルト環境: 
+  - MacBook Air M2 2022 (Apple M2, 8コアCPU, メモリ16GB) 
+  - Sequioia 15.6
+  - R 4.4.3
 
-- `main1_Estimation.m`
-  - 疑似データの作成、P-SDによる推定、BBLによる推定を行う。
+- ワークステーション環境: 
+  - Mac Studio 2025 Apple M4 Max CPU 16 コア CPU メモリ 128GB 
+  - Sequioia 15.6
+  - R 4.4.3
+
+- main1,2,3,5はデフォルト環境で実行した。(並列計算なし)
+  - main1,3,5は数分程度(10分未満)
+  - main2 は15-20分程度
+
+- main4はワークステーション環境で実行した。
+  - 並列計算に用いたコア数は10.
+  - Forward simulationを用いたP-SD: 5分未満
+  - BBLの点推定値: 5分未満
+  - BBLのブートストラップ標準誤差: 約1時間半
+
+
+### Matlabコードについて
+
+- ディレクトリ`code_from_matlab`に連載時に使用したMatlabコードを保存している。第12回 (https://sites.google.com/view/keisemi-ebiz/%E7%AC%AC12%E5%9B%9E?authuser=0) のコードを若干修正したもの。なお、第12回のコードには、通常のP-SD (Forward simulationをしないP-SD)のコードが含まれていない。こちらは第11回 (https://sites.google.com/view/keisemi-ebiz/%E7%AC%AC11%E5%9B%9E?authuser=0) を参照されたい。
+- MatlabコードはRコードのためのデータ生成に用いるのみで、Rコードの実行には不要。
+- 実行する際には以下の順番で行う。
+
+
+1. `main1_Estimation.m`
+  - 疑似データの作成、Forward simulationに基づくP-SDによる推定、BBLによる推定を行う。
   - アウトプット: `result_BBL_bootstrap.mat`
   - アウトプット: `FakeData_Matlab.csv` `random_number_matlab_BBL.mat` `random_number_matlab_PSD.mat`
-- `main2_Policy_Simulation.m`
+2. `main2_Policy_Simulation.m`
   - アウトプット: `ProbEntry.jpg`
 
-もし連載時のBBLのSEがほしいならば
+もし連載時におけるBBLの標準誤差を計算したい場合には、以下を実行すること。
 
 ```
+library(R.matlab)
 data <- readMat("06_Dynamic_Game_Ch10_11/code_from_matlab/result_BBL_bootstrap.mat")
 apply(data$bootresult.payoff,2, sd)
 ```
-
-## ディレクトリ構成
-
-## 注意
-
--   本`README.md`はあくまで一般公開を想定したものではなく、編集者向けの内容であるため、編集者向けの留意点も含むことに注意すること。
-
--   以下、連載当初用いられていたパラメターを旧パラメター、新しく用いようとしたパラメターを新パラメターと呼ぶ。
-
-## ディレクトリ構成
-
--   `AM2007_R`: Aguirregabiria and Mira (2007) に基づく推定
-    -   概ね経済セミナー第11回の[サポートコード](https://sites.google.com/view/keisemi-ebiz/%E7%AC%AC11%E5%9B%9E?authuser=0)と同内容
-    -   `main.R`の`4. Aguirregabiria and Mira (2007)の方法によるパラメターの推定`以降の内容
-    -   追加した自作関数群
-        -   `check_convergence.R`: CCPと更新されたCCPが収束しているか確認する関数。
-
-        -   `Estimation_AM_bootstrap.R`: Aguirregabiria and Mira (2007)の推定をブートストラップで繰り返すために必要な処理をまとめた関数。従来の推定より結果の標準出力を極力省略している。
-
-        -   `obj_lik.R`: 目的関数として疑似対数尤度関数を定義した関数。
--   `KS12_R`: 経済セミナー第12回に基づく反実仮想分析
-    -   概ね経済セミナー第12回の[サポートコード](https://sites.google.com/view/keisemi-ebiz/%E7%AC%AC12%E5%9B%9E?authuser=0)と同内容
-    - `main1_Estimation.R`の内容はMatLab版データで実行されている（本誌サポートコードではRで生成したデータを用いていた）。
-    - `main2_Policy_Simulation.R`は本誌とは異なるパラメターのもとで反実仮想分析のプロットを生成している。
-    -   `result`内にはCounter Factualで出力された店舗存在確率のグラフが格納されている。
-        -   `ProbEntry.png`: 何の意味もなさないファイル
-        -   `ProbEntry1.png`: 新パラメターに基づく企業1のCounter Factual
-        -   `ProbEntry1Original.png`: 旧パラメターに基づく企業1のCounter Factual
-        -   `ProbEntry2.png`: 新パラメターに基づく企業2のCounter Factual
-        -   `ProbEntry2Original.png`: 旧パラメターに基づく企業2のCounter Factual
-        -   `ProbEntry3Plots`: 企業ごとにベースライン、シナリオ1、シナリオ2をまとめたグラフ。実線がベースライン、点線に白丸がシナリオ1、点線に黒丸がシナリオ2を指している
-
-## Aguirregabiria and Mira (2007)
-
--   アルゴリズムを実行するにあたり、パラメターとCCPについては初期値が必要となる。ここでは、以下のように初期値を設定した。
-
-    -   パラメターについて、真のパラメターに近い`InitialParameters1`と真のパラメターから遠い`InitialParameters2`が存在する。`InitialParameters2`では推定が収束しなかったため、`InitialParameters1`を用いた。
-
-    -   CCPについて、実装当初はデータから推定されたCCPから遠いCCPも初期値として設定していたが、収束しなかったため不採用とし、データから推定されたCCPをそのまま用いた。
-
--   なお、ブートストラップ法による標準誤差の出力においても同様の初期値を用いている。詳細は`EM_AM_bootstrap.R`を参照のこと。
-
-## Policy Simulation
-
--   シナリオ1
-
-    -   企業1のベース利潤を`0.3`から`0.5`に、顧客奪取効果を企業1, 2共に`-0.27`から`0`に変更したものである。
-
--   シナリオ2
-
-    -   企業1のベース利潤を`0.3`から`0.5`に、
-
-    -   ライバルの店舗数が企業1の利潤に与える影響を`-0.27`から`-0.1`に、
-
-    -   ライバルの店舗数が企業2の利潤に与える影響を`-0.27`から`-0.2`に変更したものである。
-
-## Pending
-
--   `AM2007` の`main.R` について、新パラメターを記載しつつも採用しなかったという表記にしてある。存在自体を抹消する場合、該当部分を削除する必要がある。
-
--   `AM2007` の`main.R` について、`set.seed(2023)` を複数回用いている。特に推定上の問題はないが、冗長である。
-
--   `KS12_R` のCounter Factualについて、採用したプロット以外のプロットが不要である場合、そのプロットのコードを削除することを推奨する。
