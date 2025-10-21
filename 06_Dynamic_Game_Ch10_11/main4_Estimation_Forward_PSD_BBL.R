@@ -17,6 +17,17 @@ rm(list = ls())
 # メモリを開放
 gc()
 
+# ==== Prevent Mac from sleeping during long R runs ====
+
+# Start caffeinate (prevents sleep while this R session runs)
+# The "-dims" flags mean:
+# -d : prevent display sleep
+# -i : prevent idle sleep
+# -m : prevent disk sleep
+# -s : prevent system sleep
+system("caffeinate -dims &")
+
+
 # 紙面結果の再現のためのオプション
 # option_matlab: FALSEの場合はRで乱数を生成＆データセット生成する。
 # TRUEの場合はMatlabコード(書籍原稿を再現する分析)と同じ乱数＆データセットを用いる。
