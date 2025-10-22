@@ -15,6 +15,12 @@ x_ANA = read.csv("data/x_ANA.csv")
 x_JAL = read.csv("data/x_JAL.csv")
 id_port_dyad_long = read.csv("data/id_port_dyad_long.csv")
 
+# data（確認用）
+y = read.csv(here("05_Static_Game_Airline_Ch09/data/y.csv"))
+x_ANA = read.csv(here("05_Static_Game_Airline_Ch09/data/x_ANA.csv"))
+x_JAL = read.csv(here("05_Static_Game_Airline_Ch09/data/x_JAL.csv"))
+id_port_dyad_long = read.csv(here("05_Static_Game_Airline_Ch09/data/id_port_dyad_long.csv"))
+
 #whether two dfs are identical
 identical(select(x_ANA,-Flight), select(x_JAL,-Flight))
 #True
