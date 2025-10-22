@@ -1,4 +1,7 @@
+# Clear space
+rm(list = ls())
 
+# Library
 library(tidyverse)
 library(here)
 library(ROCR)
@@ -8,6 +11,9 @@ library(showtext)
 library(knitr)
 
 source(here("05_Static_Game_Airline_Ch09/function.R"))
+
+# 日本語文字
+showtext.auto()
 
 # データの読み込み ----
 y = read.csv(here("05_Static_Game_Airline_Ch09/data/y.csv"))
