@@ -62,7 +62,7 @@ require(doRNG)
 
 ```{r}
 # 病院データを読み込む
-data_raw <- readr::read_csv(file = "data_hospital_chapter6.csv", 
+data_raw <- readr::read_csv(file = "data/data_hospital_Berry1992.csv", 
                             locale = locale(encoding = "UTF-8"))
   
 ```
@@ -436,7 +436,7 @@ toc()
 
 ```{r, eval=FALSE}
 # 並列計算のための設定を行う。
-cores <- 20 #並列計算に使うCPUコアの個数。
+cores <- 10 #並列計算に使うCPUコアの個数。
 registerDoParallel(cores)
 registerDoRNG(12345) 
 
