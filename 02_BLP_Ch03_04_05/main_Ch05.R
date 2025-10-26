@@ -123,8 +123,8 @@ datalist$mkt_denom_d <- mkt_denom_d
 # GMMの荷重行列のオプション
 datalist$weight_mat_option <- "2SLS"
 
-# グローバル変数としてアップデートする平均効用
-delta_global <- data$logit_share
+# Contraction mappingで用いる初期値
+datalist$delta_ini <- data$logit_share
 
 # 最適化
 GMM_nonlinear <- stats::optim(

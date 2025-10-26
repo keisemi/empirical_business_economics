@@ -144,8 +144,8 @@ GMM_obj <- function(
   param <- parameter
   param$theta2 <- theta2
   
-  # Contractionの初期値として、グローバル変数のdelta_globalを用いる。
-  delta_ini <- delta_global
+  # Contractionの初期値として、log(s_j)-log(s_0) を用いる。
+  delta_ini <- datalist$delta_ini
   
   # 縮小写像
   delta <- calculate_avg_utility_by_Berry_inversion(
@@ -153,9 +153,6 @@ GMM_obj <- function(
     param, 
     delta_ini
   )
-  
-  # 平均効用を永続代入演算子でアップデートしている。 
-  delta_global <<- delta
   
   # 目的関数に必要な行列を準備
   X1 <- datalist$X1
