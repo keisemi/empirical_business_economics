@@ -5,7 +5,7 @@ library(tidyverse)
 library(optimx)
 library(here)
 
-source(here("04_Static_Game_MRI_Ch08/function.R"))
+source(here("04_Static_Game_MRI_Ch08/function_BR1991.R"))
 
 data <- read_csv(file = here("04_Static_Game_MRI_Ch08/data/MRIData_BR1991.csv"), locale = locale(encoding = "UTF-8"))
 data <- data.frame(data)
