@@ -498,3 +498,8 @@ result <- optimise(
 )
 
 print(result)
+
+# 保存
+sink(here("02_BLP_Ch03_04_05/output/Ch03_opt_price.txt"))
+print(result)
+sink()

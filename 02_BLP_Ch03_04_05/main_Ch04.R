@@ -8,6 +8,7 @@ library(summarytools)
 library(sjmisc)
 library(here)
 library(showtext)
+library(tictoc)
 
 source(here("02_BLP_CH03_04_05/function_Ch03_04.R"))
 
@@ -397,6 +398,7 @@ datalist$weight_mat_option <- "2SLS"
 datalist$delta_ini <- data$logit_share
 
 # 最適化
+tic()
 result <- stats::optim(
   par = c(0.2, 10, 0.1),
   fn = GMM_obj,
@@ -406,6 +408,7 @@ result <- stats::optim(
   datalist = datalist,
   option = 0
 )
+toc()
 
 ## Step 5: 標準誤差の計算 ----
 
@@ -624,4 +627,19 @@ calculate_revenue(
   result2 = result2,
   parameter = parameter, 
   option = "totalpi"
-)
+) -> total_rev
+
+# 最適価格のまとめ
+
+sink(here("02_BLP_Ch03_04_05/output/Ch04_opt_price.txt"))
+print("ベータードの利潤のみ最適化")
+print("ベータード最適価格と目的関数(ベータード利潤)")
+print(optimprice3)
+print("ベータードのみの利潤を最大にするような価格における、「ベータードのみの利潤+日評自動車の他の車種の収入」")
+print(total_rev)
+
+print("ベータード利潤+他の収入最大化")
+print("ベータード最適価格と、目的関数(ベータード利潤+その他収入)")
+print(optimprice4)
+sink()
+
