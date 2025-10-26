@@ -15,6 +15,11 @@ data <- data.frame(data)
 # 病院レベルのデータを市区町村レベルの集計データに変換
 listCode <- unique(data$CityCode)
 
+# 今回のデータは病院レベルのデータなので、
+# 推定のために市区町村レベルの集計データに変換する。
+# そのために、まず市区町村コードのリストを最初に作成し、
+# それに続いて（長さが市区町村数の）各変数のベクトルを準備する。
+
 NumHospital <- numeric(length(listCode))
 NumMRI <- numeric(length(listCode))
 Pop <- numeric(length(listCode))
@@ -22,7 +27,7 @@ Menseki <- numeric(length(listCode))
 PopDen <- numeric(length(listCode))
 Income <- numeric(length(listCode))
 
-
+# 準備した各変数のベクトルに、各市区町村の数を逐次代入する。
 for (i in 1:length(listCode)){
   subdata <- data[data$CityCode==listCode[i],]
   NumHospital[i] <- length(subdata$MRIOwnDum)
@@ -33,6 +38,7 @@ for (i in 1:length(listCode)){
   Income[i] <- as.integer(unique(subdata$TaxableIncome))
 }
 
+# 上で作成した市区町村レベルの変数のデータをdatasetとして格納
 dataset <- data.frame(Code = listCode, 
                       NumHospital = NumHospital,
                       NumMRI = NumMRI, 
@@ -111,6 +117,7 @@ for (i in 6:10){ # N_max = 6,...,10
   
   
   # ヘシアンの計算
+  # optimxが必要
   Hessian <- gHgen(par = as.numeric(res[0:N_max+1]), obj, dataset = dataset, N_max = N_max) 
   # 標準誤差の確認
   se <- sqrt(diag(solve(-Hessian$Hn)/M)) 
