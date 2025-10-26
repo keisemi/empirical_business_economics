@@ -1,0 +1,5 @@
+
+
+Measure           Nippyo and Brand A   Nippyo and Brand B
+---------------  -------------------  -------------------
+Cost reduction             0.4817918            0.2507483

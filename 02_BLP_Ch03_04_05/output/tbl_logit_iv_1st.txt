@@ -1,0 +1,24 @@
+
+
+                                  iv1st_BLP         iv1st_GH        
+--------------------------------  ----------------  ----------------
+定数項                            -3.2 (1.7)        -1.3 (0.42)     
+馬力／重量                        28.7 (0.99)       23.5 (1.5)      
+燃費(キロメートル／ 1 リットル)   -0.01 (0.008)     -0.07 (0.01)    
+サイズ                            0.20 (0.01)       0.19 (0.02)     
+iv_BLP_own_hppw                   -0.73 (0.34)                      
+iv_BLP_own_FuelEfficiency         -0.007 (0.0007)                   
+iv_BLP_own_size                   0.01 (0.004)                      
+iv_BLP_other_hppw                 0.17 (0.26)                       
+iv_BLP_other_FuelEfficiency       0.001 (0.0004)                    
+iv_BLP_other_size                 -0.002 (0.003)                    
+iv_GH_own_hppw                                      -1.9 (0.44)     
+iv_GH_own_FuelEfficiency                            5.3e-5 (3.2e-5) 
+iv_GH_own_size                                      -0.001 (0.0002) 
+iv_GH_other_hppw                                    0.42 (0.10)     
+iv_GH_other_FuelEfficiency                          4.9e-5 (8.7e-6) 
+iv_GH_other_size                                    0.0001 (3.9e-5) 
+___________________________       _______________   _______________ 
+S.E. type                         Heteroske.-rob.   Heteroske.-rob. 
+R2                                0.62              0.62            
+Observations                      1,823             1,823           
