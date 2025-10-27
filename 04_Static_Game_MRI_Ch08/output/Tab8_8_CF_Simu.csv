@@ -1,0 +1,11 @@
+"","Category","Fit_Pred","CF_Pred","PerChange"
+"1","All",2276,2193,-3.65
+"2","Kyukyu",1815,1782,-1.82
+"3","Sien",149,149,0
+"4","Hyoka",1164,1144,-1.72
+"5","DepNeurology",1053,1053,0
+"6","DepNeurosurgery",1533,1533,0
+"7","Not_(DepNeurology_and_DepNeurosurgery)",491,408,-16.9
+"8","Top25%_NumBeds",1795,1777,-1
+"9","DaigakuDum",124,124,0
+"10","ZeroBedDum",1,1,0
