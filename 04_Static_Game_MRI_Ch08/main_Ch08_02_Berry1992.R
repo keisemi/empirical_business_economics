@@ -28,7 +28,8 @@ source("04_Static_Game_MRI_Ch08/function_Berry1992.R")
 # Boostrapをするかしないかのオプション
 # Boostrapにかかる計算時間が比較的長いので、Bootstrapを行う場合はTRUE,
 # すでに回して得られた結果をロードする場合にはFALSEを指定する。 
-isBoostrap = FALSE
+isBoostrap = TRUE
+numCores = 12
 
 # 2.  データの準備----
 
@@ -247,7 +248,7 @@ if (isBoostrap == TRUE){
   # ここではdoRNGパッケージにおける`registerDoRNG()`を利用する。
   
   ## # 並列計算のための設定を行う。
-  cores <- 20 #並列計算に使うCPUコアの個数。
+  cores <- numCores #並列計算に使うCPUコアの個数。
   registerDoParallel(cores)
   registerDoRNG(12345)
 
@@ -582,5 +583,3 @@ tbl3 %>%
                     booktabs = TRUE,
                     digits = 3) %>%
   kableExtra::kable_styling() 
-
-
