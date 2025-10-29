@@ -594,10 +594,7 @@ dt_pricing <- dplyr::tibble(
   pi1 = pivec * 100 / 10000,
   pi2 = pivec2 * 100 / 10000) 
 
-dt_pricing %>% 
-  tidyr::pivot_longer(-price, names_to = "name") -> dt_forfig
-
-write.csv(dt_forfig, file = here("02_BLP_Ch03_04_05/output/dt_prof_Betard.csv"))
+write.csv(dt_pricing, file = here("02_BLP_Ch03_04_05/output/dt_prof_Betard.csv"))
 
 
 # 数値最適化を使って、利潤を最大にする価格を求める
