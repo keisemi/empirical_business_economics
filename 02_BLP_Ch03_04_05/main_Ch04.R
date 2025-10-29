@@ -588,6 +588,18 @@ plot(fig_pi2)
 
 ggsave(fig_pi2, file = here("02_BLP_CH03_04_05/output/fig4_2_revenue_all.pdf"), width = 9, height = 6, device = cairo_pdf)
 
+# まとめたテーブル
+dt_pricing <- dplyr::tibble(
+  price = pricevec * 100, 
+  pi1 = pivec * 100 / 10000,
+  pi2 = pivec2 * 100 / 10000) 
+
+dt_pricing %>% 
+  tidyr::pivot_longer(-price, names_to = "name") -> dt_forfig
+
+write.csv(dt_forfig, file = here("02_BLP_Ch03_04_05/output/dt_prof_Betard.csv"))
+
+
 # 数値最適化を使って、利潤を最大にする価格を求める
 
 # ベータードのみ
