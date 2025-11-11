@@ -9,12 +9,8 @@ rm(list = ls())
 gc()
 
 # 必要なパッケージの読み込み
-# if (!require("pacman")) install.packages("pacman")
-pacman::p_load(
-  # 必要となるパッケージ名
-  matlib, # 逆行列の作成に用いる
-  showtext # 画像の日本語
-)
+library(matlib) # 逆行列の作成に用いる
+library(showtext) # 画像の日本語
 
 # 画像の日本語のために
 showtext_auto()

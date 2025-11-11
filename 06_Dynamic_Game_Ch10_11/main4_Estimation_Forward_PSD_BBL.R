@@ -50,17 +50,13 @@ option_parallel <- TRUE
 option_numcores <- 10
 
 # 必要なパッケージの読み込み
-# if (!require("pacman")) install.packages("pacman")
-pacman::p_load(
-  # 必要となるパッケージ名
-  matlib, # 逆行列の作成に用いる
-  tictoc, # 実行時間を測るのに用いる
-  dplyr, # dplyr::if_else() に用いたがifelse()に替えることも可, see VsigmaGeneration
-  R.matlab, # matlab の.matファイルの読み込みに用いる。Matlabで用いたものと同じ乱数を利用するために必要。
-  foreach, # 並列計算のため
-  doParallel, # 並列計算のため
-  here # ファイル読み込みのため
-)
+library(matlib) # 逆行列の作成に用いる
+library(tictoc) # 実行時間を測るのに用いる
+library(dplyr) # dplyr::if_else() に用いたがifelse()に替えることも可, see VsigmaGeneration
+library(R.matlab) # matlab の.matファイルの読み込みに用いる。Matlabで用いたものと同じ乱数を利用するために必要。
+library(foreach) # 並列計算のため
+library(doParallel) # 並列計算のため
+library(here) # ファイル読み込みのため
 
 # 必要な関数の読み込み
 functionlt <- list.files("06_Dynamic_Game_Ch10_11/functions_R",
