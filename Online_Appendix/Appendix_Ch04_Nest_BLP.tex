@@ -227,8 +227,8 @@ d_{jt,j'}^{k}=x_{jt}^{k}-x_{j't}^{k}
 Petrin (2002) によって導入され、その後 Conlon and Gortmaker (2025) が包括的な整理と議論を行っている。以下では、代表的なマイクロモーメントの例をいくつか取り上げる。\footnote{マイクロモーメントが用いられる典型的な状況は、個票データが存在するものの、そのデータから得られる情報が消費者の選択行動について部分的な内容に限られている場合である。たとえば、「ミニバンを購入した世帯の平均所得」のように、個々の消費者が具体的にどの製品を購入したかまでは観察できないケースがこれに該当する。これに対し、個人レベルでの購買行動(どの消費者がどの製品を購入したか)を詳細に観察できる場合には、第2章で扱ったように、マイクロデータに基づく尤度関数を構築した推定をメインに行うことができる。詳細な方法論については
 Goolsbee and Petrin (2004) や Grieco et al. (2025) を参照されたい。なお、第2章との重要な相違点として、価格の内生性をどのように考慮するかという問題が挙げられる。}
 
-1つ目の例は、Petrin (2002) で用いられた「特定の製品を購入した消費者グループの社会経済属性」である。Ptextit\{Petrin\}
-(2002) はミニバンの需要分析を主題としており、「ミニバンを購入した消費者の所得や家計サイズ」といった情報をマイクロモーメントとして利用することで、これらの属性がミニバンに対する選好にどのような影響を及ぼすのかを推定している。
+1つ目の例は、Petrin (2002) で用いられた「特定の製品を購入した消費者グループの社会経済属性」である。Petrin (2002)
+はミニバンの需要分析を主題としており、「ミニバンを購入した消費者の所得や家計サイズ」といった情報をマイクロモーメントとして利用することで、これらの属性がミニバンに対する選好にどのような影響を及ぼすのかを推定している。
 
 もう1つの例は、BLP (2004) が使用した「第一希望・第二希望の製品の間にみられる属性の相関」である。彼らは、BLP (1995)
 で用いた集計データに加えて、消費者サーベイを用いて「セカンドチョイス」（消費者が\textquotedblleft 2番目に欲しかった製品\textquotedblright ）に関する情報を収集した。実際に購入された製品とセカンドチョイスの製品の属性の相関を調べることで、消費者が製品を代替する際にどの属性次元を重視しているのかを推測することが可能となる。
@@ -419,16 +419,59 @@ Logit Models of Demand\textquotedblright{} -- Estimation: The Nitty-Gritty
 \noindent\hang{H}ayashi, F (2000) \textit{Econometrics}, Princeton
 University Prress.
 
-\noindent\hang{B}erry, S. (1994) ``Estimating Discrete-Choice
-Models of Product Differentiation," \textit{Rand Journal of Economics},
-25(2): 242--262.
+\noindent\hang{B}erry, S. (1994)``Estimating Discrete-Choice Models
+of Product Differentiation,"\textit{Rand Journal of Economics}, 25(2):
+242--262.
 
-\noindent\hang{C}ardell, N. S. (1997) ``Variance Components Structures
+\noindent\hang{B}erry, S., Levinsohn, J., and Pakes, A. (1995)``Automobile
+Prices in Market Equilibrium,"\textit{Econometrica}, 63(4): 841--890.
+
+\noindent\hang{B}erry, S., Levinsohn, J., and Pakes, A. (2004)``Differentiated
+Products Demand Systems from a Combination of Micro and Macro Data:
+The New Car Market,"\textit{Journal of Political Economy}, 112(1):
+68--105.
+
+\noindent\hang{C}ardell, N. S. (1997)``Variance Components Structures
 for the Extreme-Value and Logistic Distributions with Application
-to Models of Heterogeneity," \textit{Econometric Theory}, 13(2):
-185--213.
+to Models of Heterogeneity,"\textit{Econometric Theory}, 13(2): 185--213.
 
-\noindent\hang{G}andhi, A. and Houde, J.-F. (2020) ``Measuring
+\noindent\hang{C}hamberlain, G. (1987)``Asymptotic Efficiency
+in Estimation with Conditional Moment Restrictions,"\textit{Journal
+of Econometrics}, 34(3): 305--334.
+
+\noindent\hang{C}onlon, C. and Gortmaker, J. (2020)``Best Practices
+for Differentiated Products Demand Estimation with PyBLP,"\textit{RAND
+Journal of Economics}, 51(4): 1108--1161.
+
+\noindent\hang{C}onlon, C. and Gortmaker, J. (2025)``Incorporating
+Micro Data into Differentiated Products Demand Estimation with PyBLP,"\textit{Journal
+of Econometrics}, forthcoming.
+
+\noindent\hang{G}andhi, A. and Houde, J.-F. (2020)``Measuring
 Substitution Patterns in Differentiated-Products Industries," NBER
 Working Paper, No.26375.
+
+\noindent\hang{G}oolsbee, A. and Petrin, A. (2004)``The Value
+of Information in Central Place: Evidence from Real-Estate Transactions,"\textit{Quarterly
+Journal of Economics}, 119(2): 713--751.
+
+\noindent\hang{G}rieco, P., Murry, C., Pinkse, J., and Sagl, S.
+(2025)``Conformant and Efficient Estimation of Discrete Choice Demand
+Models,"\textit{Review of Economic Studies}, forthcoming.
+
+\noindent\hang{N}evo, A. (2000)``A Practitioner's Guide to Estimation
+of Random-Coefficients Logit Models of Demand,"\textit{Journal of
+Economics \& Management Strategy}, 9(4): 513--548.
+
+\noindent\hang{P}etrin, A. (2002)``Quantifying the Benefits of
+New Products: The Case of the Minivan,"\textit{Journal of Political
+Economy}, 110(4): 705--729.
+
+\noindent\hang{R}eynaert, M. and Verboven, F. (2014)``Improving
+the Performance of Random Coefficients Demand Models: The Role of
+Optimal Instruments,"\textit{Journal of Econometrics}, 179(1): 83--98.
+
+\noindent\hang{S}alani\'{e}, B. and Wolak, F. (2022)``Fast, 'Robust',
+and Approximately Correct: Estimating Mixed Demand Systems,"\textit{NBER
+Working Paper}, No. 30219.
 \end{document}
