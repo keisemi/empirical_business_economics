@@ -1,7 +1,7 @@
 # はじめに
 ここは、上武康亮・遠山祐太・若森直樹・渡辺安虎/著『[実証ビジネス・エコノミクス](https://nippyo.co.jp/shop/book/9633.html)』（日本評論社、2025年12月刊）のリポジトリです。分析事例を再現・実践するためのコードとデータ、書籍本文で解説しきれなかった補足や理論的・技術的な詳細などを解説したノートを提供します。本書とあわせて、ぜひご利用ください。
 
-<img src="C:\Users\daisu\OneDrive\ドキュメント\GitHub\empirical_business_economics\src\09633.jpg" style="zoom:7%;" />
+<img src=".\src\09633.jpg" style="zoom:7%;" />
 
 
 
