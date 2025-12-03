@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>実証ビジネス・エコノミクス・サポート</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="上武康亮・遠山祐太・若森直樹・渡辺安虎『実証ビジネス・エコノミクス』（日本評論社、2025年12月刊）のサポートサイト。コード・データ・補足ノートを提供します。">
+  <style>
+    :root {
+      --bg: #f5f7fb;
+      --card-bg: #ffffff;
+      --accent: #2563eb;
+      --accent-soft: #dbeafe;
+      --text-main: #111827;
+      --text-sub: #6b7280;
+      --border-soft: #e5e7eb;
+      --radius-lg: 16px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+        sans-serif;
+      background-color: var(--bg);
+      color: var(--text-main);
+      line-height: 1.6;
+    }
+
+    .page {
+      max-width: 980px;
+      margin: 0 auto;
+      padding: 32px 16px 64px;
+    }
+
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 32px;
+    }
+
+    .site-title {
+      font-size: 1.4rem;
+      font-weight: 700;
+      letter-spacing: 0.03em;
+    }
+
+    .site-subtitle {
+      font-size: 0.9rem;
+      color: var(--text-sub);
+    }
+
+    .nav-links {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      font-size: 0.9rem;
+    }
+
+    .nav-links a {
+      text-decoration: none;
+      color: var(--text-sub);
+      padding: 6px 10px;
+      border-radius: 999px;
+      border: 1px solid transparent;
+    }
+
+    .nav-links a:hover {
+      border-color: var(--border-soft);
+      background-color: #ffffffaa;
+    }
+
+    .hero {
+      background: radial-gradient(circle at top left, var(--accent-soft), #ffffff);
+      border-radius: 24px;
+      padding: 32px 24px;
+      margin-bottom: 32px;
+      box-shadow: 0 18px 45px rgba(15, 23, 42, 0.08);
+    }
+
+    .hero-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      border-radius: 999px;
+      font-size: 0.8rem;
+      color: var(--accent);
+      background-color: var(--accent-soft);
+      margin-bottom: 12px;
+    }
+
+    .hero-tag-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 999px;
+      background-color: var(--accent);
+    }
+
+    .hero-title {
+      font-size: 1.8rem;
+      margin: 4px 0 12px;
+    }
+
+    .hero-text {
+      font-size: 0.98rem;
+      color: var(--text-sub);
+      max-width: 620px;
+    }
+
+    .hero-actions {
+      margin-top: 20px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .hero-image {
+      margin-top: 20px;
+      text-align: center;
+    }
+
+    .hero-image img {
+      border-radius: 8px;
+      border: 1px solid var(--border-soft);
+    }
+
+    .btn-primary,
+    .btn-ghost {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 16px;
+      border-radius: 999px;
+      font-size: 0.9rem;
+      text-decoration: none;
+      white-space: nowrap;
+      border: 1px solid transparent;
+    }
+
+    .btn-primary {
+      background-color: var(--accent);
+      color: #ffffff;
+      border-color: var(--accent);
+    }
+
+    .btn-primary:hover {
+      filter: brightness(1.05);
+    }
+
+    .btn-ghost {
+      color: var(--text-sub);
+      border-color: var(--border-soft);
+      background-color: #ffffffaa;
+    }
+
+    .sections {
+      display: grid;
+      grid-template-columns: minmax(0, 2.2fr) minmax(0, 1.6fr);
+      gap: 24px;
+    }
+
+    @media (max-width: 768px) {
+      .sections {
+        grid-template-columns: minmax(0, 1fr);
+      }
+
+      header {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+
+      .hero {
+        padding: 24px 18px;
+      }
+    }
+
+    .card {
+      background-color: var(--card-bg);
+      border-radius: var(--radius-lg);
+      padding: 18px 20px;
+      border: 1px solid var(--border-soft);
+      box-shadow: 0 10px 24px rgba(15, 23, 42, 0.04);
+      margin-bottom: 18px;
+    }
+
+    .card-title {
+      font-size: 1rem;
+      font-weight: 600;
+      margin-bottom: 6px;
+    }
+
+    .card-desc {
+      font-size: 0.9rem;
+      color: var(--text-sub);
+      margin-bottom: 10px;
+    }
+
+    .list {
+      margin: 0;
+      padding-left: 1.1rem;
+      font-size: 0.92rem;
+      color: var(--text-main);
+    }
+
+    .list li + li {
+      margin-top: 4px;
+    }
+
+    .chapter-list {
+      white-space: pre-line;
+      font-size: 0.9rem;
+      margin: 0;
+    }
+
+    footer {
+      margin-top: 32px;
+      font-size: 0.8rem;
+      color: var(--text-sub);
+      text-align: center;
+    }
+
+    a {
+      color: var(--accent);
+    }
+
+    a:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <header>
+      <div>
+        <div class="site-title">実証ビジネス・エコノミクス サポートサイト</div>
+        <div class="site-subtitle">再現コード＆データ・補足ノートの提供</div>
+      </div>
+      <nav class="nav-links">
+        <a href="#about">概要</a>
+        <a href="#book">書籍情報</a>
+        <a href="#code-note">Code &amp; Note</a>
+        <a href="#disclaimer">ご利用に際してのお断り</a>
+      </nav>
+    </header>
+
+    <main>
+      <section class="hero" id="about">
+        <div class="hero-tag">
+          <span class="hero-tag-dot"></span>
+          <span>Support Site</span>
+        </div>
+        <h1 class="hero-title">『実証ビジネス・エコノミクス』サポートサイト</h1>
+        <br class="hero-text">
+          上武康亮・遠山祐太・若森直樹・渡辺安虎/著『実証ビジネス・エコノミクス』（日本評論社、2025年12月刊）のサポートサイトです。</br>分析事例を再現・実践するためのコードとデータ、書籍本文で解説しきれなかった補足や理論的・技術的な詳細などを解説したノートを提供します。</br>本書とあわせて、ぜひご利用ください。
+        </p>
+        <div class="hero-actions">
+          <a class="btn-primary" href="https://nippyo.co.jp/shop/book/9633.html" target="_blank" rel="noopener">
+            書籍ページ（日本評論社）
+          </a>
+          <a class="btn-ghost" href="https://github.com/keisemi/empirical_business_economics" target="_blank" rel="noopener">
+            GitHub リポジトリを見る
+          </a>
+        </div>
+        <div class="hero-image">
+          <img src="src/09633.jpg" width="250" alt="書影">
+        </div>
+      </section>
+
+      <section class="sections">
+        <div>
+          <div class="card" id="book">
+            <h2 class="card-title">書籍情報</h2>
+            <p class="card-desc">
+              上武康亮・遠山祐太・若森直樹・渡辺安虎/著『<a href="https://nippyo.co.jp/shop/book/9633.html" target="_blank">実証ビジネス・エコノミクス</a>』（日本評論社、2025年12月刊）。
+            </p>
+            <p class="card-desc">
+              <strong>経済理論とデータの力で、ビジネスはもっと強くなる！</strong><br>
+              理論とデータを融合した「構造推定」。ビジネスの現場でも活躍するこの実証手法を、プライシング、合併、新規参入、ブランド戦略などの実例と共に実践的に解説します。
+            </p>
+            <ul class="list">
+              <li><a href="https://note.com/keisemi/n/ne05895107194" target="_blank">内容紹介・はしがき（note）</a></li>
+              <li><a href="https://nippyo.co.jp/shop/img/content_pdf/09633.pdf" target="_blank">立ち読みPDF</a></li>
+            </ul>
+          </div>
+
+          <div class="card" id="code-note">
+            <h2 class="card-title">再現コードとデータ【Code】／補足説明ノート【Note】</h2>
+            <p class="card-desc">
+              各章に対応したコード（Code）と補足ノート（Note）です。実際のファイルが揃い次第、この部分をリンクに置き換えていきます。
+            </p>
+            <p class="chapter-list">
+<b>第Ⅰ部　イントロダクション</b>
+　第１章　実証ビジネス・エコノミクスとは
+　第２章　消費者の購買パターンを浮き彫りにする：個票データを用いた離散選択モデルの推定 【<a href="https://github.com/keisemi/empirical_business_economics/tree/main/01_Discrete_Choice_Ch02">Code</a>】 【<a href="https://github.com/keisemi/empirical_business_economics/blob/main/Online_Appendix/Appendix_Ch02_MLE.pdf">Note：最尤推定法</a>】
+
+<b>第Ⅱ部　需要の推定</b>
+　第３章　需要を制する者はプライシングを制す 【<a href="https://github.com/keisemi/empirical_business_economics/tree/main/02_BLP_Ch03_04_05">Code</a>】
+　第４章　プライシングの真髄は代替性にあり 【<a href="https://github.com/keisemi/empirical_business_economics/tree/main/02_BLP_Ch03_04_05">Code</a>】 【<a href="https://github.com/keisemi/empirical_business_economics/blob/main/Online_Appendix/Appendix_Ch04_GMM.pdf">Note1：一般化モーメント法 (GMM)</a>】 【<a href="https://github.com/keisemi/empirical_business_economics/blob/main/Online_Appendix/Appendix_Ch04_Nest_BLP.pdf">Note2：入れ子ロジット、ランダム係数ロジット推定の詳細</a>】
+　第５章　合併の効果は需要次第 【<a href="https://github.com/keisemi/empirical_business_economics/tree/main/02_BLP_Ch03_04_05">Code</a>】
+
+<b>第Ⅲ部　動学的なシングルエージェント</b>
+　第６章　将来予想のインパクトを測る 【<a href="https://github.com/keisemi/empirical_business_economics/tree/main/03_Dynamic_Single_Agent_Ch06_07">Code</a>】 【<a href="https://github.com/keisemi/empirical_business_economics/blob/main/Online_Appendix/Appendix_Ch06_Transition.pdf">Note：遷移行列の推定</a>】
+　第７章　価格戦略をダイナミックに考える 【<a href="https://github.com/keisemi/empirical_business_economics/tree/main/03_Dynamic_Single_Agent_Ch06_07">Code</a>】 【<a href="https://github.com/keisemi/empirical_business_economics/blob/main/Online_Appendix/Appendix_Ch07_TwoStep.pdf">Note：2段階推定量の導出の詳細</a>】
+
+<b>第Ⅳ部　静学ゲームの推定</b>
+　第８章　参入すべきか否か 【<a href="https://github.com/keisemi/empirical_business_economics/tree/main/04_Static_Game_MRI_Ch08">Code</a>】
+　第９章　未知のライバルの行動を捉える 【<a href="https://github.com/keisemi/empirical_business_economics/tree/main/05_Static_Game_Airline_Ch09">Code</a>】
+
+<b>第Ⅴ部　動学ゲームの推定</b>
+　第10章　相手の将来行動を読んで競争優位へ 【<a href="https://github.com/keisemi/empirical_business_economics/tree/main/06_Dynamic_Game_Ch10_11">Code</a>】 【<a href="https://github.com/keisemi/empirical_business_economics/blob/main/Online_Appendix/Appendix_Ch10_Matrix.pdf">Note：(10.7)式の詳細</a>】
+　第11章　市場ダイナミクスから利益構造を見通す 【<a href="https://github.com/keisemi/empirical_business_economics/tree/main/06_Dynamic_Game_Ch10_11">Code</a>】
+
+Fan (2013) の解説 【<a href="https://github.com/keisemi/empirical_business_economics/blob/main/Online_Appendix/Review_Fan_Wollman/fan_toyama_keisemi.md">Note</a>】
+Wollmann (2018) の解説 【<a href="https://github.com/keisemi/empirical_business_economics/blob/main/Online_Appendix/Review_Fan_Wollman/wollmann_toyama_keisemi.md">Note</a>】
+            </p>
+          </div>
+        </div>
+
+        <aside>
+          <div class="card" id="disclaimer">
+            <h2 class="card-title">ご利用に際してのお断り</h2>
+            <p class="card-desc">
+              本リポジトリおよび本書の内容、サンプルコード等は情報提供のみを目的としています。運用・利用については、ご自身の判断と責任で行ってください。
+            </p>
+            <p class="card-desc">
+              これらの情報を利用した結果により損害が生じた場合でも、著者・日本評論社はいかなる責任も負いません。
+            </p>
+          </div>
+        </aside>
+      </section>
+    </main>
+
+    <footer>
+      Copyright <span id="year"></span> Kosuke Uetake, Yuta Toyama, Naoki Wakamori, and Yasutora Watanabe
+    </footer>
+  </div>
+
+  <script>
+    document.getElementById("year").textContent = new Date().getFullYear();
+  </script>
+</body>
+</html>
