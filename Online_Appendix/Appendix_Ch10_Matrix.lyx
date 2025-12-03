@@ -1,0 +1,265 @@
+#LyX 2.4 created this file. For more info see https://www.lyx.org/
+\lyxformat 620
+\begin_document
+\begin_header
+\save_transient_properties true
+\origin unavailable
+\textclass jsarticle
+\begin_preamble
+%\usepackage{fullpage}
+\usepackage{natbib}
+\usepackage{dcolumn}
+
+%\usepackage{doublespace}
+\usepackage[dvipdfmx, bookmarkstype=toc, colorlinks=true, urlcolor=black, linkcolor=blue, citecolor=red, linktocpage=false, bookmarks=true, bookmarksnumbered=true]{hyperref}
+
+\usepackage{pxjahyper}
+\end_preamble
+\options nomag
+\use_default_options true
+\begin_modules
+eqs-within-sections
+theorems-ams
+theorems-ams-extended
+\end_modules
+\maintain_unincluded_children no
+\language japanese
+\language_package default
+\inputencoding utf8
+\fontencoding default
+\font_roman "default" "default"
+\font_sans "default" "default"
+\font_typewriter "default" "default"
+\font_math "auto" "auto"
+\font_default_family default
+\use_non_tex_fonts false
+\font_sc false
+\font_roman_osf false
+\font_sans_osf false
+\font_typewriter_osf false
+\font_sf_scale 100 100
+\font_tt_scale 100 100
+\use_microtype false
+\use_dash_ligatures true
+\graphics dvipdfmx
+\default_output_format default
+\output_sync 1
+\bibtex_command default
+\index_command default
+\paperfontsize 11
+\spacing onehalf
+\use_hyperref false
+\papersize letter
+\use_geometry true
+\use_package amsmath 1
+\use_package amssymb 1
+\use_package cancel 1
+\use_package esint 0
+\use_package mathdots 1
+\use_package mathtools 1
+\use_package mhchem 1
+\use_package stackrel 1
+\use_package stmaryrd 1
+\use_package undertilde 1
+\cite_engine basic
+\cite_engine_type default
+\biblio_style plain
+\use_bibtopic false
+\use_indices false
+\paperorientation portrait
+\suppress_date false
+\justification true
+\use_refstyle 1
+\use_formatted_ref 0
+\use_minted 0
+\use_lineno 0
+\index Index
+\shortcut idx
+\color #008000
+\end_index
+\leftmargin 1in
+\topmargin 1in
+\rightmargin 1in
+\bottommargin 1in
+\secnumdepth 3
+\tocdepth 3
+\paragraph_separation indent
+\paragraph_indentation default
+\is_math_indent 0
+\math_numbering_side default
+\quotes_style cjk
+\dynamic_quotes 0
+\papercolumns 1
+\papersides 1
+\paperpagestyle default
+\tablestyle default
+\tracking_changes false
+\output_changes false
+\change_bars false
+\postpone_fragile_content false
+\html_math_output 0
+\html_css_as_file 0
+\html_be_strict false
+\docbook_table_output 0
+\docbook_mathml_prefix 1
+\end_header
+
+\begin_body
+
+\begin_layout Title
+第10章付録:
+ (10.7)式の詳細
+\end_layout
+
+\begin_layout Date
+最終更新：
+ 
+\begin_inset ERT
+status collapsed
+
+\begin_layout Plain Layout
+
+
+\backslash
+today
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\align right
+\begin_inset ERT
+status collapsed
+
+\begin_layout Plain Layout
+
+
+\backslash
+begin{small}
+\end_layout
+
+\end_inset
+
+ 上武康亮・遠山祐太・若森直樹・渡辺安虎
+\begin_inset Newline newline
+\end_inset
+
+「実証ビジネス・エコノミクス」 
+\begin_inset Newline newline
+\end_inset
+
+ 第10章「相手の将来の行動を読んで競争優位につなげる」
+\begin_inset Newline newline
+\end_inset
+
+の付録
+\begin_inset Newline newline
+\end_inset
+
+ 
+\begin_inset VSpace -20baselineskip%
+\end_inset
+
+ ©上武康亮・遠山祐太・若森直樹・渡辺安虎 
+\begin_inset ERT
+status collapsed
+
+\begin_layout Plain Layout
+
+
+\backslash
+end{small}
+\end_layout
+
+\end_inset
+
+ 
+\end_layout
+
+\begin_layout Section
+第10章(10.7)式の詳細
+\end_layout
+
+\begin_layout Standard
+(10.7)式を再掲すると
+\begin_inset Formula 
+\begin{eqnarray*}
+F^{P^{\sigma}} & = & \left[\begin{array}{llllllll}
+\left.p_{G00}\right|_{G00} & \left.p_{G01}\right|_{G00} & \left.p_{G10}\right|_{G00} & \left.p_{G11}\right|_{G00} & \left.p_{B00}\right|_{G00} & \left.p_{B01}\right|_{G00} & \left.p_{B10}\right|_{G00} & \left.p_{B11}\right|_{G00}\\
+\left.p_{G00}\right|_{G01} & \left.p_{G01}\right|_{G01} & \left.p_{G10}\right|_{G01} & \left.p_{G11}\right|_{G01} & \left.p_{B00}\right|_{G01} & \left.p_{B01}\right|_{G01} & \left.p_{B10}\right|_{G01} & \left.p_{B11}\right|_{G01}\\
+\left.p_{G00}\right|_{G10} & \left.p_{G01}\right|_{G10} & \left.p_{G10}\right|_{G10} & \left.p_{G11}\right|_{G10} & \left.p_{B00}\right|_{G10} & \left.p_{B01}\right|_{G10} & \left.p_{B10}\right|_{G10} & \left.p_{B11}\right|_{G10}\\
+\left.p_{G00}\right|_{G11} & \left.p_{G01}\right|_{G11} & \left.p_{G10}\right|_{G11} & \left.p_{G11}\right|_{G11} & \left.p_{B00}\right|_{G11} & \left.p_{B01}\right|_{G11} & \left.p_{B10}\right|_{G11} & \left.p_{B11}\right|_{G11}\\
+\left.p_{G00}\right|_{B00} & \left.p_{G01}\right|_{B00} & \left.p_{G10}\right|_{B00} & \left.p_{G11}\right|_{B00} & \left.p_{B00}\right|_{B00} & \left.p_{B01}\right|_{B00} & \left.p_{B10}\right|_{B00} & \left.p_{B11}\right|_{B00}\\
+\left.p_{G00}\right|_{B01} & \left.p_{G01}\right|_{B01} & \left.p_{G10}\right|_{B01} & \left.p_{G11}\right|_{B01} & \left.p_{B00}\right|_{B01} & \left.p_{B01}\right|_{B01} & \left.p_{B10}\right|_{B01} & \left.p_{B11}\right|_{B01}\\
+\left.p_{G00}\right|_{B10} & \left.p_{G01}\right|_{B10} & \left.p_{G10}\right|_{B10} & \left.p_{G11}\right|_{B10} & \left.p_{B00}\right|_{B10} & \left.p_{B01}\right|_{B10} & \left.p_{B10}\right|_{B10} & \left.p_{B11}\right|_{B10}\\
+\left.p_{G00}\right|_{B11} & \left.p_{G01}\right|_{B11} & \left.p_{G10}\right|_{B11} & \left.p_{G11}\right|_{B11} & \left.p_{B00}\right|_{B11} & \left.p_{B01}\right|_{B11} & \left.p_{B10}\right|_{B11} & \left.p_{B11}\right|_{B11}
+\end{array}\right]\\
+ & = & A\odot B\odot C
+\end{eqnarray*}
+
+\end_inset
+
+この式は以下のように与えられる。
+
+\begin_inset Formula 
+\[
+F^{P^{\sigma}}=A\odot B\odot C
+\]
+
+\end_inset
+
+ここで、行列
+\begin_inset Formula $A,B,C$
+\end_inset
+
+は以下で与えられる。
+
+\end_layout
+
+\begin_layout Standard
+
+\size scriptsize
+\begin_inset Formula 
+\begin{eqnarray*}
+A & = & \left[\begin{array}{llllllll}
+\left.p_{G}\right|_{G} & \left.p_{G}\right|_{G} & \left.p_{G}\right|_{G} & \left.p_{G}\right|_{G} & \left.p_{B}\right|_{G} & \left.p_{B}\right|_{G} & \left.p_{B}\right|_{G} & \left.p_{B}\right|_{G}\\
+\left.p_{G}\right|_{G} & \left.p_{G}\right|_{G} & \left.p_{G}\right|_{G} & \left.p_{G}\right|_{G} & \left.p_{B}\right|_{G} & \left.p_{B}\right|_{G} & \left.p_{B}\right|_{G} & \left.p_{B}\right|_{G}\\
+\left.p_{G}\right|_{G} & \left.p_{G}\right|_{G} & \left.p_{G}\right|_{G} & \left.p_{G}\right|_{G} & \left.p_{B}\right|_{G} & \left.p_{B}\right|_{G} & \left.p_{B}\right|_{G} & \left.p_{B}\right|_{G}\\
+\left.p_{G}\right|_{G} & \left.p_{G}\right|_{G} & \left.p_{G}\right|_{G} & \left.p_{G}\right|_{G} & \left.p_{B}\right|_{G} & \left.p_{B}\right|_{G} & \left.p_{B}\right|_{G} & \left.p_{B}\right|_{G}\\
+\left.p_{G}\right|_{B} & \left.p_{G}\right|_{B} & \left.p_{G}\right|_{B} & \left.p_{G}\right|_{B} & \left.p_{B}\right|_{B} & \left.p_{B}\right|_{B} & \left.p_{B}\right|_{B} & \left.p_{B}\right|_{B}\\
+\left.p_{G}\right|_{B} & \left.p_{G}\right|_{B} & \left.p_{G}\right|_{B} & \left.p_{G}\right|_{B} & \left.p_{B}\right|_{B} & \left.p_{B}\right|_{B} & \left.p_{B}\right|_{B} & \left.p_{B}\right|_{B}\\
+\left.p_{G}\right|_{B} & \left.p_{G}\right|_{B} & \left.p_{G}\right|_{B} & \left.p_{G}\right|_{B} & \left.p_{B}\right|_{B} & \left.p_{B}\right|_{B} & \left.p_{B}\right|_{B} & \left.p_{B}\right|_{B}\\
+\left.p_{G}\right|_{B} & \left.p_{G}\right|_{B} & \left.p_{G}\right|_{B} & \left.p_{G}\right|_{B} & \left.p_{B}\right|_{B} & \left.p_{B}\right|_{B} & \left.p_{B}\right|_{B} & \left.p_{B}\right|_{B}
+\end{array}\right]\\
+B & = & \left[\begin{array}{cccccccc}
+P_{1}{}^{\sigma}(0\mid G00) & P_{1}{}^{\sigma}(0\mid G00) & P_{1}{}^{\sigma}(1\mid G00) & P_{1}{}^{\sigma}(1\mid G00) & P_{1}{}^{\sigma}(0\mid G00) & P_{1}{}^{\sigma}(0\mid G00) & P_{1}{}^{\sigma}(1\mid G00) & P_{1}{}^{\sigma}(1\mid G00)\\
+P_{1}{}^{\sigma}(0\mid G01) & P_{1}{}^{\sigma}(0\mid G01) & P_{1}{}^{\sigma}(1\mid G01) & P_{1}{}^{\sigma}(1\mid G01) & P_{1}{}^{\sigma}(0\mid G01) & P_{1}{}^{\sigma}(0\mid G01) & P_{1}{}^{\sigma}(1\mid G01) & P_{1}{}^{\sigma}(1\mid G01)\\
+P_{1}{}^{\sigma}(-1\mid G10) & P_{1}{}^{\sigma}(-1\mid G10) & P_{1}{}^{\sigma}(0\mid G10) & P_{1}{}^{\sigma}(0\mid G10) & P_{1}{}^{\sigma}(-1\mid G10) & P_{1}{}^{\sigma}(-1\mid G10) & P_{1}{}^{\sigma}(0\mid G10) & P_{1}{}^{\sigma}(0\mid G10)\\
+P_{1}{}^{\sigma}(-1\mid G11) & P_{1}{}^{\sigma}(-1\mid G11) & P_{1}{}^{\sigma}(0\mid G11) & P_{1}{}^{\sigma}(0\mid G11) & P_{1}{}^{\sigma}(-1\mid G11) & P_{1}{}^{\sigma}(-1\mid G11) & P_{1}{}^{\sigma}(0\mid G11) & P_{1}{}^{\sigma}(0\mid G11)\\
+P_{1}{}^{\sigma}(0\mid B00) & P_{1}{}^{\sigma}(0\mid B00) & P_{1}{}^{\sigma}(1\mid B00) & P_{1}{}^{\sigma}(1\mid B00) & P_{1}{}^{\sigma}(0\mid B00) & P_{1}{}^{\sigma}(0\mid B00) & P_{1}{}^{\sigma}(1\mid B00) & P_{1}{}^{\sigma}(1\mid B00)\\
+P_{1}{}^{\sigma}(0\mid B01) & P_{1}{}^{\sigma}(0\mid B0) & P_{1}{}^{\sigma}(1\mid B01) & P_{1}{}^{\sigma}(1\mid B01) & P_{1}{}^{\sigma}(0\mid B01) & P_{1}{}^{\sigma}(0\mid B01) & P_{1}{}^{\sigma}(1\mid B01) & P_{1}{}^{\sigma}(1\mid B01)\\
+P_{1}{}^{\sigma}(-1\mid B10) & P_{1}{}^{\sigma}(-1\mid B10) & P_{1}{}^{\sigma}(0\mid B10) & P_{1}{}^{\sigma}(0\mid B10) & P_{1}{}^{\sigma}(-1\mid B10) & P_{1}{}^{\sigma}(-1\mid B10) & P_{1}{}^{\sigma}(0\mid B10) & P_{1}{}^{\sigma}(0\mid B10)\\
+P_{1}{}^{\sigma}(-1\mid B11) & P_{1}{}^{\sigma}(-1\mid B11) & P_{1}{}^{\sigma}(0\mid B11) & P_{1}{}^{\sigma}(0\mid B11) & P_{1}{}^{\sigma}(-1\mid B11) & P_{1}{}^{\sigma}(-1\mid B11) & P_{1}{}^{\sigma}(0\mid B11) & P_{1}{}^{\sigma}(0\mid B11)
+\end{array}\right]\\
+C & = & \left[\begin{array}{cccccccc}
+P_{2}{}^{\sigma}(0\mid G00) & P_{2}{}^{\sigma}(1\mid G00) & P_{2}{}^{\sigma}(0\mid G00) & P_{2}{}^{\sigma}(1\mid G00) & P_{2}{}^{\sigma}(0\mid G00) & P_{2}{}^{\sigma}(1\mid G00) & P_{2}{}^{\sigma}(0\mid G00) & P_{2}{}^{\sigma}(1\mid G00)\\
+P_{2}{}^{\sigma}(-1\mid G01) & P_{2}{}^{\sigma}(0\mid G01) & P_{2}{}^{\sigma}(-1\mid G01) & P_{2}{}^{\sigma}(0\mid G01) & P_{2}{}^{\sigma}(-1\mid G01) & P_{2}{}^{\sigma}(0\mid G01) & P_{2}{}^{\sigma}(-1\mid G01) & P_{2}{}^{\sigma}(0\mid G01)\\
+P_{2}{}^{\sigma}(0\mid G10) & P_{2}{}^{\sigma}(1\mid G10) & P_{2}{}^{\sigma}(0\mid G10) & P_{2}{}^{\sigma}(1\mid G10) & P_{2}{}^{\sigma}(0\mid G10) & P_{2}{}^{\sigma}(1\mid G10) & P_{2}{}^{\sigma}(0\mid G10) & P_{2}{}^{\sigma}(1\mid G10)\\
+P_{2}{}^{\sigma}(-1\mid G11) & P_{2}{}^{\sigma}(0\mid G11) & P_{2}{}^{\sigma}(-1\mid G11) & P_{2}{}^{\sigma}(0\mid G11) & P_{2}{}^{\sigma}(-1\mid G11) & P_{2}{}^{\sigma}(0\mid G11) & P_{2}{}^{\sigma}(-1\mid G11) & P_{2}{}^{\sigma}(0\mid G11)\\
+P_{2}{}^{\sigma}(0\mid B00) & P_{2}{}^{\sigma}(1\mid B00) & P_{2}{}^{\sigma}(0\mid B00) & P_{2}{}^{\sigma}(1\mid B00) & P_{2}{}^{\sigma}(0\mid B00) & P_{2}{}^{\sigma}(1\mid B00) & P_{2}{}^{\sigma}(0\mid B00) & P_{2}{}^{\sigma}(1\mid B00)\\
+P_{2}{}^{\sigma}(-1\mid B01) & P_{2}{}^{\sigma}(0\mid B01) & P_{2}{}^{\sigma}(-1\mid B0) & P_{2}{}^{\sigma}(0\mid B01) & P_{2}{}^{\sigma}(-1\mid B01) & P_{2}{}^{\sigma}(0\mid B01) & P_{2}{}^{\sigma}(-1\mid B01) & P_{2}{}^{\sigma}(0\mid B01)\\
+P_{2}{}^{\sigma}(0\mid B10) & P_{2}{}^{\sigma}(1\mid B10) & P_{2}{}^{\sigma}(0\mid B10) & P_{2}{}^{\sigma}(1\mid B10) & P_{2}{}^{\sigma}(0\mid B10) & P_{2}{}^{\sigma}(1\mid B10) & P_{2}{}^{\sigma}(0\mid B10) & P_{2}{}^{\sigma}(1\mid B10)\\
+P_{2}{}^{\sigma}(-1\mid B11) & P_{2}{}^{\sigma}(0\mid B11) & P_{2}{}^{\sigma}(-1\mid B11) & P_{2}{}^{\sigma}(0\mid B11) & P_{2}{}^{\sigma}(-1\mid B11) & P_{2}{}^{\sigma}(0\mid B11) & P_{2}{}^{\sigma}(-1\mid B11) & P_{2}{}^{\sigma}(0\mid B11)
+\end{array}\right]
+\end{eqnarray*}
+
+\end_inset
+
+
+\end_layout
+
+\end_body
+\end_document

@@ -1,0 +1,1851 @@
+#LyX 2.4 created this file. For more info see https://www.lyx.org/
+\lyxformat 620
+\begin_document
+\begin_header
+\save_transient_properties true
+\origin unavailable
+\textclass jsarticle
+\begin_preamble
+%\usepackage{fullpage}
+\usepackage{dcolumn}
+
+
+%\usepackage{doublespace}
+
+
+\usepackage{pxjahyper}
+
+
+%%%%%%折返し字下げ%%%%%%%
+\newcommand{\hang}[1]{%
+	\settowidth{\hangindent}{#1}%
+	#1%
+}%
+%%%%%%%%%%%%%%%%%%%%%%%%%
+\end_preamble
+\options nomag
+\use_default_options false
+\begin_modules
+theorems-ams
+\end_modules
+\maintain_unincluded_children no
+\language japanese
+\language_package default
+\inputencoding utf8-platex
+\fontencoding default
+\font_roman "default" "default"
+\font_sans "default" "default"
+\font_typewriter "default" "default"
+\font_math "auto" "auto"
+\font_default_family default
+\use_non_tex_fonts false
+\font_sc false
+\font_roman_osf false
+\font_sans_osf false
+\font_typewriter_osf false
+\font_sf_scale 100 100
+\font_tt_scale 100 100
+\use_microtype false
+\use_dash_ligatures true
+\graphics default
+\default_output_format default
+\output_sync 0
+\bibtex_command default
+\index_command default
+\paperfontsize 11
+\spacing onehalf
+\use_hyperref true
+\pdf_bookmarks true
+\pdf_bookmarksnumbered true
+\pdf_bookmarksopen false
+\pdf_bookmarksopenlevel 1
+\pdf_breaklinks false
+\pdf_pdfborder false
+\pdf_colorlinks true
+\pdf_backref section
+\pdf_pdfusetitle false
+\pdf_quoted_options "dvipdfmx,bookmarkstype=toc,urlcolor=black,linkcolor=blue,citecolor=red,linktocpage=false"
+\papersize letter
+\use_geometry true
+\use_package amsmath 2
+\use_package amssymb 0
+\use_package cancel 0
+\use_package esint 1
+\use_package mathdots 0
+\use_package mathtools 0
+\use_package mhchem 0
+\use_package stackrel 0
+\use_package stmaryrd 0
+\use_package undertilde 0
+\cite_engine natbib
+\cite_engine_type authoryear
+\biblio_style plainnat
+\use_bibtopic false
+\use_indices false
+\paperorientation portrait
+\suppress_date false
+\justification true
+\use_refstyle 0
+\use_formatted_ref 0
+\use_minted 0
+\use_lineno 0
+\index Index
+\shortcut idx
+\color #008000
+\end_index
+\leftmargin 1in
+\topmargin 1in
+\rightmargin 1in
+\bottommargin 1in
+\secnumdepth 3
+\tocdepth 3
+\paragraph_separation indent
+\paragraph_indentation default
+\is_math_indent 0
+\math_numbering_side default
+\quotes_style cjk
+\dynamic_quotes 0
+\papercolumns 1
+\papersides 1
+\paperpagestyle default
+\tablestyle default
+\tracking_changes false
+\output_changes false
+\change_bars false
+\postpone_fragile_content true
+\html_math_output 0
+\html_css_as_file 0
+\html_be_strict false
+\docbook_table_output 0
+\docbook_mathml_prefix 1
+\end_header
+
+\begin_body
+
+\begin_layout Title
+第4章付録2：
+入れ子型ロジットモデル、ランダム係数ロジットモデルの推定に関する詳細
+\end_layout
+
+\begin_layout Date
+最終更新：
+ 
+\begin_inset ERT
+status collapsed
+
+\begin_layout Plain Layout
+
+
+\backslash
+today
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\align right
+\begin_inset ERT
+status collapsed
+
+\begin_layout Plain Layout
+
+
+\backslash
+begin{small}
+\end_layout
+
+\end_inset
+
+ 上武康亮・遠山祐太・若森直樹・渡辺安虎
+\begin_inset Newline newline
+\end_inset
+
+「実証ビジネス・エコノミクス」 
+\begin_inset Newline newline
+\end_inset
+
+ 第4章「プライシングの真髄は代替性にあり」
+\begin_inset Newline newline
+\end_inset
+
+の付録
+\begin_inset Newline newline
+\end_inset
+
+ 
+\begin_inset VSpace -20baselineskip%
+\end_inset
+
+ ©上武康亮・遠山祐太・若森直樹・渡辺安虎 
+\begin_inset ERT
+status collapsed
+
+\begin_layout Plain Layout
+
+
+\backslash
+end{small}
+\end_layout
+
+\end_inset
+
+ 
+\end_layout
+
+\begin_layout Section
+はじめに
+\end_layout
+
+\begin_layout Standard
+補足資料２では第4章で取り上げた入れ子型ロジットモデルとランダム係数ロジットモデルの詳細について説明する。
+ なお、ノーテーションはすべて書籍の用法に従う。
+
+\end_layout
+
+\begin_layout Section
+赤バス・青バス問題に関する補論
+\end_layout
+
+\begin_layout Standard
+ここでは書籍でも取り上げた赤バス・青バス問題について、少し技術的な観点から説明する。
+やや数理的な説明になるものの、この点を踏まえると、入れ子型ロジットモデルやランダム係数ロジットモデルにおいて赤バス・青バス問題がなぜ緩和されるか(すなわちなぜ代替性の問題が緩和されるか)を理解しやすくなるであろう。
+
+\end_layout
+
+\begin_layout Standard
+まず、通勤のための選択肢の集合として、自動車 (
+\shape italic
+car
+\shape default
+)、赤バス (
+\shape italic
+redbus
+\shape default
+) という2つを考える。
+ さらに仮定として、平均効用
+\begin_inset Formula $\delta_{car}=\delta_{redbus}$
+\end_inset
+
+とする。
+ その結果、ロジットモデルにおいて、両選択肢の選択確率 (マーケットシェア) は50%となる。
+
+\end_layout
+
+\begin_layout Standard
+ここで、新たな3つ目の選択肢として「青バス (
+\shape italic
+bluebus
+\shape default
+) 」を導入しよう。
+ ここで青バスは、赤バスの一部を青ペンキで塗り替えたものと考えればよい。
+したがって、青バスと赤バスの平均効用も
+\begin_inset Formula $\delta_{bluebus}=\delta_{redbus}$
+\end_inset
+
+となる。
+ この状況で、人々の通勤選択はどのように変化するであろうか。
+青バスが赤バスで塗り替えられたものであることを踏まえるのであれば、「妥当な予測」は 
+\begin_inset Formula 
+\[
+s_{bluebus}=s_{redbus}=0.25,\quad s_{car}=0.5
+\]
+
+\end_inset
+
+になるであろう。
+しかしながら、この状況を多項ロジットモデルで分析すると、 
+\begin_inset Formula 
+\[
+s_{bluebus}=s_{redbus}=s_{car}=\frac{1}{3}
+\]
+
+\end_inset
+
+という予測が得られてしまうのである。
+
+\end_layout
+
+\begin_layout Standard
+この原因となっているのが、個人・選択肢特有のショック
+\begin_inset Formula $\epsilon_{ijt}$
+\end_inset
+
+である。
+青バスが導入されたあとにおける選択問題は以下となる。
+ 
+\begin_inset Formula 
+\[
+\max\left\{ \begin{array}{c}
+\delta_{bluebus}+\epsilon_{i,bluebus}\\
+\delta_{redbus}+\epsilon_{i,redbus}\\
+\delta_{car}+\epsilon_{i,car}
+\end{array}\right\} .
+\]
+
+\end_inset
+
+いま、平均効用は３つの選択肢で共通である。
+ しかしながら、ロジットモデルにおいては個人・選択肢特有のショック
+\begin_inset Formula $\epsilon_{ijt}$
+\end_inset
+
+が独立なショックであるとしているため、このショック項によって「赤バス」と「青バス」が「差別化された選択肢」とされてしまっているのである。
+ 言い換えると、もし青バスが赤バスの一部を塗り替えたものであるならば、
+\begin_inset Formula $\epsilon_{i,redbus}$
+\end_inset
+
+と
+\begin_inset Formula $\epsilon_{i,bluebus}$
+\end_inset
+
+は強く相関しているべきであろう。
+
+\end_layout
+
+\begin_layout Standard
+書籍で導入した入れ子型ロジットモデルとランダム係数ロジットモデルはこの問題を解決するべく、個人・選択肢特有のショックに関して相関を許すような構造を導入している。
+入れ子型ロジットモデルにおいては当該ショックが
+\begin_inset Formula $\zeta_{igt}+(1-\sigma)\epsilon_{ijt}$
+\end_inset
+
+という形で入っており、これは同じグループ内における製品への選好ショックは
+\begin_inset Formula $\zeta_{igt}$
+\end_inset
+
+を通じて相関が強くなるのである。
+ 一方、ランダム係数ロジットモデルでは当該ショックは
+\begin_inset Formula $\mu_{ijt}+\epsilon_{ijt}$
+\end_inset
+
+である。
+ここで
+\begin_inset Formula $\mu_{ijt}$
+\end_inset
+
+は消費者の製品属性への選好の異質性に起因する項である。
+仮に燃費を強く気にする消費者がいると、その消費者は燃費性能が高い自動車を強く好むようになり、これは
+\begin_inset Formula $\mu_{ijt}$
+\end_inset
+
+に反映される。
+結果、燃費性能が高い自動車車種同士の選好ショック
+\begin_inset Formula $\mu_{ijt}+\epsilon_{ijt}$
+\end_inset
+
+は相関が強くなるのである。
+
+\end_layout
+
+\begin_layout Section
+入れ子型ロジットモデルの導出の詳細
+\end_layout
+
+\begin_layout Standard
+ここでは、入れ子型ロジットモデルにおける導出の詳細について説明する。
+ より厳密な導出方法については、Berry (1994) およびCardell (1997)を参照されたい。
+
+\end_layout
+
+\begin_layout Subsection
+選択確率
+\end_layout
+
+\begin_layout Standard
+書籍と同様に、グループが全体で
+\begin_inset Formula $G+1$
+\end_inset
+
+あるとし、グループのインデックスを
+\begin_inset Formula $g=0,1,\cdots,G$
+\end_inset
+
+とする。
+ なお、アウトサイドグッズ(
+\begin_inset Formula $j=0$
+\end_inset
+
+)は、グループ0における唯一の製品とする。
+このとき、消費者
+\begin_inset Formula $i$
+\end_inset
+
+の効用を以下のように書く。
+ 
+\begin_inset Formula 
+\begin{align*}
+u_{ijt} & =\beta_{0}+\sum_{k=1}^{K}\beta^{k}x_{jt}^{k}-\alpha p_{j}+\xi_{jt}+\zeta_{igt}+(1-\sigma)\epsilon_{ijt},\\
+ & =\delta_{jt}+\zeta_{igt}+(1-\sigma)\epsilon_{ijt}.
+\end{align*}
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+では、このモデルに基づいて消費者の購買確率を導出しよう。
+以下ではマーケットのインデックス
+\begin_inset Formula $t$
+\end_inset
+
+を落として議論する。
+まず、製品をグループ
+\begin_inset Formula $g$
+\end_inset
+
+から購入することを条件付けたとき、ある製品
+\begin_inset Formula $j\in\mathcal{G}_{g}$
+\end_inset
+
+ を購入する確率は以下となる。
+ 
+\begin_inset Formula 
+\[
+{\rm Pr}(choose\ j\mid group\ g)=\frac{\exp(\frac{\delta_{j}}{1-\sigma})}{\sum_{k\in\mathcal{G}_{g}}^{}\exp(\frac{\delta_{k}}{1-\sigma})}.
+\]
+
+\end_inset
+
+ここで、グループ
+\begin_inset Formula $g$
+\end_inset
+
+を選んだ場合の
+\family sans
+包括的価値
+\family default
+ (inclusive value) を以下のように定義する。
+ 
+\begin_inset Formula 
+\[
+I_{g}=\text{log}\left\lbrack \sum_{k\in\mathcal{G}_{g}}\exp\left(\frac{\delta_{k}}{1-\sigma}\right)\right\rbrack .
+\]
+
+\end_inset
+
+なお、この包括的価値は、グループ
+\begin_inset Formula $g$
+\end_inset
+
+の選択肢から得られる期待効用として解釈することができる。
+
+\end_layout
+
+\begin_layout Standard
+この包括的価値を利用することで、グループ
+\begin_inset Formula $g$
+\end_inset
+
+を選択する確率を以下のように求めることができる。
+ 
+\begin_inset Formula 
+\[
+{\rm Pr}(group\ g)=\frac{\exp((1-\sigma)I_{g})}{\sum_{g=0}^{G}\exp((1-\sigma)I_{g})}=\frac{D_{g}^{(1-\sigma)}}{\sum_{g=0}^{G}D_{g}^{(1-\sigma)}}.
+\]
+
+\end_inset
+
+ここで、 
+\begin_inset Formula $D_{g}=\sum_{k\in\mathcal{G}_{g}}\exp(\frac{\delta_{k}}{1-\sigma})$
+\end_inset
+
+となる。
+
+\end_layout
+
+\begin_layout Standard
+これらをまとめることで、製品
+\begin_inset Formula $j$
+\end_inset
+
+を購入する確率は 
+\begin_inset Formula 
+\begin{align*}
+{\rm Pr}(choose\ j) & =Pr(group\ g)\times Pr(choose\ j\mid group\ g)\\
+ & =\frac{D_{g}^{(1-\sigma)}}{\sum_{g=0}^{G}D_{g}^{(1-\sigma)}}\times\frac{\exp\left(\frac{\delta_{j}}{1-\sigma}\right)}{D_{g}}
+\end{align*}
+
+\end_inset
+
+となる。
+なお、アウトサイドグッズ(
+\begin_inset Formula $j=0$
+\end_inset
+
+)を選択する確率は、 
+\begin_inset Formula 
+\[
+{\rm Pr}(outside\ good)=\frac{1}{\sum_{k}D_{k}^{(1-\sigma)}}
+\]
+
+\end_inset
+
+として与えられる。
+
+\end_layout
+
+\begin_layout Subsection
+推定式
+\end_layout
+
+\begin_layout Standard
+続いて、推定式の導出について見ていこう。
+今、マーケットシェアは以下の形で与えられる。
+ 
+\begin_inset Formula 
+\begin{align*}
+s_{jt} & =\frac{\exp\left(\frac{\delta_{jt}}{1-\sigma}\right)}{D_{gt}^{\sigma}\left\lbrack \sum_{g=0}^{G}D_{gt}^{(1-\sigma)}\right\rbrack },\\
+s_{0t} & =\frac{1}{\sum_{g=0}^{G}D_{gt}^{(1-\sigma)}}.
+\end{align*}
+
+\end_inset
+
+まず、上の2つの式からロジットモデルの場合と同様の変形を考えよう。
+ 
+\begin_inset Formula 
+\[
+\ln(s_{jt})-\ln(s_{0t})=\frac{\delta_{jt}}{1-\sigma}-\sigma\ln(D_{gt})
+\]
+
+\end_inset
+
+さらに変形を進めるべく、次にインサイドシェア
+\begin_inset Formula $s_{jt/g}$
+\end_inset
+
+に関する次の式に着目しよう。
+ 
+\begin_inset Formula 
+\begin{align*}
+s_{jt/g} & =\frac{\exp\left(\frac{\delta_{jt}}{1-\sigma}\right)}{D_{gt}}\\
+\Longleftrightarrow\ln(s_{jt/g}) & =\frac{\delta_{jt}}{1-\sigma}-\ln(D_{gt}).
+\end{align*}
+
+\end_inset
+
+これら2つの式を変形して
+\begin_inset Formula $D_{gt}$
+\end_inset
+
+を消すことで、ロジットモデルと同様の線形の式が得られる。
+ 
+\begin_inset Formula 
+\begin{align*}
+\ln(s_{jt})-\ln(s_{0t}) & =\delta_{jt}+\sigma\ln(s_{jt/g}),\\
+ & =\beta_{0}+\sum_{k=1}^{K}\beta^{k}x_{jt}^{k}-\alpha p_{j}+\sigma\ln(s_{jt/g})+\xi_{jt}.
+\end{align*}
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Section
+ランダム係数パラメターの識別に関する補足
+\end_layout
+
+\begin_layout Standard
+書籍でも述べたように、ランダム係数ロジットモデルを推定する際には、ランダム係数の標準偏差パラメターを識別するために追加の操作変数が必要となる。
+言い換えれば、「ランダム係数に関するパラメターを、どのようにデータから識別し推定するのか」という点を明確にする必要がある。
+個票データが利用できる場合には、標準偏差パラメタや消費者属性に関するパラメタの識別方法について、本書第2.10.3項で説明したとおりである。
+しかし、利用可能なデータが市場レベルの集計データに限られる場合には、個人属性と個人の選択行動との結びつきを直接観察できない。
+その結果、消費者の選好の異質性を表すパラメタの識別・推定は、個票データがある場合と比べて難しくなることが知られている。
+
+\end_layout
+
+\begin_layout Standard
+本付録では、ランダム係数に関するパラメタを推定する際の、実践的なアプローチをいくつか紹介する。
+議論をわかりやすくするため、以下では財の特徴がひとつ（スカラー 
+\begin_inset Formula $x_{jt}$
+\end_inset
+
+）のみである場合を考え、そのときの効用関数を次のように定式化する。
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\[
+U_{ijt}=\beta_{0}+(\beta_{1}+\pi_{1}y_{it}+\sigma_{1}\nu_{it})x_{jt}+\xi_{jt}+\epsilon_{ijt}.
+\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+ここで、
+\begin_inset Formula $y_{it}$
+\end_inset
+
+ は観察される消費者属性であり、既知の分布 
+\begin_inset Formula $y_{it}\sim F_{t}(\cdot)$
+\end_inset
+
+ に従うとする。
+また、
+\begin_inset Formula $\nu_{it}$
+\end_inset
+
+ は観察されない選好の異質性を表し、
+\begin_inset Formula $\nu_{it}\sim N(0,1)$
+\end_inset
+
+ と仮定する。
+その他の変数については書籍本文と同じである。
+このモデルでは、線形パラメタは 
+\begin_inset Formula $\theta_{1}=(\beta_{0},\beta_{1})$
+\end_inset
+
+、非線形パラメタは 
+\begin_inset Formula $\theta_{2}=(\pi_{1},\sigma_{1})$
+\end_inset
+
+ と整理できる。
+
+\end_layout
+
+\begin_layout Standard
+この効用関数のもとで導出される需要関数について、Salanié and Wolak (2022) のアイデアに基づき、
+\begin_inset Formula $\pi_{1}=\sigma_{1}=0$
+\end_inset
+
+ の周りで二次のテイラー展開を行った次の近似式を考える。
+
+\begin_inset Foot
+status collapsed
+
+\begin_layout Plain Layout
+Salanié and Wolak (2022) は、この近似式を用いて推定を行う FRAC（Fast,
+ Robust,
+ Approximately Correct）推定法を提案している。
+
+\end_layout
+
+\end_inset
+
+
+\begin_inset Formula 
+\begin{equation}
+\log\frac{s_{jt}}{s_{0t}}\approx\beta_{0}+\beta_{1}x_{jt}+\sigma_{1}^{2}a_{jt}+\pi_{1}m_{t}^{y}x_{jt}+\pi_{1}^{2}v_{t}^{y}a_{jt}+\xi_{jt}\label{eq:SalanieWolak}
+\end{equation}
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+ここで、 
+\begin_inset Formula 
+\[
+a_{jt}=\left(\frac{x_{jt}}{2}-\sum_{k\in J_{t}}s_{kt}x_{kt}\right)x_{jt},
+\]
+
+\end_inset
+
+
+\begin_inset Formula $m_{t}^{y}$
+\end_inset
+
+ は市場 
+\begin_inset Formula $t$
+\end_inset
+
+ における消費者属性 
+\begin_inset Formula $y_{it}$
+\end_inset
+
+ の平均、
+\begin_inset Formula $v_{t}^{y}$
+\end_inset
+
+ はその分散を表す。
+この近似式を用いることで、非線形パラメタ 
+\begin_inset Formula $\theta_{2}=(\pi_{1},\sigma_{1})$
+\end_inset
+
+ に関する識別を、線形回帰モデルに近い枠組みで議論することが可能となる。
+
+\end_layout
+
+\begin_layout Standard
+まず、消費者属性の係数 
+\begin_inset Formula $\pi_{1}$
+\end_inset
+
+ の識別について考えよう。
+式（
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "eq:SalanieWolak"
+plural "false"
+caps "false"
+noprefix "false"
+nolink "false"
+
+\end_inset
+
+）から明らかなように、もし消費者属性の分布 
+\begin_inset Formula $F_{t}(\cdot)$
+\end_inset
+
+ が市場間で共通である場合、変数 
+\begin_inset Formula $m_{t}^{y}x_{jt}$
+\end_inset
+
+ と 
+\begin_inset Formula $x_{jt}$
+\end_inset
+
+ の間に共線性が生じることになる。
+その結果、係数 
+\begin_inset Formula $\beta_{1}$
+\end_inset
+
+ と 
+\begin_inset Formula $\pi_{1}$
+\end_inset
+
+ を別々に識別することができなくなる。
+言い換えれば、社会経済属性の分布が市場間で異なっていることが、係数 
+\begin_inset Formula $\pi_{1}$
+\end_inset
+
+ を識別・推定するうえで重要な役割を果たすことがわかる。
+
+\end_layout
+
+\begin_layout Standard
+つづいて、
+\begin_inset Formula $\sigma_{1}$
+\end_inset
+
+ の識別について考えよう。
+このパラメタは変数 
+\begin_inset Formula $a_{jt}$
+\end_inset
+
+ の係数として現れる。
+変数 
+\begin_inset Formula $a_{jt}$
+\end_inset
+
+ は 
+\begin_inset Formula 
+\[
+a_{jt}=\left(\frac{x_{jt}}{2}-\sum_{k\in J_{t}}s_{kt}x_{kt}\right)x_{jt}
+\]
+
+\end_inset
+
+と定義されており、これは製品 
+\begin_inset Formula $j$
+\end_inset
+
+ の品質 
+\begin_inset Formula $x_{jt}$
+\end_inset
+
+ が、他の製品の品質（の荷重平均）からどの程度離れているか、すなわち製品の差別化の程度を捉える指標となっている。
+
+\end_layout
+
+\begin_layout Standard
+この点を踏まえると、もし製品集合 
+\begin_inset Formula $J_{t}$
+\end_inset
+
+ が市場間で大きく変わらず、どの市場でも似通った製品が販売されている場合には、変数 
+\begin_inset Formula $a_{jt}$
+\end_inset
+
+ と 
+\begin_inset Formula $x_{jt}$
+\end_inset
+
+ の間に共線性が生じてしまう。
+その結果、パラメタ 
+\begin_inset Formula $\sigma_{1}$
+\end_inset
+
+ の識別は困難となる。
+
+\end_layout
+
+\begin_layout Standard
+この点をさらに直観的に説明しよう。
+標準偏差パラメタが大きいとは、特定の特徴を好む消費者が、その特徴を共有する別の製品も強く好むことを意味する。
+たとえば、エコカーを好む消費者が「プリウス」だけでなく「アクア」など類似したモデルを選択しやすいといった状況がその典型である。
+
+\end_layout
+
+\begin_layout Standard
+このような選好の連動性を識別するには、市場間で製品集合が異なる状況があることが重要である。
+仮に、ある市場で特定の製品が販売されていないとすれば、その製品を本来選ぶはずであった消費者が、どの製品に代替するかを観察できる。
+このスイッチングのパターンは、どの製品同士に強い代替関係があるかを示すため、標準偏差パラメタの識別に直接結びつく。
+具体的には、ある市場で燃費性能の高いモデルが販売されておらず、その市場において燃費性能が類似した別のモデルの販売が相対的に増加しているとすれば、消費者が燃費性能という特性を基準に代替行動を行っていることがわかる。
+このような代替の強さは、選好の異質性の大きさ、すなわち標準偏差パラメタの大きさに反映される。
+
+\end_layout
+
+\begin_layout Standard
+市場間での製品集合の違いは、より技術的には除外制約（exclusion restriction）として理解できる。
+特定のモデルが市場に存在しないという事実は、他の製品の直接効用には影響を与えない。
+しかし、選択可能な製品集合が異なることによって、消費者の選択確率には間接的な影響が生じる。
+このようなモデルの不在に伴う代替行動が、どの製品間で効用差がどの程度縮まるかを反映し、それが標準偏差パラメタの識別に利用されるのである。
+
+\begin_inset Foot
+status collapsed
+
+\begin_layout Plain Layout
+ただし、市場間の製品集合の違いが常に外生的であるとは限らない点には注意を要する。
+短期的には、価格設定などと比較して製品集合が固定的であるとみなせる状況も多いが、中長期的には新製品の投入や市場からの退出など企業の戦略的行動が関与するため、製品集合自体が内生的に決まる可能性がある。
+このような内生性の問題をどのように扱うかについては、より発展的な議論が必要であり、これは参入・退出を扱う章で取り上げることとする。
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+これらの考え方は、BLP (1995) の操作変数や、Gandhi and Houde (2020) が提案した差別化操作変数にも明確に反映されている。
+これらの操作変数は、市場においてどの程度「似通った製品」が利用可能であるかという構造的な情報を利用し、それによって選好の異質性に関するパラメタを識別するという発想に基づいている。
+
+\end_layout
+
+\begin_layout Standard
+具体的には、Gandhi and Houde (2020) の差別化操作変数
+\begin_inset Formula $Z_{jt}$
+\end_inset
+
+は以下のように与えられる。
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\[
+Z_{jt}=\begin{cases}
+{\displaystyle \sum_{j'\neq j}\left(d_{jt,j'}^{k}\right)^{2},}\\[6pt]
+{\displaystyle \sum_{j'\neq j}d_{jt,j'}^{k}\cdot d_{jt,j'}^{k'}.}
+\end{cases}
+\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+ここで、 
+\begin_inset Formula 
+\[
+d_{jt,j'}^{k}=x_{jt}^{k}-x_{j't}^{k}
+\]
+
+\end_inset
+
+は製品属性 
+\begin_inset Formula $k$
+\end_inset
+
+ に関する、製品 
+\begin_inset Formula $j$
+\end_inset
+
+ と 
+\begin_inset Formula $j'$
+\end_inset
+
+ の属性差を表す。
+この操作変数は、先述した変数 
+\begin_inset Formula $a_{jt}$
+\end_inset
+
+ と構造的に類似している点にも注意されたい。
+
+\end_layout
+
+\begin_layout Standard
+以上が、集計データのみを用いた場合におけるランダム係数パラメタの識別に関する議論である。
+実務的な応用においては、マイクロデータに基づく情報を追加的なモーメント（いわゆるマイクロモーメント）として利用することで、ランダム係数パラメタの推定精度を高めようとするアプローチもしばしば用いられる。
+このアイデアは Petrin (2002) によって導入され、その後 Conlon and Gortmaker (2025) が包括的な整理と議論を行っている。
+以下では、代表的なマイクロモーメントの例をいくつか取り上げる。
+
+\begin_inset Foot
+status open
+
+\begin_layout Plain Layout
+マイクロモーメントが用いられる典型的な状況は、個票データが存在するものの、そのデータから得られる情報が消費者の選択行動について部分的な内容に限られている場合である。
+たとえば、「ミニバンを購入した世帯の平均所得」のように、個々の消費者が具体的にどの製品を購入したかまでは観察できないケースがこれに該当する。
+これに対し、個人レベルでの購買行動(どの消費者がどの製品を購入したか)を詳細に観察できる場合には、第2章で扱ったように、マイクロデータに基づく尤度関数を構築した推定をメインに行うことができる。
+詳細な方法論については Goolsbee and Petrin (2004) や Grieco et al.
+ (2025) を参照されたい。
+なお、第2章との重要な相違点として、価格の内生性をどのように考慮するかという問題が挙げられる。
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+1つ目の例は、Petrin (2002) で用いられた「特定の製品を購入した消費者グループの社会経済属性」である。
+Ptextit{Petrin} (2002) はミニバンの需要分析を主題としており、「ミニバンを購入した消費者の所得や家計サイズ」といった情報をマイクロモーメントとして利用することで、これらの属性がミニバンに対する選好にどのような影響を及ぼすのかを推定している。
+
+\end_layout
+
+\begin_layout Standard
+もう1つの例は、BLP (2004) が使用した「第一希望・第二希望の製品の間にみられる属性の相関」である。
+彼らは、BLP (1995) で用いた集計データに加えて、消費者サーベイを用いて「セカンドチョイス」（消費者が“2番目に欲しかった製品”）に関する情報を収集した。
+実際に購入された製品とセカンドチョイスの製品の属性の相関を調べることで、消費者が製品を代替する際にどの属性次元を重視しているのかを推測することが可能となる。
+
+\end_layout
+
+\begin_layout Standard
+最後に、マイクロモーメントを利用しない追加的な推定アプローチを紹介する。
+1つ目は、GMM推定を行う際に、供給側の価格付けに関する最適化条件を追加的なモーメントとして利用する方法である。
+オリジナルの BLP (1995) では、この供給側モーメントを用いて推定を行っている。
+2つ目は、最適操作変数（Optimal Instrumental Variables）を構築する方法である。
+Chamberlain (1987) の条件付きモーメントの考え方に基づき、最適なモーメント条件を構築し、それを用いて推定するというアイデアである。
+ただし、BLP モデルは非線形であるため、最適モーメントを解析的に求めることは困難であり、実際には近似的な計算手法を用いる必要がある。
+詳細については、Reynaert and Verboven (2014) を参照されたい。
+
+\begin_inset Foot
+status open
+
+\begin_layout Plain Layout
+Conlon and Gortmaker (2020)では、モンテカルロ実験を通じて、供給側のモーメント条件を用いる点及び最適操作変数の重要性について議論している。
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Section
+BLPアルゴリズムの詳細
+\end_layout
+
+\begin_layout Subsection
+復習：
+セットアップ
+\end_layout
+
+\begin_layout Itemize
+詳細は書籍を参照されたい。
+ 
+\end_layout
+
+\begin_layout Itemize
+市場
+\begin_inset Formula $t=1,\cdots,T$
+\end_inset
+
+における消費者
+\begin_inset Formula $i$
+\end_inset
+
+は、選択肢
+\begin_inset Formula $j\in\{0,1,\cdots,J_{t}\}$
+\end_inset
+
+に直面している。
+ 
+\end_layout
+
+\begin_layout Itemize
+間接効用は以下のように与えられる。
+ 
+\begin_inset Formula 
+\[
+u_{ijt}=-\alpha_{i}p_{jt}+\beta_{i}^{\prime}x_{jt}+\xi_{jt}+\epsilon_{ijt}.
+\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Itemize
+係数
+\begin_inset Formula $(\alpha_{i},\beta_{i})$
+\end_inset
+
+は以下のように与えられる。
+ 
+\begin_inset Formula 
+\[
+\begin{pmatrix}\alpha_{i}\\
+\beta_{i}
+\end{pmatrix}=\begin{pmatrix}\alpha\\
+\beta
+\end{pmatrix}+\Pi D_{i}+\Sigma v_{i},\ D_{i}\sim F(D),\ v_{i}\sim G(v).
+\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Itemize
+線形パラメター
+\begin_inset Formula $\text{(\ensuremath{\alpha,\beta})}$
+\end_inset
+
+の数を
+\begin_inset Formula $K_{1}$
+\end_inset
+
+、非線形パラメターの個数を
+\begin_inset Formula $K_{2}$
+\end_inset
+
+とする。
+ 
+\end_layout
+
+\begin_layout Itemize
+市場シェアは以下のように与えられる。
+ 
+\begin_inset Formula 
+\[
+s_{jt}=\int\int\frac{\exp(\delta_{jt}+\mu_{ijt}(v_{i},D_{i}))}{1+\sum_{j=1}^{J_{t}}\exp(\delta_{jt}+\mu_{ijt}(v_{i},D_{i}))}dF(D_{it})dG(v_{i}).
+\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Itemize
+ここで 
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\begin{align*}
+\delta_{jt} & =-\alpha p_{jt}+\beta^{\prime}x_{jt}+\xi_{jt}.\\
+\mu_{ijt}(v_{i},D_{i}) & =\left\lbrack \Pi D_{i}+\Sigma v_{i}\right\rbrack ^{\prime}\begin{bmatrix}p_{jt}\\
+x_{jt}
+\end{bmatrix}.
+\end{align*}
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Itemize
+今後の表記のために、積分の中の確率を
+\begin_inset Formula $s_{ijt}=\frac{\exp(\delta_{jt}+\mu_{ijt})}{1+\sum_{j=1}^{J_{t}}\exp(\delta_{jt}+\mu_{ijt})}$
+\end_inset
+
+とする。
+ 
+\end_layout
+
+\begin_layout Itemize
+また、この積分自体には解析的な解がないため、シミュレーションによるモンテカルロ積分を行う。
+ 
+\begin_inset Formula 
+\[
+s_{jt}=\frac{1}{R}\sum_{r=1}^{R}\frac{\exp\left(\delta_{jt}+\mu_{ijt}(v^{r},D^{r})\right)}{1+\sum_{j=1}^{J_{t}}\exp\left(\delta_{jt}+\mu_{ijt}(v^{r},D^{r})\right)}.
+\]
+
+\end_inset
+
+ここで
+\begin_inset Formula $R$
+\end_inset
+
+はシミュレーションにおいて生成した乱数の個数である。
+ 
+\end_layout
+
+\begin_layout Itemize
+Berryインバージョンを行うことで、データにおけるマーケットシェアのベクトルから、平均効用のベクトルを導出することができる。
+この操作を 
+\begin_inset Formula 
+\[
+\delta_{jt}=S_{jt}^{-1}\left(\left\{ s_{jt}\right\} _{j=1}^{J_{t}};\theta_{2}\right)
+\]
+
+\end_inset
+
+とする。
+具体的には、縮小写像アルゴリズムを用いて計算する。
+詳細は書籍を参照されたい。
+ 
+\end_layout
+
+\begin_layout Subsection
+GMM目的関数
+\end_layout
+
+\begin_layout Itemize
+表記の定義 
+\end_layout
+
+\begin_deeper
+\begin_layout Itemize
+\begin_inset Formula $K_{1}$
+\end_inset
+
+：
+線形パラメターの個数。
+ 
+\end_layout
+
+\begin_layout Itemize
+\begin_inset Formula $K_{2}$
+\end_inset
+
+：
+非線形パラメターの個数 (ランダム係数パラメター)。
+ 
+\end_layout
+
+\begin_layout Itemize
+\begin_inset Formula $K=K_{1}+K_{2}$
+\end_inset
+
+.
+ 
+\end_layout
+
+\begin_layout Itemize
+\begin_inset Formula $N$
+\end_inset
+
+：
+サンプルサイズ。
+これは、すべての市場におけるすべての製品数を足し合わせたもの。
+
+\begin_inset Formula $N=\sum_{t=1}^{T}J_{t}$
+\end_inset
+
+.
+ 
+\end_layout
+
+\begin_layout Itemize
+\begin_inset Formula $L$
+\end_inset
+
+：
+外生変数を含む、操作変数の個数。
+
+\begin_inset Formula $L\geq K$
+\end_inset
+
+ .
+ 
+\end_layout
+
+\begin_layout Itemize
+\begin_inset Formula $\theta=(\theta_{1},\theta_{2})$
+\end_inset
+
+ 、
+\begin_inset Formula $\theta_{1}$
+\end_inset
+
+は線形パラメター、 
+\begin_inset Formula $\theta_{2}$
+\end_inset
+
+は非線形パラメター。
+ 
+\end_layout
+
+\end_deeper
+\begin_layout Itemize
+非線形GMMにおける目的関数は以下となる。
+ 
+\begin_inset Formula 
+\begin{align*}
+J(\theta) & =\left(\frac{1}{N}\xi(\theta)^{\prime}Z\right)W\left(\frac{1}{N}Z^{\prime}\xi(\theta)\right)\\
+ & =\left(\frac{1}{N}\sum_{j,t}\xi_{jt}(\theta)z_{jt}\right)^{\prime}W\left(\frac{1}{N}\sum_{j,t}\xi_{jt}(\theta)z_{jt}\right)
+\end{align*}
+
+\end_inset
+
+
+\end_layout
+
+\begin_deeper
+\begin_layout Itemize
+\begin_inset Formula $z_{jt}$
+\end_inset
+
+ は操作変数をまとめたベクトル。
+ (
+\begin_inset Formula $L\times1$
+\end_inset
+
+) ベクトル。
+ 
+\end_layout
+
+\begin_layout Itemize
+\begin_inset Formula $Z=(Z_{11}^{\prime},\cdots,Z_{JT}^{\prime})$
+\end_inset
+
+ は操作変数をまとめた (
+\begin_inset Formula $N\times L$
+\end_inset
+
+) 行列。
+ 
+\end_layout
+
+\begin_layout Itemize
+\begin_inset Formula $W$
+\end_inset
+
+ は 
+\begin_inset Formula $(L\times L)$
+\end_inset
+
+ の荷重行列 (weighting matrix).
+ 
+\end_layout
+
+\begin_layout Itemize
+ここで誤差項
+\begin_inset Formula $\xi_{jt}$
+\end_inset
+
+はパラメターの関数として計算することができ、 
+\begin_inset Formula 
+\[
+\xi_{jt}(\theta)=S_{jt}^{-1}\left(\left\{ s_{jt}\right\} _{j=1}^{J_{t}};\theta_{2}\right)-(-\alpha p_{jt}+\beta^{\prime}x_{jt})
+\]
+
+\end_inset
+
+となる。
+また、 
+\begin_inset Formula $\xi(\theta)=(\xi_{1}(\theta),\cdots,\xi_{N})^{\prime}$
+\end_inset
+
+を
+\begin_inset Formula $(N\times1$
+\end_inset
+
+) ベクトルとしてまとめる。
+ 
+\end_layout
+
+\end_deeper
+\begin_layout Subsection
+GMM推定
+\end_layout
+
+\begin_layout Itemize
+GMM推定では、目的関数
+\begin_inset Formula $J(\theta)$
+\end_inset
+
+を最小化するようなパラメター
+\begin_inset Formula $\theta$
+\end_inset
+
+を求める。
+ 
+\end_layout
+
+\begin_layout Itemize
+\begin_inset Formula $J(\theta)$
+\end_inset
+
+は非線形の関数であるが、
+\begin_inset Formula $\hat{\theta}_{1}=(\alpha,\beta)$
+\end_inset
+
+は解析的に求めることが可能である。
+この点について見ていこう。
+ 
+\end_layout
+
+\begin_layout Itemize
+まず、非線形パラメター
+\begin_inset Formula $\theta_{2}$
+\end_inset
+
+を所与とすると、Berryインバージョンから平均効用
+\begin_inset Formula $\delta_{jt}$
+\end_inset
+
+を
+\begin_inset Formula $S_{jt}^{-1}\left(\left\{ s_{jt}\right\} _{j=1}^{J_{t}};\theta_{2}\right)$
+\end_inset
+
+という式で求めることができる。
+ 
+\end_layout
+
+\begin_layout Itemize
+平均効用
+\begin_inset Formula $\delta_{jt}$
+\end_inset
+
+は
+\begin_inset Formula $\delta_{jt}=-\alpha p_{jt}+\beta^{\prime}x_{jt}+\xi_{jt}$
+\end_inset
+
+という定式化であり、価格
+\begin_inset Formula $p_{jt}$
+\end_inset
+
+と製品属性
+\begin_inset Formula $x_{jt}$
+\end_inset
+
+、そして誤差項
+\begin_inset Formula $\xi_{jt}$
+\end_inset
+
+について線形の式となっている。
+ 
+\end_layout
+
+\begin_layout Itemize
+したがって、
+\begin_inset Formula $\theta_{2}$
+\end_inset
+
+を所与としてBerryインバージョンから得られた平均効用
+\begin_inset Formula $\delta_{jt}(\theta_{2})$
+\end_inset
+
+を「被説明変数」とみなし、式
+\begin_inset Formula $\delta_{jt}=-\alpha p_{jt}+\beta^{\prime}x_{jt}+\xi_{jt}$
+\end_inset
+
+について外生変数を含んだ操作変数
+\begin_inset Formula $z_{jt}$
+\end_inset
+
+を用いた線形GMMを行うことで 
+\begin_inset Formula $\theta_{1}$
+\end_inset
+
+が得られるのである。
+ 
+\begin_inset Formula 
+\[
+\hat{\theta}_{1}=(X^{\prime}ZWZ^{\prime}X)^{-1}X^{\prime}ZWZ^{\prime}\delta(\theta_{2}).
+\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Itemize
+この
+\begin_inset Formula $\hat{\theta_{1}}$
+\end_inset
+
+を目的関数に代入することで、目的関数は非線形パラメター
+\begin_inset Formula $\theta_{2}$
+\end_inset
+
+のみの関数となる。
+ 
+\end_layout
+
+\begin_layout Itemize
+\begin_inset Formula $\theta_{2}$
+\end_inset
+
+については解析的な解がないため、数値計算を行って求めることとなる。
+ 
+\end_layout
+
+\begin_layout Subsubsection
+［Advanced］GMM目的関数のGradientに関して
+\end_layout
+
+\begin_layout Itemize
+サンプルコードでは、非線形パラメターの個数が少ないため利用していないものの、一般に数値計算の際には、パラメターに関する勾配ベクトル (Gradient) がわかると、計算が早くかつ安定する。
+ 
+\end_layout
+
+\begin_layout Itemize
+ここではGradientの導出を行おう。
+ 
+\begin_inset Formula 
+\[
+\underbrace{\frac{\partial J(\theta_{2})}{\partial\theta_{2}}}_{(K_{2}\times1)}=2\cdot\left(\underbrace{D\delta(\theta_{2})}_{(N\times K_{2})}\right)^{\prime}ZWZ^{\prime}\xi(\theta).
+\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Itemize
+ここで 
+\begin_inset Formula 
+\begin{align*}
+\underbrace{D\delta(\theta_{2})}_{N\times K_{2}} & =\left(\begin{array}{ccc}
+\frac{\partial\delta_{1}}{\partial\theta_{21}} & \cdots & \frac{\partial\delta_{1}}{\partial\theta_{2K_{2}}}\\
+\vdots & \ddots & \vdots\\
+\frac{\partial\delta_{N}}{\partial\theta_{21}} & \cdots & \frac{\partial\delta_{N}}{\partial\theta_{2K_{2}}}
+\end{array}\right)\\
+ & =-\underbrace{\left(\begin{array}{ccc}
+\frac{\partial s_{1}}{\partial\delta_{1}} & \cdots & \frac{\partial s_{1}}{\partial\delta_{N}}\\
+\vdots & \ddots & \vdots\\
+\frac{\partial s_{N}}{\partial\delta_{1}} & \cdots & \frac{\partial s_{N}}{\partial\delta_{N}}
+\end{array}\right)^{-1}}_{(N\times N)}\underbrace{\left(\begin{array}{ccc}
+\frac{\partial s_{1}}{\partial\theta_{21}} & \cdots & \frac{\partial s_{1}}{\partial\theta_{2K_{2}}}\\
+\vdots & \ddots & \vdots\\
+\frac{\partial s_{N}}{\partial\theta_{21}} & \cdots & \frac{\partial s_{N}}{\partial\theta_{2K_{2}}}
+\end{array}\right)}_{(N\times K_{2})}.
+\end{align*}
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Itemize
+ここの導出は陰関数定理を用いている。
+詳しくはNevo (2000,
+ Appendix)
+\begin_inset Foot
+status collapsed
+
+\begin_layout Plain Layout
+Appendix to 
+\begin_inset Quotes eld
+\end_inset
+
+Practitioner's Guide to Estimation of Random:
+ Coefficients Logit Models of Demand” – Estimation:
+ The Nitty-Gritty (
+\begin_inset Flex URL
+status collapsed
+
+\begin_layout Plain Layout
+
+https://web.archive.org/web/20171116012208/http://faculty.wcas.northwestern.edu/
+\backslash
+textasciitilde ane686/supplements/Ras
+\backslash
+_guide
+\backslash
+_appendix.pdf
+\end_layout
+
+\end_inset
+
+).
+\end_layout
+
+\end_inset
+
+を参照されたい。
+ 
+\end_layout
+
+\begin_layout Itemize
+ここで、行列の中身の微分について 
+\begin_inset Formula 
+\begin{align*}
+\frac{\partial s_{jt}}{\partial\delta_{jt}} & =\frac{1}{R}\sum_{i=1}^{R}\frac{\partial s_{rjt}}{\partial\delta_{jt}}=\frac{1}{R}\sum_{i=1}^{R}s_{ijt}(1-s_{ijt}),\\
+\frac{\partial s_{jt}}{\partial\delta_{mt}} & =\frac{1}{R}\sum_{i=1}^{R}\frac{\partial s_{rjt}}{\partial\delta_{mt}}=-\frac{1}{R}\sum_{i=1}^{R}s_{ijt}s_{imt}.
+\end{align*}
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Itemize
+また、 
+\begin_inset Formula 
+\begin{align*}
+\frac{\partial s_{jt}}{\partial\sigma^{k}} & =\frac{1}{R}\sum_{i=1}^{R}\frac{\partial s_{rjt}}{\partial\sigma^{k}}=\frac{1}{R}\sum_{i=1}^{R}s_{ijt}\left(x_{jt}^{k}v_{i}^{k}-\sum_{m=1}^{J}x_{mt}^{k}v_{i}^{k}s_{imt}\right).
+\end{align*}
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Subsection
+漸近分散(Asymptotic Variance)
+\end_layout
+
+\begin_layout Itemize
+非線形GMMの漸近分散は以下のように与えられる。
+ 詳細については、末石(2015)やHayashi (2000)などを参照されたい。
+ 
+\begin_inset Formula 
+\[
+\sqrt{N}(\hat{\theta}-\theta)\overset{d}{\rightarrow}N\left(0,(G^{\prime}WG)^{-1}G^{\prime}W\Omega WG(G^{\prime}WG)^{-1}\right).
+\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Itemize
+ここで、 
+\begin_inset Formula 
+\[
+\underbrace{\Omega}_{(L\times L)}=E[\xi_{jt}z_{jt}z_{jt}^{\prime}\xi_{jt}].
+\]
+
+\end_inset
+
+そして 
+\begin_inset Formula 
+\begin{align*}
+\underbrace{G}_{(L\times K)} & =E\left[z_{jt}\frac{\partial\xi_{jt}(\theta)}{\partial\theta}\right]\\
+ & =E\left[z_{jt}\frac{\partial(\delta_{jt}(\theta_{2})-x_{jt}^{\prime}\theta_{1})}{\partial\theta}\right]\\
+ & =\left(\underbrace{E\left[z_{jt}(-x_{jt}^{\prime})\right]}_{(L\times K_{1})},\underbrace{E\left[z_{jt}\frac{\partial\delta_{jt}(\theta_{2})}{\partial\theta}\right]}_{(L\times K_{2})}\right).
+\end{align*}
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Itemize
+この結果から、推定パラメター
+\begin_inset Formula $\hat{\theta}$
+\end_inset
+
+は漸近的に
+\begin_inset Formula $\hat{\theta}\sim N(\theta,\Sigma/N)$
+\end_inset
+
+と近似できる。
+この結果に基づいてパラメタの漸近標準誤差を計算することができる。
+ 具体的には、漸近標準誤差は
+\begin_inset Formula $\sqrt{diag(\Sigma)/N}$
+\end_inset
+
+となる。
+なお、
+\begin_inset Formula $diag(\Sigma)$
+\end_inset
+
+は行列
+\begin_inset Formula $\Sigma$
+\end_inset
+
+の対角要素を示す。
+ 
+\end_layout
+
+\begin_layout Subsection
+漸近分散の推定
+\end_layout
+
+\begin_layout Itemize
+漸近分散の推定は、期待値を対応する標本平均で置き換えることとなる。
+これを標本対応(sample analogue)と呼ぶ。
+ 
+\end_layout
+
+\begin_layout Itemize
+すなわち、 
+\begin_inset Formula 
+\begin{align*}
+\underbrace{\hat{\Omega}}_{(L\times L)} & =\frac{1}{N}\sum_{j,t}\hat{\xi}_{jt}z_{jt}z_{jt}^{\prime}\hat{\xi}_{jt}.
+\end{align*}
+
+\end_inset
+
+
+\end_layout
+
+\begin_deeper
+\begin_layout Itemize
+ここで、
+\begin_inset Formula $\hat{\xi}_{jt}$
+\end_inset
+
+は推定値に基づく残差であり、
+\begin_inset Formula $\hat{\xi}_{jt}=\delta_{jt}(\hat{\theta}_{2})-x_{jt}^{\prime}\hat{\theta}_{1}$
+\end_inset
+
+である。
+ 
+\end_layout
+
+\begin_layout Itemize
+また、
+\begin_inset Formula $\hat{\xi}=(\hat{\xi}_{1},\cdots,\hat{\xi}_{N})^{\prime}$
+\end_inset
+
+ は 
+\begin_inset Formula $(N\times1$
+\end_inset
+
+) ベクトル。
+ 
+\end_layout
+
+\end_deeper
+\begin_layout Itemize
+同様にして、
+\begin_inset Formula $G$
+\end_inset
+
+の標本対応は 
+\begin_inset Formula 
+\begin{align*}
+\hat{G} & =\left(\frac{1}{N}\sum_{j,t}z_{jt}\frac{\partial\delta_{jt}(\theta_{2})}{\partial\theta},\,\,\frac{1}{N}\sum_{j,t}z_{jt}(-x_{jt}^{\prime})\right)\\
+ & =\frac{1}{N}Z^{\prime}\left(\underbrace{-X}_{(N\times K_{1})},\,\,\underbrace{D\delta(\theta_{2})}_{(N\times K_{2})}\right).
+\end{align*}
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset VSpace 100baselineskip%
+\end_inset
+
+ 
+\end_layout
+
+\begin_layout Subsection*
+参考文献
+\end_layout
+
+\begin_layout Standard
+\noindent
+\begin_inset ERT
+status collapsed
+
+\begin_layout Plain Layout
+
+
+\backslash
+hang{
+\end_layout
+
+\end_inset
+
+末
+\begin_inset ERT
+status collapsed
+
+\begin_layout Plain Layout
+
+}
+\end_layout
+
+\end_inset
+
+石直也 (2015)『計量経済学：
+ミクロデータ分析へのいざない』日本評論社。
+
+\end_layout
+
+\begin_layout Standard
+\noindent
+\begin_inset ERT
+status collapsed
+
+\begin_layout Plain Layout
+
+
+\backslash
+hang{
+\end_layout
+
+\end_inset
+
+H
+\begin_inset ERT
+status collapsed
+
+\begin_layout Plain Layout
+
+}
+\end_layout
+
+\end_inset
+
+ayashi,
+ F (2000) 
+\shape italic
+Econometrics
+\shape default
+,
+ Princeton University Prress.
+\end_layout
+
+\begin_layout Standard
+\noindent
+\begin_inset ERT
+status collapsed
+
+\begin_layout Plain Layout
+
+
+\backslash
+hang{
+\end_layout
+
+\end_inset
+
+B
+\begin_inset ERT
+status collapsed
+
+\begin_layout Plain Layout
+
+}
+\end_layout
+
+\end_inset
+
+erry,
+ S.
+ (1994) 
+\begin_inset Quotes eld
+\end_inset
+
+Estimating Discrete-Choice Models of Product Differentiation,
+\begin_inset ERT
+status collapsed
+
+\begin_layout Plain Layout
+
+"
+\end_layout
+
+\end_inset
+
+ 
+\shape italic
+Rand Journal of Economics
+\shape default
+,
+ 25(2):
+ 242–262.
+\end_layout
+
+\begin_layout Standard
+\noindent
+\begin_inset ERT
+status collapsed
+
+\begin_layout Plain Layout
+
+
+\backslash
+hang{
+\end_layout
+
+\end_inset
+
+C
+\begin_inset ERT
+status collapsed
+
+\begin_layout Plain Layout
+
+}
+\end_layout
+
+\end_inset
+
+ardell,
+ N.
+ S.
+ (1997) 
+\begin_inset Quotes eld
+\end_inset
+
+Variance Components Structures for the Extreme-Value and Logistic Distributions with Application to Models of Heterogeneity,
+\begin_inset ERT
+status collapsed
+
+\begin_layout Plain Layout
+
+"
+\end_layout
+
+\end_inset
+
+ 
+\shape italic
+Econometric Theory
+\shape default
+,
+ 13(2):
+ 185–213.
+\end_layout
+
+\begin_layout Standard
+\noindent
+\begin_inset ERT
+status collapsed
+
+\begin_layout Plain Layout
+
+
+\backslash
+hang{
+\end_layout
+
+\end_inset
+
+G
+\begin_inset ERT
+status collapsed
+
+\begin_layout Plain Layout
+
+}
+\end_layout
+
+\end_inset
+
+andhi,
+ A.
+ and Houde,
+ J.-F.
+ (2020) 
+\begin_inset Quotes eld
+\end_inset
+
+Measuring Substitution Patterns in Differentiated-Products Industries,
+\begin_inset ERT
+status collapsed
+
+\begin_layout Plain Layout
+
+"
+\end_layout
+
+\end_inset
+
+ NBER Working Paper,
+ No.26375.
+\end_layout
+
+\end_body
+\end_document

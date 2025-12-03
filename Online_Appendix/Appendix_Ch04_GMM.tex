@@ -1,0 +1,325 @@
+%% LyX 2.4.1 created this file.  For more info, see https://www.lyx.org/.
+%% Do not edit unless you really know what you are doing.
+\documentclass[11pt,japanese,nomag]{jsarticle}
+\usepackage{textcomp}
+\UseRawInputEncoding
+\usepackage[letterpaper]{geometry}
+\geometry{verbose,tmargin=1in,bmargin=1in,lmargin=1in,rmargin=1in}
+\usepackage{color}
+\usepackage{babel}
+\usepackage{amsmath}
+\usepackage{amsthm}
+\usepackage{amssymb}
+\usepackage{setspace}
+\usepackage[authoryear]{natbib}
+\onehalfspacing
+\usepackage[bookmarks=true,bookmarksnumbered=true,bookmarksopen=false,
+ breaklinks=false,pdfborder={0 0 1},backref=section,colorlinks=true]
+ {hyperref}
+\hypersetup{
+ dvipdfmx,bookmarkstype=toc,urlcolor=black,linkcolor=blue,citecolor=red,linktocpage=false}
+
+\makeatletter
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% User specified LaTeX commands.
+%\usepackage{fullpage}
+\usepackage{dcolumn}
+
+
+%\usepackage{doublespace}
+
+
+\usepackage{pxjahyper}
+
+\makeatother
+
+\begin{document}
+\title{第4章付録1：一般化モーメント法 (GMM) に関するノート}
+\date{最終更新： \today}
+\maketitle
+\begin{flushright}
+\begin{small} 上武康亮・遠山祐太・若森直樹・渡辺安虎\\
+「実証ビジネス・エコノミクス」 \\
+ 第4章「プライシングの真髄は代替性にあり」\\
+の付録\\
+ \vspace{-0.2\baselineskip}
+ \textcopyright 上武康亮・遠山祐太・若森直樹・渡辺安虎 \end{small} 
+\par\end{flushright}
+
+\section{はじめに}
+
+本付録では、一般化モーメント法 (generalized method of moments、以下GMM) に関する簡単な解説を行う。
+GMMは第4章で取り上げるランダム係数ロジットモデルの推定をはじめ、産業組織論の実証分析、および構造推定全般で広く用いられている。
+また、第3章における線形モデルの操作変数法や2段階最小2乗法もGMMの特殊ケースとして見ることができる。
+
+本資料では、最初にモーメント法を解説した後、それの一般化であるGMMについて見ていく。なお、詳細な解説については以下の教科書等を参考にされたい。
+\begin{itemize}
+\item 末石直也 (2015)『計量経済学：ミクロデータ分析へのいざない』日本評論社。 
+\item Hayashi, F (2000) \textit{Econometrics}, Princeton University Prress. 
+\item Newey, W. K. and McFadden, D. (1994) ``Large Sample Estimation and
+Hypothesis Testing," \textit{Handbook of Econometrics}, Vol.4, North
+Holland: 2111--2245. 
+\end{itemize}
+
+\section{モーメント法}
+
+統計的推定における\textsf{モーメント法} (method of moment) とは、母集団におけるモーメントを標本(サンプル)におけるモーメントで置き換えることから得られる条件を用いて未知パラメターを推定する方法である。以下では具体例を通じて見ていこう。
+
+\subsection{例１：正規分布の平均と分散}
+
+確率変数$X$を $X\sim N(\mu,\sigma^{2})$としよう。このとき、1次と2次のモーメント$E[X],E[X^{2}]$はそれぞれ以下で与えられる。
+
+\begin{align*}
+E[X] & =\mu,\\
+E[X^{2}] & =\sigma^{2}+\mu^{2}.
+\end{align*}
+
+これらのモーメントに関する条件を用いることでパラメター $\mu$と $\sigma^{2}$を推定することができる。具体的には、上二式に母集団モーメントを対応する標本のモーメント、すなわち標本平均で置き換えれば良い。今、母集団からのランダムサンプルを$\{x_{1},\cdots,x_{n}\}$とすると、モーメント推定量は以下で与えられる。
+\begin{align*}
+\hat{\mu} & =\frac{1}{n}\sum_{i=1}^{n}x_{i},\\
+\hat{\sigma^{2}} & =\frac{1}{n}\sum_{i=1}^{n}x_{i}^{2}-\left(\frac{1}{n}\sum_{i=1}^{n}x_{i}\right)^{2}.
+\end{align*}
+
+
+\subsection{例2：線形回帰モデル}
+
+以下の線形回帰モデルを考えよう。
+
+\[
+y_{i}={x_{i}^{\prime}\beta}+u_{i},\quad E[{x_{i}}u_{i}]=0.
+\]
+ここで$x_{i}$と$\beta$は ($K\times1$) ベクトルである。また、条件$E[{x_{i}}u_{i}]=0$が課されており、これは説明変数${x_{i}}$と誤差項$u_{i}$が無相関であることを意味する。このモデルから以下の$K$本のモーメント条件が得られる。
+
+\[
+E[{x_{i}}(y_{i}-{x_{i}^{\prime}\beta})]=0.
+\]
+今、未知のパラメター${\beta}$は$K$個あり、モーメント条件が$K$個存在する。適切な条件(特に説明変数に関する多重共線性)のもとで、パラメター$\beta$について解くことができる。
+
+推定に際しては、上と同様に母集団モーメントを標本で対応するものに置き換えてやればよい。 
+\[
+\frac{1}{n}\sum_{i=1}^{n}x_{i}\left(y_{i}-{x_{i}^{\prime}\hat{\beta}}\right)=0.
+\]
+この式は最小2乗法における1階条件と等しい。
+
+\subsection{例2：操作変数法}
+
+以下のモデルを考えよう。
+
+\[
+y_{i}={x_{i}^{\prime}\beta}+e_{i},\quad E[{z_{i}}e_{i}]=0.
+\]
+ここで、${z_{i}}$は操作変数であり、$(L\times1)$ベクトルとしよう。操作変数と誤差項の独立性条件から、$L$個のモーメント条件が得られる。
+
+ここで、パラメター数$K$と操作変数の個数$L$に応じて、モーメント法で推定できるか否かが決まる。具体的には以下の３つのケースが考えられる。
+
+\paragraph{ケース1：$L<K$}
+
+このケースでは、モーメント条件数がパラメター数よりも少ないため、モーメント条件を満たすパラメターが複数存在することとなる。これを\textsf{過小識別}
+(under-identification) と呼ぶ。
+
+\paragraph{ケース2：$L=K$　}
+
+モーメント条件数とパラメター数が同じであるため、一定の条件のもとで、モーメント条件を満たすパラメターを一意に特定することができる。これを\textsf{丁度識別}
+(just-identification) と呼ぶ。 具体的には、以下を満たすパラメターが操作変数推定量となる。 
+\[
+\frac{1}{n}\sum_{i=1}^{n}{z}_{i}\left(y_{i}-{x_{i}^{\prime}\hat{\beta}}\right)=0.
+\]
+
+
+\paragraph{ケース3：$L>K$}
+
+この場合、満たすべき等式の数 (モーメント条件の数) がパラメター数よりも多いため、すべての等式を満たすようなパラメターを見つけることができない。このケースを\textsf{過剰識別}
+(over-identification) と呼ぶ。 このケースを考慮した推定方法が、以下で導入するGMMである。
+
+\section{線形モデルにおけるGMM}
+
+\subsection{GMM推定量}
+
+以下の線形モデルを考えよう。
+
+\[
+y_{i}=x_{i}^{\prime}\beta+e_{i},\quad E[z_{i}e_{i}]=0.
+\]
+
+モーメント条件は以下となる。
+
+\[
+0=E[z_{i}(y_{i}-x_{i}^{\prime}\beta)]\equiv E[g_{i}(\beta)]\equiv\left(\begin{array}{c}
+E[g_{1i}(\beta)]\\
+E[g_{2i}(\beta)]\\
+\vdots\\
+E[g_{Li}(\beta)]
+\end{array}\right).
+\]
+このモーメント条件を標本のモーメント(標本平均)で置き換えたものは以下となる。 
+\[
+\bar{g}(b)\equiv\frac{1}{n}\sum_{i=1}^{n}g_{i}\left(b\right)=\frac{1}{n}(z_{1},\dots,z_{n})(Y-Xb)=\frac{1}{n}Z^{\prime}(Y-Xb)=0.
+\]
+ここで$Y,X,Z$は以下のように行列を用いて定義される。 
+\begin{align*}
+\underbrace{Y}_{(n\times1)} & =\left(\begin{array}{c}
+y_{1}\\
+\vdots\\
+y_{n}
+\end{array}\right),\quad\underbrace{X}_{(n\times K)}=\left(\begin{array}{c}
+x_{1}^{\prime}\\
+\vdots\\
+x_{n}^{\prime}
+\end{array}\right)=\left(\begin{array}{ccc}
+x_{11} & \cdots & x_{K1}\\
+\vdots & \ddots & \vdots\\
+x_{1n} & \cdots & x_{Kn}
+\end{array}\right),\\
+\underbrace{Z}_{(n\times L)} & =\left(\begin{array}{c}
+z_{1}^{\prime}\\
+\vdots\\
+z_{n}^{\prime}
+\end{array}\right)=\left(\begin{array}{ccc}
+z_{11} & \cdots & z_{L1}\\
+\vdots & \ddots & \vdots\\
+z_{1n} & \cdots & z_{Ln}
+\end{array}\right).
+\end{align*}
+
+さて、すでに述べたように、$L>K$の場合(過剰識別)には、$\bar{g}(b)=0$を満たすような$b$は存在しない。そこで、モーメント条件がなるべくゼロに近づくようなパラメターを推定値とするというのが、GMMの考え方となる。
+
+GMM推定量を、以下の最小化問題を解くようなパラメターとして定義しよう。
+
+\[
+\min_{b}Q_{n}(b)=\bar{g}\left(b\right)^{\prime}\hat{W}\bar{g}\left(b\right).
+\]
+ここで、$\hat{W}$は荷重行列(weighting matrix)と呼ばれ、 $(L\times L)$行列で、対称かつ正定値
+(positive definite)である。この荷重行列は、$L$個あるモーメント条件に重み付けを置く役割をもつ。この点については\ref{subsec:choiceWM}項で説明する。
+
+上記の線形モデルでは、目的関数は以下となる。
+
+\[
+Q_{n}(b)=\left(\frac{1}{n}Z^{\prime}(Y-Xb)\right)^{\prime}\hat{W}\left(\frac{1}{n}Z^{\prime}(Y-Xb)\right).
+\]
+行列微分を用いることで1階条件は以下のように与えられる。 
+\begin{align*}
+0 & =\left.\frac{\partial Q_{n}(b)}{\partial b}\right|_{b=\hat{\beta}}\\
+ & =\left(-\frac{1}{n}X^{\prime}Z\right)\left(\hat{W}+\hat{W}^{\prime}\right)\left(\frac{1}{n}Z^{\prime}(Y-X\hat{\beta})\right)\\
+ & =-2\left(\frac{1}{n}X^{\prime}Z\right)\hat{W}\left(\frac{1}{n}Z^{\prime}(Y-X\hat{\beta})\right).
+\end{align*}
+この式を解くことで、GMM推定量は以下の形で与えられる。
+
+\[
+\hat{\beta}_{GMM}=\left(X^{\prime}Z\hat{W}Z^{\prime}X\right)^{-1}X^{\prime}Z\hat{W}Z^{\prime}Y.
+\]
+
+
+\subsubsection{丁度識別の場合$(L=K)$}
+
+もし$L=K$のとき、荷重行列$\hat{W}$ はキャンセルされることがわかる。$Z^{\prime}X$ が正方行列であり、かつ正則であるならば
+\begin{align*}
+\hat{\beta}_{GMM} & =\left(Z^{\prime}X\right)^{-1}\hat{W}^{-1}\left(X^{\prime}Z\right)^{-1}(X^{\prime}Z)\hat{W}Z^{\prime}Y\\
+ & =(Z^{\prime}X)^{-1}Z^{\prime}Y.
+\end{align*}
+これは、操作変数推定量と一致する。また、$Z=X$、すなわち内生性問題がない場合には、$\hat{\beta}_{GMM}$はOLS推定量$\hat{\beta}=(X^{\prime}X)^{-1}X^{\prime}Y$と一致する。
+
+\subsection{GMM推定量の性質}
+
+一定の条件のもとで、GMM推定量は以下の性質を持つことが示される(詳細は本資料の冒頭で挙げた教科書を参照)。
+\begin{itemize}
+\item 一致性: $\hat{\beta}_{GMM}\stackrel{p}{\longrightarrow}\beta$. 
+\item 漸近正規性 
+\[
+\sqrt{n}(\hat{\beta}-\beta)\stackrel{d}{\longrightarrow}N\left(0,\left(Q^{\prime}WQ\right)^{-1}Q^{\prime}W\Omega WQ\left(Q^{\prime}WQ\right)^{-1}\right),
+\]
+ここで、$Q=E[z_{i}x_{i}^{\prime}]$, $\Omega=E\left[z_{i}z_{i}^{\prime}e_{i}^{2}\right]$,
+$W=\underset{\mathrm{n\rightarrow\infty}}{{\rm plim}}\hspace{0.125em}\hat{W}$である。 
+\end{itemize}
+
+\subsection{荷重行列 $\hat{W}$ の選び方}
+
+\label{subsec:choiceWM}
+
+上で導出した漸近分布は荷重行列$W$に依存している。ここでは荷重行列$\hat{W}$のうまい選び方について考えよう。理論的な詳細は省くが、荷重行列を$g_{i}(\beta)=z_{i}e_{i}$の分散共分散行列の逆行列にすることで、漸近分散が小さくなり、パラメターをより効率的に推定することができる。
+\[
+W=\Omega^{-1}=E\left[z_{i}z_{i}^{\prime}e_{i}^{2}\right]^{-1}.
+\]
+この荷重行列は\textsf{最適荷重行列} (optimal weighting matrix) と呼ばれる。
+
+しかしながら、行列$\Omega$は母集団のモーメントであるため推定する必要がある。ここでは、$\Omega$の推定量として以下の$\hat{\Omega}$を考えよう
+
+\[
+\hat{\Omega}=\frac{1}{n}\sum_{i=1}^{n}z_{i}z_{i}^{\prime}\hat{e}_{i}^{2}.
+\]
+ここで、$\hat{e}_{i}$はGMM推定値から得られた残差である。$\hat{\Omega}$は$\Omega$に対する一致推定量であることが示される。
+この推定量を用いて、$\hat{W}=\hat{\Omega}^{-1}$とする。
+
+\subsection{２段階GMM推定量}
+
+以上のアイデアを実行するためには、残差$\hat{e}_{i}$を取得する必要がある。その実行方法として、以下のような\textsf{2段階GMM推定}と呼ばれる方法がある。 
+\begin{description}
+\item [{ステップ1}] 荷重行列を単位行列、すなわち$W=I$としてGMMを行い、GMM推定量$\hat{\beta}_{GMM,1st}$およびそれに基づく残差$\hat{e}_{i}=y_{i}-x_{i}^{\prime}\hat{\beta}_{GMM,1st}$を計算する。その上で、$\hat{\Omega}=\frac{1}{n}\sum_{i=1}^{n}z_{i}z_{i}^{\prime}\hat{e}_{i}$を構築する。なお、$\hat{\Omega}\stackrel{p}{\longrightarrow}\Omega$である。 
+\item [{ステップ2}] 荷重行列を $\hat{W}=\hat{\Omega}^{-1}$とし、再びGMM推定を行う。 
+\end{description}
+２段階目で得られた推定量を\textsf{漸近的に効率的なGMM推定量}(もしくは\textsf{最適GMM推定量}) $\hat{\beta}_{GMM,optimal}$と呼ぶ。
+
+一定の条件下で、$\hat{\beta}_{GMM,optimal}$の漸近分布は以下のように得られる。
+
+\[
+\sqrt{n}\left(\hat{\beta}_{GMM,optimal}-\beta\right)\stackrel{d}{\longrightarrow}N\left(0,\left(Q^{\prime}\Omega^{-1}Q\right)^{-1}\right).
+\]
+ここで得られた漸近分散行列$\left(Q^{\prime}\Omega^{-1}Q\right)^{-1}$は、通常のGMM推定量で得られるのものよりも小さい。具体的には、どのような対称かつ正定値行列$W$についても、
+\[
+\left(Q^{\prime}WQ\right)^{-1}Q^{\prime}W\Omega WQ\left(Q^{\prime}WQ\right)^{-1}\geq\left(Q^{\prime}\Omega^{-1}Q\right)^{-1},
+\]
+が「行列の意味で」成立する \footnote{$A,B$が正方行列とする。$A-B$が正定値行列であるとき、行列の意味で$A\geq B$が成立すると定義する。}
+。
+
+\subsection{特殊ケース：2段階最小2乗法}
+
+ある条件のもとで、2段階最小2乗法が漸近的に効率的なGMMの推定量と一致することを示そう。
+
+誤差項について均一分散(homoskedasticity)を仮定しよう。これは$E[e_{i}^{2}|z_{i}]=\sigma^{2}$を意味し、このとき$\Omega=\sigma^{2}E[z_{i}z_{i}^{\prime}]$となる。したがって、$\hat{W}=\left(\frac{1}{n}Z^{\prime}Z\right)^{-1}$とセットすることが、最適な荷重行列となり、このとき
+
+\begin{align*}
+\hat{\beta}_{GMM} & =\left(X^{\prime}Z\left(Z^{\prime}Z\right)^{-1}Z^{\prime}X\right)^{-1}X^{\prime}Z\left(Z^{\prime}Z\right)^{-1}Z^{\prime}Y
+\end{align*}
+となる。
+
+これは、2段階最小2乗法推定量と同じになる。というのも、2段階最小2乗法推定量$\hat{\beta}_{2SLS}$ 
+\begin{align*}
+\hat{\beta}_{2SLS}=\left(\hat{X}^{\prime}\hat{X}\right)^{-1}\hat{X}^{\prime}Y
+\end{align*}
+として与えられる。ここで$\hat{X}$は一段階目の最小二乗法から得られた説明変数(の行列)$X$の予測値であり、 
+\begin{align*}
+\hat{X}=Z\left(Z^{\prime}Z\right)^{-1}Z^{\prime}X
+\end{align*}
+である。この式を$\hat{\beta}_{2SLS}$の右辺に代入することで、上で導出した均一分散における漸近的に効率的なGMM推定量と一致することがわかるであろう。
+
+\begin{align*}
+\hat{\beta}_{2SLS} & =\left(X^{\prime}Z\left(Z^{\prime}Z\right)^{-1}Z^{\prime}X\right)^{-1}X^{\prime}Z\left(Z^{\prime}Z\right)^{-1}Z^{\prime}Y
+\end{align*}
+
+
+\section{一般ケースにおけるGMM}
+
+以上のモデルはモーメント条件がパラメターに関して線形の形で書けることを仮定していたが、ここではモーメント条件がパラメターに関して非線形に依存するケースを含んだ一般形について考えよう。
+
+モーメント条件を以下のように与える。 
+\[
+E[g(V_{i};\theta_{0})]\equiv E[g_{i}(\theta_{0})]=0.
+\]
+ここで $\theta\in\mathbb{R}^{K},$ $g$は$(L\times1)$要素、そして$V_{i}$はすべての変数を含んでいる。また$L\geq K$とする。
+
+GMM推定量は上と同様の形で定義される。 
+\[
+\hat{\theta}=\arg\min_{\theta}Q_{n}(\theta)=\bar{g}(\theta)^{\prime}\hat{W}\bar{g}(\theta).
+\]
+なお、この場合は$\hat{\theta}$について解析的に求まるとは限らず、数値計算によって数値解を探す必要がある。
+
+この一般ケースにおいても同様に一致性と漸近正規性が得られ、漸近分布は以下のように与えられる。 
+\[
+\sqrt{n}(\hat{\theta}_{GMM}-\theta_{0})\stackrel{d}{\longrightarrow}N\left(0,\left(G^{\prime}WG\right)^{-1}G^{\prime}W\Omega WG\left(G^{\prime}WG\right)^{-1}\right).
+\]
+ここで、 
+\[
+G=E\left[\left.\frac{\partial g_{i}(\theta)}{\partial\theta^{\prime}}\right|_{\theta=\theta_{0}}\right]
+\]
+であり、$\Omega=E[g_{i}(\theta_{0})g_{i}(\theta_{0})^{\prime}]$である。
+
+なお、荷重行列の選択については、上の議論と同様に$\hat{W}=\Omega^{-1}$となる。2段階GMMを用いることで、漸近的に効率的なGMM推定量が得られる。
+\end{document}

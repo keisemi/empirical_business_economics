@@ -1,0 +1,793 @@
+#LyX 2.4 created this file. For more info see https://www.lyx.org/
+\lyxformat 620
+\begin_document
+\begin_header
+\save_transient_properties true
+\origin unavailable
+\textclass jsarticle
+\begin_preamble
+%\usepackage{fullpage}
+\usepackage{natbib}
+\usepackage{dcolumn}
+
+%\usepackage{doublespace}
+\usepackage[dvipdfmx, bookmarkstype=toc, colorlinks=true, urlcolor=black, linkcolor=blue, citecolor=red, linktocpage=false, bookmarks=true, bookmarksnumbered=true]{hyperref}
+
+\usepackage{pxjahyper}
+\end_preamble
+\options nomag
+\use_default_options true
+\begin_modules
+eqs-within-sections
+theorems-ams
+theorems-ams-extended
+\end_modules
+\maintain_unincluded_children no
+\language japanese
+\language_package default
+\inputencoding utf8
+\fontencoding default
+\font_roman "default" "default"
+\font_sans "default" "default"
+\font_typewriter "default" "default"
+\font_math "auto" "auto"
+\font_default_family default
+\use_non_tex_fonts false
+\font_sc false
+\font_roman_osf false
+\font_sans_osf false
+\font_typewriter_osf false
+\font_sf_scale 100 100
+\font_tt_scale 100 100
+\use_microtype false
+\use_dash_ligatures true
+\graphics dvipdfmx
+\default_output_format default
+\output_sync 1
+\bibtex_command default
+\index_command default
+\paperfontsize 11
+\spacing onehalf
+\use_hyperref false
+\papersize letter
+\use_geometry true
+\use_package amsmath 1
+\use_package amssymb 1
+\use_package cancel 1
+\use_package esint 0
+\use_package mathdots 1
+\use_package mathtools 1
+\use_package mhchem 1
+\use_package stackrel 1
+\use_package stmaryrd 1
+\use_package undertilde 1
+\cite_engine basic
+\cite_engine_type default
+\biblio_style plain
+\use_bibtopic false
+\use_indices false
+\paperorientation portrait
+\suppress_date false
+\justification true
+\use_refstyle 1
+\use_formatted_ref 0
+\use_minted 0
+\use_lineno 0
+\index Index
+\shortcut idx
+\color #008000
+\end_index
+\leftmargin 1in
+\topmargin 1in
+\rightmargin 1in
+\bottommargin 1in
+\secnumdepth 3
+\tocdepth 3
+\paragraph_separation indent
+\paragraph_indentation default
+\is_math_indent 0
+\math_numbering_side default
+\quotes_style cjk
+\dynamic_quotes 0
+\papercolumns 1
+\papersides 1
+\paperpagestyle default
+\tablestyle default
+\tracking_changes false
+\output_changes false
+\change_bars false
+\postpone_fragile_content false
+\html_math_output 0
+\html_css_as_file 0
+\html_be_strict false
+\docbook_table_output 0
+\docbook_mathml_prefix 1
+\end_header
+
+\begin_body
+
+\begin_layout Title
+第2章付録:
+ 最尤推定法
+\end_layout
+
+\begin_layout Date
+最終更新：
+ 
+\begin_inset ERT
+status collapsed
+
+\begin_layout Plain Layout
+
+
+\backslash
+today
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\align right
+\begin_inset ERT
+status collapsed
+
+\begin_layout Plain Layout
+
+
+\backslash
+begin{small}
+\end_layout
+
+\end_inset
+
+ 上武康亮・遠山祐太・若森直樹・渡辺安虎
+\begin_inset Newline newline
+\end_inset
+
+「実証ビジネス・エコノミクス」 
+\begin_inset Newline newline
+\end_inset
+
+ 第2章「消費者の購買パターンを浮き彫りにする」
+\begin_inset Newline newline
+\end_inset
+
+の付録
+\begin_inset Newline newline
+\end_inset
+
+ 
+\begin_inset VSpace -20baselineskip%
+\end_inset
+
+ ©上武康亮・遠山祐太・若森直樹・渡辺安虎 
+\begin_inset ERT
+status collapsed
+
+\begin_layout Plain Layout
+
+
+\backslash
+end{small}
+\end_layout
+
+\end_inset
+
+ 
+\end_layout
+
+\begin_layout Section
+最尤法の解説
+\end_layout
+
+\begin_layout Standard
+本付録においては最尤法 (Maximum Likelihood Estimation,
+ MLE) の概略について解説を行う。
+最尤法は第2章で扱う離散選択モデルを含め、非線形モデルのパラメタ推定において幅広く用いられている手法である。
+詳細な解説については以下の教科書等を参考にされたい。
+
+\end_layout
+
+\begin_layout Itemize
+末石直也 (2015)『計量経済学：
+ミクロデータ分析へのいざない』日本評論社。
+ 
+\end_layout
+
+\begin_layout Itemize
+Hayashi,
+ F (2000) 
+\shape italic
+Econometrics
+\shape default
+,
+ Princeton University Prress.
+ 
+\end_layout
+
+\begin_layout Itemize
+Newey,
+ W.
+ K.
+ and McFadden,
+ D.
+ (1994) 
+\begin_inset Quotes eld
+\end_inset
+
+Large Sample Estimation and Hypothesis Testing,
+\begin_inset ERT
+status collapsed
+
+\begin_layout Plain Layout
+
+"
+\end_layout
+
+\end_inset
+
+ 
+\shape italic
+Handbook of Econometrics
+\shape default
+,
+ Vol.4,
+ North Holland:
+ 2111–2245.
+ 
+\end_layout
+
+\begin_layout Subsection
+最尤推定量の導入
+\end_layout
+
+\begin_layout Standard
+ある確率変数
+\begin_inset Formula $Y$
+\end_inset
+
+を考えよう。
+この確率変数
+\begin_inset Formula $Y$
+\end_inset
+
+は密度関数
+\begin_inset Formula $f(y;\theta)$
+\end_inset
+
+を持ち、
+\begin_inset Formula $\theta$
+\end_inset
+
+は未知パラメタとする。
+今、データとして
+\begin_inset Formula $\{y_{i}\}_{i=1}^{n}$
+\end_inset
+
+が存在し、各観測
+\begin_inset Formula $y_{i}$
+\end_inset
+
+は独立かつ同一(i.i.d.)に密度関数
+\begin_inset Formula $f(y;\theta_{0})$
+\end_inset
+
+から生成されているとしよう。
+ここで、
+\begin_inset Formula $\theta_{0}$
+\end_inset
+
+は真のパラメタであり、データからこのパラメタを推定することが目標である。
+
+\end_layout
+
+\begin_layout Standard
+ここで、手元のデータ
+\begin_inset Formula $\{y_{i}\}_{i=1}^{N}$
+\end_inset
+
+を観察する確率をパラメタ
+\begin_inset Formula $\theta$
+\end_inset
+
+の関数として表現する尤度関数を考えよう。
+尤度関数
+\begin_inset Formula $L(\theta)$
+\end_inset
+
+は以下のように定義される。
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\begin{align*}
+L(\theta) & \equiv\prod_{i=1}^{n}f(y_{i};\theta).
+\end{align*}
+
+\end_inset
+
+また、尤度関数について自然対数を取った対数尤度を以下のように定義する
+\begin_inset Formula 
+\[
+l(\theta)\equiv\log L(\theta)=\sum_{i=1}^{n}\log f(y_{i};\theta).
+\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+最尤推定量(Maximum Likelihood Estimator)は、対数尤度を最大化するようなパラメタ
+\begin_inset Formula $\theta$
+\end_inset
+
+として定義される。
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\[
+\hat{\theta}_{n}=\operatorname{argmax}_{\theta\in\Theta}\frac{1}{n}\sum_{i=1}^{n}\log f(y_{i};\theta).
+\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Subsection
+最尤推定量の例
+\end_layout
+
+\begin_layout Standard
+最尤推定量に関するいくつかの例を見ていこう。
+
+\end_layout
+
+\begin_layout Subsubsection
+コイントス
+\end_layout
+
+\begin_layout Standard
+確率変数
+\begin_inset Formula $Y$
+\end_inset
+
+として、確率
+\begin_inset Formula $p$
+\end_inset
+
+で
+\begin_inset Formula $1$
+\end_inset
+
+,確率
+\begin_inset Formula $1-p$
+\end_inset
+
+で0をとるものを考える。
+すなわち、
+\begin_inset Formula $P(Y=1)=p,P(Y=0)=1-p$
+\end_inset
+
+とする。
+今、データとして、
+\begin_inset Formula $\{y_{i}\}_{i=1}^{n}$
+\end_inset
+
+があるとしよう。
+このとき、尤度関数は
+\begin_inset Formula 
+\[
+L(\theta)=\prod_{i=1}^{n}P(Y=y_{i})=p^{N_{1}}(1-p)^{n-N_{1}}
+\]
+
+\end_inset
+
+と与えられる。
+ここで、
+\begin_inset Formula $N_{0},N_{1}$
+\end_inset
+
+はそれぞれ、
+\begin_inset Formula $Y=0,Y=1$
+\end_inset
+
+となるような観測の個数である。
+すなわち、
+\begin_inset Formula $N_{0}=\sum_{i=1}^{n}\mathrm{1}\{y_{i}=0\},N_{1}=\sum_{i=1}^{n}\mathrm{1}\{y_{i}=1\}$
+\end_inset
+
+である。
+
+\end_layout
+
+\begin_layout Standard
+対数尤度関数は
+\begin_inset Formula 
+\[
+l(\theta)=N_{1}\log(p)+(N-N_{1})\log(1-p)
+\]
+
+\end_inset
+
+となる。
+この対数尤度関数をパラメタ
+\begin_inset Formula $p$
+\end_inset
+
+について微分して一階条件を解くと、
+\begin_inset Formula 
+\[
+\hat{p}=\frac{N_{1}}{n}
+\]
+
+\end_inset
+
+が得られる。
+これは、
+\begin_inset Formula $n$
+\end_inset
+
+回の試行の中で表が出た回数が
+\begin_inset Formula $N_{1}$
+\end_inset
+
+のとき、表が出る確率の推定量を、表が出た回数の比率として与えられることを意味する。
+
+\end_layout
+
+\begin_layout Subsubsection
+正規分布の平均と分散
+\end_layout
+
+\begin_layout Standard
+確率変数
+\begin_inset Formula $y\sim N(\mu,\sigma^{2})$
+\end_inset
+
+を考える。
+未知パラメタを
+\begin_inset Formula $\theta=(\mu,\sigma^{2})$
+\end_inset
+
+とする。
+今、正規分布からi.i.d.に生成されたデータセット
+\begin_inset Formula $\{y_{i}\}_{i=1}^{n}$
+\end_inset
+
+があるとき、尤度関数は以下のように与えられる。
+
+\begin_inset Formula 
+\begin{align*}
+L(\theta) & =\prod_{i=1}^{n}f(y_{i};\theta)=\prod_{i=1}^{n}\frac{1}{\sqrt{2\pi\sigma^{2}}}\exp\left(-\frac{(y_{i}-\mu)^{2}}{2\sigma^{2}}\right).
+\end{align*}
+
+\end_inset
+
+また対数尤度は
+\begin_inset Formula 
+\begin{align*}
+\log L(\theta) & =\sum_{i=1}^{n}\left\{ -\frac{1}{2}\log2\pi\sigma^{2}-\frac{(y_{i}-\mu)^{2}}{2\sigma^{2}}\right\} \\
+ & =-\frac{n}{2}\log2\pi-\frac{n}{2}\log\sigma^{2}-\sum_{i=1}^{n}\frac{\left(y_{i}-\mu\right)^{2}}{2\sigma^{2}}.
+\end{align*}
+
+\end_inset
+
+対数尤度を最大化するようなパラメタについて一回条件を用いて求めよう。
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\begin{align*}
+\frac{\partial\log L(\theta)}{\partial\sigma^{2}} & =-\frac{n}{2}\frac{1}{\sigma^{2}}+\frac{1}{2\sigma^{4}}\sum_{i=1}^{n}\left(y_{i}-\mu\right)^{2}=0,\\
+\frac{\partial\log L(\theta)}{\partial\mu} & =\frac{1}{\sigma^{2}}\sum_{i=1}^{n}(y_{i}-\mu)=0.
+\end{align*}
+
+\end_inset
+
+これらの式を解くと、最尤推定量は
+\begin_inset Formula 
+\begin{align*}
+\hat{\mu} & =\frac{1}{n}\sum_{i=1}^{n}y_{i},\\
+\hat{\sigma}^{2} & =\frac{1}{n}\sum_{i=1}^{n}\left(y_{i}-\bar{y}\right)^{2}.
+\end{align*}
+
+\end_inset
+
+となる。
+ここで
+\begin_inset Formula $\hat{\mu}$
+\end_inset
+
+は標本平均に一致し、また
+\begin_inset Formula $\hat{\sigma}^{2}$
+\end_inset
+
+は標本分散に一致する。
+
+\end_layout
+
+\begin_layout Subsubsection
+誤差項に正規分布を仮定した線形回帰モデル
+\end_layout
+
+\begin_layout Standard
+以下の線形回帰モデルを考えよう。
+
+\begin_inset Formula 
+\[
+y_{i}=x_{i}'\beta+u_{i},\quad u_{i}\sim N\left(0,\sigma^{2}\right).
+\]
+
+\end_inset
+
+なお、
+\begin_inset Formula $x_{i}=(x_{1i},\ldots,x_{Ki})',\beta=(\beta_{1},\ldots,\beta_{K})'$
+\end_inset
+
+とする。
+ここでは誤差項に正規分布を仮定している。
+推定するパラメタは
+\begin_inset Formula $\theta=\left(\beta,\sigma^{2}\right)$
+\end_inset
+
+としてまとめられる。
+
+\end_layout
+
+\begin_layout Standard
+ここでは説明変数
+\begin_inset Formula $x_{i}$
+\end_inset
+
+について条件付をした、被説明変数
+\begin_inset Formula $y_{i}$
+\end_inset
+
+に関する尤度関数を考えよう。
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\[
+L(\theta|x_{i})=\prod_{i=1}^{n}f(y_{i};\theta)=\prod_{i=1}^{n}\frac{1}{\sqrt{2\pi\sigma^{2}}}\exp\left(-\frac{(y_{i}-x_{i}'\beta)^{2}}{2\sigma^{2}}\right).
+\]
+
+\end_inset
+
+対数尤度
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\begin{align*}
+\log L(\theta|x_{i}) & =\sum_{i=1}^{n}\left\{ -\frac{1}{2}\log2\pi\sigma^{2}-\frac{(y_{i}-x_{i}'\beta)^{2}}{2\sigma^{2}}\right\} \\
+ & =-\frac{n}{2}\log2\pi-\frac{n}{2}\log\sigma^{2}-\sum_{i=1}^{n}\frac{\left(y_{i}-x_{i}'\beta\right)^{2}}{2\sigma^{2}}.
+\end{align*}
+
+\end_inset
+
+対数尤度を最大化するべく、一回条件を考えると
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\begin{align*}
+\frac{\partial\log L(\theta)}{\partial\sigma^{2}} & =-\frac{n}{2}\frac{1}{\sigma^{2}}+\frac{1}{2\sigma^{4}}\sum_{i=1}^{n}\left(y_{i}-x_{i}'\beta\right)^{2}=0,\\
+\frac{\partial\log L(\theta)}{\partial\beta} & =\frac{1}{\sigma^{2}}\sum_{i=1}^{n}x_{i}(y_{i}-x_{i}'\beta)=0.
+\end{align*}
+
+\end_inset
+
+ここで回帰係数
+\begin_inset Formula $\beta$
+\end_inset
+
+に着目すると
+\begin_inset Formula 
+\begin{align*}
+\hat{\beta}^{MLE} & =\left(\sum_{i=1}^{n}x_{i}x_{i}'\right)^{-1}\sum_{i=1}^{n}x_{i}y_{i}\\
+ & =\hat{\beta}^{OLS}.
+\end{align*}
+
+\end_inset
+
+となり、最小二乗推定量と同じものが得られる。
+
+\end_layout
+
+\begin_layout Subsection
+最尤推定量の性質
+\end_layout
+
+\begin_layout Standard
+最尤推定量は一定の仮定のもとで、一致性や漸近正規性などの漸近的性質を持つ。
+以下ではパラメタを
+\begin_inset Formula $K$
+\end_inset
+
+次元のベクトル
+\begin_inset Formula $\theta=(\theta_{1},\ldots,\theta_{K})'\in\mathbb{R}^{K}$
+\end_inset
+
+とする。
+
+\end_layout
+
+\begin_layout Standard
+まず一致性として、最尤推定量はサンプルサイズが大きくなるに連れて真のパラメタ
+\begin_inset Formula $\theta_{0}$
+\end_inset
+
+へ確率収束する。
+
+\begin_inset Formula 
+\[
+\hat{\theta}\stackrel{p}{\longrightarrow}\theta_{0}
+\]
+
+\end_inset
+
+また漸近正規性として以下の式が成立する
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\[
+\begin{aligned}\sqrt{n}\left(\hat{\theta}-\theta_{0}\right) & \stackrel{d}{\longrightarrow}N(0,\underbrace{V}_{(K\times K)}),\end{aligned}
+\]
+
+\end_inset
+
+ここで、
+\begin_inset Formula $(K\times K)$
+\end_inset
+
+行列
+\begin_inset Formula $V$
+\end_inset
+
+は
+\begin_inset Formula $V=H^{-1}$
+\end_inset
+
+であり、
+\begin_inset Formula 
+\begin{align*}
+H & =-E\left[\left.\frac{\partial^{2}\log f(y_{i};\theta)}{\partial\theta\partial\theta'}\right|_{\theta=\theta_{0}}\right]\\
+\end{align*}
+
+\end_inset
+
+として与えられる。
+行列
+\begin_inset Formula $H$
+\end_inset
+
+は期待ヘシアンと呼ばれる。
+なお、ヘシアンの中身は
+\begin_inset Formula 
+\[
+\underbrace{\frac{\partial^{2}\log f(y_{i};\theta)}{\partial\theta\partial\theta'}}_{(K\times K)}=\left(\begin{array}{ccc}
+\frac{\partial^{2}\log f(y_{i};\theta)}{\partial\theta_{1}\partial\theta_{1}} & \cdots & \frac{\partial^{2}\log f(y_{i};\theta)}{\partial\theta_{1}\partial\theta_{K}}\\
+\vdots & \ddots & \vdots\\
+\frac{\partial^{2}\log f(y_{i};\theta)}{\partial\theta_{K}\partial\theta_{1}} & \cdots & \frac{\partial^{2}\log f(y_{i};\theta)}{\partial\theta_{K}\partial\theta_{K}}
+\end{array}\right)
+\]
+
+\end_inset
+
+となる。
+
+\begin_inset Foot
+status open
+
+\begin_layout Plain Layout
+なお、分散共分散行列
+\begin_inset Formula $V$
+\end_inset
+
+はしばしば、
+\begin_inset Formula $V=H^{-1}IH^{-1}$
+\end_inset
+
+ とも与えられる。
+ここで、行列
+\begin_inset Formula $I$
+\end_inset
+
+は
+\begin_inset Formula $\underbrace{I}_{(K\times K)}=E\left[\left.\frac{\partial\log f(y_{i};\theta)}{\partial\theta}\right|_{\theta=\theta_{0}}\left.\frac{\partial\log f(y_{i};\theta)}{\partial\theta'}\right|_{\theta=\theta_{0}}\right]=E\left(\begin{array}{ccc}
+\frac{\partial\log f(y_{i};\theta)}{\partial\theta_{1}}\frac{\partial\log f(y_{i};\theta)}{\partial\theta_{1}} & \cdots & \frac{\partial\log f(y_{i};\theta)}{\partial\theta_{1}}\frac{\partial\log f(y_{i};\theta)}{\partial\theta_{K}}\\
+\vdots & \ddots & \vdots\\
+\frac{\partial\log f(y_{i};\theta)}{\partial\theta_{K}}\frac{\partial\log f(y_{i};\theta)}{\partial\theta_{1}} & \cdots & \frac{\partial\log f(y_{i};\theta)}{\partial\theta_{K}}\frac{\partial\log f(y_{i};\theta)}{\partial\theta_{K}}
+\end{array}\right)$
+\end_inset
+
+である。
+一定の条件下(定式化の正しさ及びいくつかの正則条件)では、情報等式(information equality) 
+\begin_inset Formula $I=H^{-1}$
+\end_inset
+
+が成立するため、
+\begin_inset Formula $V=H^{-1}$
+\end_inset
+
+となる。
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+この結果にもとづいて、漸近分散の計算を以下のように行うことができる。
+まず、漸近分散の推定量として以下の
+\begin_inset Formula $\hat{A}$
+\end_inset
+
+を考える。
+
+\begin_inset Formula 
+\begin{align*}
+\hat{A} & =-\frac{1}{n}\sum_{i=1}^{n}\frac{\partial^{2}}{\partial\theta\partial\theta}\log f\left(y_{i},\hat{\theta}\right)\\
+ & =-\frac{\partial^{2}}{\partial\theta\partial\theta}\frac{1}{N}l\left(\hat{\theta}\right)
+\end{align*}
+
+\end_inset
+
+これは目的関数(をサンプルサイズで割った値)のヘシアンに相当する。
+なお、目的関数（対数尤度）のヘシアンは、数値計算などにおいて付随的に計算されることが多い。
+
+\begin_inset Foot
+status collapsed
+
+\begin_layout Plain Layout
+第2章における離散選択モデルの推定のコードを参照されたい。
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+よって漸近分散の推定量
+\begin_inset Formula $ase(\hat{\theta})$
+\end_inset
+
+は、
+\begin_inset Formula 
+\[
+ase(\hat{\theta})=\sqrt{diag(\frac{1}{n}\hat{A}^{-1})}
+\]
+
+\end_inset
+
+として与えられる。
+ここで、
+\begin_inset Formula $diag(X)$
+\end_inset
+
+は行列
+\begin_inset Formula $X$
+\end_inset
+
+の対角要素のみを抜き出したベクトルである。
+
+\end_layout
+
+\end_body
+\end_document
