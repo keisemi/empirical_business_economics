@@ -1,0 +1,748 @@
+<!doctype html>
+<html>
+<head>
+<meta charset='UTF-8'><meta name='viewport' content='width=device-width initial-scale=1'>
+
+<link href='https://fonts.loli.net/css?family=Open+Sans:400italic,700italic,700,400&subset=latin,latin-ext' rel='stylesheet' type='text/css' /><style type='text/css'>html {overflow-x: initial !important;}:root { --bg-color:#ffffff; --text-color:#333333; --select-text-bg-color:#B5D6FC; --select-text-font-color:auto; --monospace:"Lucida Console",Consolas,"Courier",monospace; --title-bar-height:20px; }
+.mac-os-11 { --title-bar-height:28px; }
+html { font-size: 14px; background-color: var(--bg-color); color: var(--text-color); font-family: "Helvetica Neue", Helvetica, Arial, sans-serif; -webkit-font-smoothing: antialiased; }
+body { margin: 0px; padding: 0px; height: auto; inset: 0px; font-size: 1rem; line-height: 1.42857; overflow-x: hidden; background: inherit; tab-size: 4; }
+iframe { margin: auto; }
+a.url { word-break: break-all; }
+a:active, a:hover { outline: 0px; }
+.in-text-selection, ::selection { text-shadow: none; background: var(--select-text-bg-color); color: var(--select-text-font-color); }
+#write { margin: 0px auto; height: auto; width: inherit; word-break: normal; overflow-wrap: break-word; position: relative; white-space: normal; overflow-x: visible; padding-top: 36px; }
+#write.first-line-indent p { text-indent: 2em; }
+#write.first-line-indent li p, #write.first-line-indent p * { text-indent: 0px; }
+#write.first-line-indent li { margin-left: 2em; }
+.for-image #write { padding-left: 8px; padding-right: 8px; }
+body.typora-export { padding-left: 30px; padding-right: 30px; }
+.typora-export .footnote-line, .typora-export li, .typora-export p { white-space: pre-wrap; }
+.typora-export .task-list-item input { pointer-events: none; }
+@media screen and (max-width: 500px) {
+  body.typora-export { padding-left: 0px; padding-right: 0px; }
+  #write { padding-left: 20px; padding-right: 20px; }
+  .CodeMirror-sizer { margin-left: 0px !important; }
+  .CodeMirror-gutters { display: none !important; }
+}
+#write li > figure:last-child { margin-bottom: 0.5rem; }
+#write ol, #write ul { position: relative; }
+img { max-width: 100%; vertical-align: middle; image-orientation: from-image; }
+button, input, select, textarea { color: inherit; font: inherit; }
+input[type="checkbox"], input[type="radio"] { line-height: normal; padding: 0px; }
+*, ::after, ::before { box-sizing: border-box; }
+#write h1, #write h2, #write h3, #write h4, #write h5, #write h6, #write p, #write pre { width: inherit; }
+#write h1, #write h2, #write h3, #write h4, #write h5, #write h6, #write p { position: relative; }
+p { line-height: inherit; }
+h1, h2, h3, h4, h5, h6 { break-after: avoid-page; break-inside: avoid; orphans: 4; }
+p { orphans: 4; }
+h1 { font-size: 2rem; }
+h2 { font-size: 1.8rem; }
+h3 { font-size: 1.6rem; }
+h4 { font-size: 1.4rem; }
+h5 { font-size: 1.2rem; }
+h6 { font-size: 1rem; }
+.md-math-block, .md-rawblock, h1, h2, h3, h4, h5, h6, p { margin-top: 1rem; margin-bottom: 1rem; }
+.hidden { display: none; }
+.md-blockmeta { color: rgb(204, 204, 204); font-weight: 700; font-style: italic; }
+a { cursor: pointer; }
+sup.md-footnote { padding: 2px 4px; background-color: rgba(238, 238, 238, 0.7); color: rgb(85, 85, 85); border-radius: 4px; cursor: pointer; }
+sup.md-footnote a, sup.md-footnote a:hover { color: inherit; text-transform: inherit; text-decoration: inherit; }
+#write input[type="checkbox"] { cursor: pointer; width: inherit; height: inherit; }
+figure { overflow-x: auto; margin: 1.2em 0px; max-width: calc(100% + 16px); padding: 0px; }
+figure > table { margin: 0px; }
+tr { break-inside: avoid; break-after: auto; }
+thead { display: table-header-group; }
+table { border-collapse: collapse; border-spacing: 0px; width: 100%; overflow: auto; break-inside: auto; text-align: left; }
+table.md-table td { min-width: 32px; }
+.CodeMirror-gutters { border-right: 0px; background-color: inherit; }
+.CodeMirror-linenumber { user-select: none; }
+.CodeMirror { text-align: left; }
+.CodeMirror-placeholder { opacity: 0.3; }
+.CodeMirror pre { padding: 0px 4px; }
+.CodeMirror-lines { padding: 0px; }
+div.hr:focus { cursor: none; }
+#write pre { white-space: pre-wrap; }
+#write.fences-no-line-wrapping pre { white-space: pre; }
+#write pre.ty-contain-cm { white-space: normal; }
+.CodeMirror-gutters { margin-right: 4px; }
+.md-fences { font-size: 0.9rem; display: block; break-inside: avoid; text-align: left; overflow: visible; white-space: pre; background: inherit; position: relative !important; }
+.md-fences-adv-panel { width: 100%; margin-top: 10px; text-align: center; padding-top: 0px; padding-bottom: 8px; overflow-x: auto; }
+#write .md-fences.mock-cm { white-space: pre-wrap; }
+.md-fences.md-fences-with-lineno { padding-left: 0px; }
+#write.fences-no-line-wrapping .md-fences.mock-cm { white-space: pre; overflow-x: auto; }
+.md-fences.mock-cm.md-fences-with-lineno { padding-left: 8px; }
+.CodeMirror-line, twitterwidget { break-inside: avoid; }
+.footnotes { opacity: 0.8; font-size: 0.9rem; margin-top: 1em; margin-bottom: 1em; }
+.footnotes + .footnotes { margin-top: 0px; }
+.md-reset { margin: 0px; padding: 0px; border: 0px; outline: 0px; vertical-align: top; background: 0px 0px; text-decoration: none; text-shadow: none; float: none; position: static; width: auto; height: auto; white-space: nowrap; cursor: inherit; -webkit-tap-highlight-color: transparent; line-height: normal; font-weight: 400; text-align: left; box-sizing: content-box; direction: ltr; }
+li div { padding-top: 0px; }
+blockquote { margin: 1rem 0px; }
+li .mathjax-block, li p { margin: 0.5rem 0px; }
+li blockquote { margin: 1rem 0px; }
+li { margin: 0px; position: relative; }
+blockquote > :last-child { margin-bottom: 0px; }
+blockquote > :first-child, li > :first-child { margin-top: 0px; }
+.footnotes-area { color: rgb(136, 136, 136); margin-top: 0.714rem; padding-bottom: 0.143rem; white-space: normal; }
+#write .footnote-line { white-space: pre-wrap; }
+@media print {
+  body, html { border: 1px solid transparent; height: 99%; break-after: avoid; break-before: avoid; font-variant-ligatures: no-common-ligatures; }
+  #write { margin-top: 0px; padding-top: 0px; border-color: transparent !important; }
+  .typora-export * { -webkit-print-color-adjust: exact; }
+  .typora-export #write { break-after: avoid; }
+  .typora-export #write::after { height: 0px; }
+  .is-mac table { break-inside: avoid; }
+  .typora-export-show-outline .typora-export-sidebar { display: none; }
+}
+.footnote-line { margin-top: 0.714em; font-size: 0.7em; }
+a img, img a { cursor: pointer; }
+pre.md-meta-block { font-size: 0.8rem; min-height: 0.8rem; white-space: pre-wrap; background: rgb(204, 204, 204); display: block; overflow-x: hidden; }
+p > .md-image:only-child:not(.md-img-error) img, p > img:only-child { display: block; margin: auto; }
+#write.first-line-indent p > .md-image:only-child:not(.md-img-error) img { left: -2em; position: relative; }
+p > .md-image:only-child { display: inline-block; width: 100%; }
+#write .MathJax_Display { margin: 0.8em 0px 0px; }
+.md-math-block { width: 100%; }
+.md-math-block:not(:empty)::after { display: none; }
+.MathJax_ref { fill: currentcolor; }
+[contenteditable="true"]:active, [contenteditable="true"]:focus, [contenteditable="false"]:active, [contenteditable="false"]:focus { outline: 0px; box-shadow: none; }
+.md-task-list-item { position: relative; list-style-type: none; }
+.task-list-item.md-task-list-item { padding-left: 0px; }
+.md-task-list-item > input { position: absolute; top: 0px; left: 0px; margin-left: -1.2em; margin-top: calc(1em - 10px); border: none; }
+.math { font-size: 1rem; }
+.md-toc { min-height: 3.58rem; position: relative; font-size: 0.9rem; border-radius: 10px; }
+.md-toc-content { position: relative; margin-left: 0px; }
+.md-toc-content::after, .md-toc::after { display: none; }
+.md-toc-item { display: block; color: rgb(65, 131, 196); }
+.md-toc-item a { text-decoration: none; }
+.md-toc-inner:hover { text-decoration: underline; }
+.md-toc-inner { display: inline-block; cursor: pointer; }
+.md-toc-h1 .md-toc-inner { margin-left: 0px; font-weight: 700; }
+.md-toc-h2 .md-toc-inner { margin-left: 2em; }
+.md-toc-h3 .md-toc-inner { margin-left: 4em; }
+.md-toc-h4 .md-toc-inner { margin-left: 6em; }
+.md-toc-h5 .md-toc-inner { margin-left: 8em; }
+.md-toc-h6 .md-toc-inner { margin-left: 10em; }
+@media screen and (max-width: 48em) {
+  .md-toc-h3 .md-toc-inner { margin-left: 3.5em; }
+  .md-toc-h4 .md-toc-inner { margin-left: 5em; }
+  .md-toc-h5 .md-toc-inner { margin-left: 6.5em; }
+  .md-toc-h6 .md-toc-inner { margin-left: 8em; }
+}
+a.md-toc-inner { font-size: inherit; font-style: inherit; font-weight: inherit; line-height: inherit; }
+.footnote-line a:not(.reversefootnote) { color: inherit; }
+.md-attr { display: none; }
+.md-fn-count::after { content: "."; }
+code, pre, samp, tt { font-family: var(--monospace); }
+kbd { margin: 0px 0.1em; padding: 0.1em 0.6em; font-size: 0.8em; color: rgb(36, 39, 41); background: rgb(255, 255, 255); border: 1px solid rgb(173, 179, 185); border-radius: 3px; box-shadow: rgba(12, 13, 14, 0.2) 0px 1px 0px, rgb(255, 255, 255) 0px 0px 0px 2px inset; white-space: nowrap; vertical-align: middle; }
+.md-comment { color: rgb(162, 127, 3); opacity: 0.8; font-family: var(--monospace); }
+code { text-align: left; vertical-align: initial; }
+a.md-print-anchor { white-space: pre !important; border-width: initial !important; border-style: none !important; border-color: initial !important; display: inline-block !important; position: absolute !important; width: 1px !important; right: 0px !important; outline: 0px !important; background: 0px 0px !important; text-decoration: initial !important; text-shadow: initial !important; }
+.os-windows.monocolor-emoji .md-emoji { font-family: "Segoe UI Symbol", sans-serif; }
+.md-diagram-panel > svg { max-width: 100%; }
+[lang="flow"] svg, [lang="mermaid"] svg { max-width: 100%; height: auto; }
+[lang="mermaid"] .node text { font-size: 1rem; }
+table tr th { border-bottom: 0px; }
+video { max-width: 100%; display: block; margin: 0px auto; }
+iframe { max-width: 100%; width: 100%; border: none; }
+.highlight td, .highlight tr { border: 0px; }
+mark { background: rgb(255, 255, 0); color: rgb(0, 0, 0); }
+.md-html-inline .md-plain, .md-html-inline strong, mark .md-inline-math, mark strong { color: inherit; }
+.md-expand mark .md-meta { opacity: 0.3 !important; }
+mark .md-meta { color: rgb(0, 0, 0); }
+@media print {
+  .typora-export h1, .typora-export h2, .typora-export h3, .typora-export h4, .typora-export h5, .typora-export h6 { break-inside: avoid; }
+}
+.md-diagram-panel .messageText { stroke: none !important; }
+.md-diagram-panel .start-state { fill: var(--node-fill); }
+.md-diagram-panel .edgeLabel rect { opacity: 1 !important; }
+.md-fences.md-fences-math { font-size: 1em; }
+.md-fences-advanced:not(.md-focus) { padding: 0px; white-space: nowrap; border: 0px; }
+.md-fences-advanced:not(.md-focus) { background: inherit; }
+.typora-export-show-outline .typora-export-content { max-width: 1440px; margin: auto; display: flex; flex-direction: row; }
+.typora-export-sidebar { width: 300px; font-size: 0.8rem; margin-top: 80px; margin-right: 18px; }
+.typora-export-show-outline #write { --webkit-flex:2; flex: 2 1 0%; }
+.typora-export-sidebar .outline-content { position: fixed; top: 0px; max-height: 100%; overflow: hidden auto; padding-bottom: 30px; padding-top: 60px; width: 300px; }
+@media screen and (max-width: 1024px) {
+  .typora-export-sidebar, .typora-export-sidebar .outline-content { width: 240px; }
+}
+@media screen and (max-width: 800px) {
+  .typora-export-sidebar { display: none; }
+}
+.outline-content li, .outline-content ul { margin-left: 0px; margin-right: 0px; padding-left: 0px; padding-right: 0px; list-style: none; }
+.outline-content ul { margin-top: 0px; margin-bottom: 0px; }
+.outline-content strong { font-weight: 400; }
+.outline-expander { width: 1rem; height: 1.42857rem; position: relative; display: table-cell; vertical-align: middle; cursor: pointer; padding-left: 4px; }
+.outline-expander::before { content: ""; position: relative; font-family: Ionicons; display: inline-block; font-size: 8px; vertical-align: middle; }
+.outline-item { padding-top: 3px; padding-bottom: 3px; cursor: pointer; }
+.outline-expander:hover::before { content: ""; }
+.outline-h1 > .outline-item { padding-left: 0px; }
+.outline-h2 > .outline-item { padding-left: 1em; }
+.outline-h3 > .outline-item { padding-left: 2em; }
+.outline-h4 > .outline-item { padding-left: 3em; }
+.outline-h5 > .outline-item { padding-left: 4em; }
+.outline-h6 > .outline-item { padding-left: 5em; }
+.outline-label { cursor: pointer; display: table-cell; vertical-align: middle; text-decoration: none; color: inherit; }
+.outline-label:hover { text-decoration: underline; }
+.outline-item:hover { border-color: rgb(245, 245, 245); background-color: var(--item-hover-bg-color); }
+.outline-item:hover { margin-left: -28px; margin-right: -28px; border-left: 28px solid transparent; border-right: 28px solid transparent; }
+.outline-item-single .outline-expander::before, .outline-item-single .outline-expander:hover::before { display: none; }
+.outline-item-open > .outline-item > .outline-expander::before { content: ""; }
+.outline-children { display: none; }
+.info-panel-tab-wrapper { display: none; }
+.outline-item-open > .outline-children { display: block; }
+.typora-export .outline-item { padding-top: 1px; padding-bottom: 1px; }
+.typora-export .outline-item:hover { margin-right: -8px; border-right: 8px solid transparent; }
+.typora-export .outline-expander::before { content: "+"; font-family: inherit; top: -1px; }
+.typora-export .outline-expander:hover::before, .typora-export .outline-item-open > .outline-item > .outline-expander::before { content: "−"; }
+.typora-export-collapse-outline .outline-children { display: none; }
+.typora-export-collapse-outline .outline-item-open > .outline-children, .typora-export-no-collapse-outline .outline-children { display: block; }
+.typora-export-no-collapse-outline .outline-expander::before { content: "" !important; }
+.typora-export-show-outline .outline-item-active > .outline-item .outline-label { font-weight: 700; }
+.md-inline-math-container mjx-container { zoom: 0.95; }
+
+
+:root {
+    --side-bar-bg-color: #fafafa;
+    --control-text-color: #777;
+}
+
+@include-when-export url(https://fonts.loli.net/css?family=Open+Sans:400italic,700italic,700,400&subset=latin,latin-ext);
+
+/* open-sans-regular - latin-ext_latin */
+  /* open-sans-italic - latin-ext_latin */
+    /* open-sans-700 - latin-ext_latin */
+    /* open-sans-700italic - latin-ext_latin */
+  html {
+    font-size: 16px;
+    -webkit-font-smoothing: antialiased;
+}
+
+body {
+    font-family: "Open Sans","Clear Sans", "Helvetica Neue", Helvetica, Arial, 'Segoe UI Emoji', sans-serif;
+    color: rgb(51, 51, 51);
+    line-height: 1.6;
+}
+
+#write {
+    max-width: 860px;
+  	margin: 0 auto;
+  	padding: 30px;
+    padding-bottom: 100px;
+}
+
+@media only screen and (min-width: 1400px) {
+	#write {
+		max-width: 1024px;
+	}
+}
+
+@media only screen and (min-width: 1800px) {
+	#write {
+		max-width: 1200px;
+	}
+}
+
+#write > ul:first-child,
+#write > ol:first-child{
+    margin-top: 30px;
+}
+
+a {
+    color: #4183C4;
+}
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+    position: relative;
+    margin-top: 1rem;
+    margin-bottom: 1rem;
+    font-weight: bold;
+    line-height: 1.4;
+    cursor: text;
+}
+h1:hover a.anchor,
+h2:hover a.anchor,
+h3:hover a.anchor,
+h4:hover a.anchor,
+h5:hover a.anchor,
+h6:hover a.anchor {
+    text-decoration: none;
+}
+h1 tt,
+h1 code {
+    font-size: inherit;
+}
+h2 tt,
+h2 code {
+    font-size: inherit;
+}
+h3 tt,
+h3 code {
+    font-size: inherit;
+}
+h4 tt,
+h4 code {
+    font-size: inherit;
+}
+h5 tt,
+h5 code {
+    font-size: inherit;
+}
+h6 tt,
+h6 code {
+    font-size: inherit;
+}
+h1 {
+    font-size: 2.25em;
+    line-height: 1.2;
+    border-bottom: 1px solid #eee;
+}
+h2 {
+    font-size: 1.75em;
+    line-height: 1.225;
+    border-bottom: 1px solid #eee;
+}
+
+/*@media print {
+    .typora-export h1,
+    .typora-export h2 {
+        border-bottom: none;
+        padding-bottom: initial;
+    }
+
+    .typora-export h1::after,
+    .typora-export h2::after {
+        content: "";
+        display: block;
+        height: 100px;
+        margin-top: -96px;
+        border-top: 1px solid #eee;
+    }
+}*/
+
+h3 {
+    font-size: 1.5em;
+    line-height: 1.43;
+}
+h4 {
+    font-size: 1.25em;
+}
+h5 {
+    font-size: 1em;
+}
+h6 {
+   font-size: 1em;
+    color: #777;
+}
+p,
+blockquote,
+ul,
+ol,
+dl,
+table{
+    margin: 0.8em 0;
+}
+li>ol,
+li>ul {
+    margin: 0 0;
+}
+hr {
+    height: 2px;
+    padding: 0;
+    margin: 16px 0;
+    background-color: #e7e7e7;
+    border: 0 none;
+    overflow: hidden;
+    box-sizing: content-box;
+}
+
+li p.first {
+    display: inline-block;
+}
+ul,
+ol {
+    padding-left: 30px;
+}
+ul:first-child,
+ol:first-child {
+    margin-top: 0;
+}
+ul:last-child,
+ol:last-child {
+    margin-bottom: 0;
+}
+blockquote {
+    border-left: 4px solid #dfe2e5;
+    padding: 0 15px;
+    color: #777777;
+}
+blockquote blockquote {
+    padding-right: 0;
+}
+table {
+    padding: 0;
+    word-break: initial;
+}
+table tr {
+    border: 1px solid #dfe2e5;
+    margin: 0;
+    padding: 0;
+}
+table tr:nth-child(2n),
+thead {
+    background-color: #f8f8f8;
+}
+table th {
+    font-weight: bold;
+    border: 1px solid #dfe2e5;
+    border-bottom: 0;
+    margin: 0;
+    padding: 6px 13px;
+}
+table td {
+    border: 1px solid #dfe2e5;
+    margin: 0;
+    padding: 6px 13px;
+}
+table th:first-child,
+table td:first-child {
+    margin-top: 0;
+}
+table th:last-child,
+table td:last-child {
+    margin-bottom: 0;
+}
+
+.CodeMirror-lines {
+    padding-left: 4px;
+}
+
+.code-tooltip {
+    box-shadow: 0 1px 1px 0 rgba(0,28,36,.3);
+    border-top: 1px solid #eef2f2;
+}
+
+.md-fences,
+code,
+tt {
+    border: 1px solid #e7eaed;
+    background-color: #f8f8f8;
+    border-radius: 3px;
+    padding: 0;
+    padding: 2px 4px 0px 4px;
+    font-size: 0.9em;
+}
+
+code {
+    background-color: #f3f4f4;
+    padding: 0 2px 0 2px;
+}
+
+.md-fences {
+    margin-bottom: 15px;
+    margin-top: 15px;
+    padding-top: 8px;
+    padding-bottom: 6px;
+}
+
+
+.md-task-list-item > input {
+  margin-left: -1.3em;
+}
+
+@media print {
+    html {
+        font-size: 13px;
+    }
+    table,
+    pre {
+        page-break-inside: avoid;
+    }
+    pre {
+        word-wrap: break-word;
+    }
+}
+
+.md-fences {
+	background-color: #f8f8f8;
+}
+#write pre.md-meta-block {
+	padding: 1rem;
+    font-size: 85%;
+    line-height: 1.45;
+    background-color: #f7f7f7;
+    border: 0;
+    border-radius: 3px;
+    color: #777777;
+    margin-top: 0 !important;
+}
+
+.mathjax-block>.code-tooltip {
+	bottom: .375rem;
+}
+
+.md-mathjax-midline {
+    background: #fafafa;
+}
+
+#write>h3.md-focus:before{
+	left: -1.5625rem;
+	top: .375rem;
+}
+#write>h4.md-focus:before{
+	left: -1.5625rem;
+	top: .285714286rem;
+}
+#write>h5.md-focus:before{
+	left: -1.5625rem;
+	top: .285714286rem;
+}
+#write>h6.md-focus:before{
+	left: -1.5625rem;
+	top: .285714286rem;
+}
+.md-image>.md-meta {
+    /*border: 1px solid #ddd;*/
+    border-radius: 3px;
+    padding: 2px 0px 0px 4px;
+    font-size: 0.9em;
+    color: inherit;
+}
+
+.md-tag {
+    color: #a7a7a7;
+    opacity: 1;
+}
+
+.md-toc { 
+    margin-top:20px;
+    padding-bottom:20px;
+}
+
+.sidebar-tabs {
+    border-bottom: none;
+}
+
+#typora-quick-open {
+    border: 1px solid #ddd;
+    background-color: #f8f8f8;
+}
+
+#typora-quick-open-item {
+    background-color: #FAFAFA;
+    border-color: #FEFEFE #e5e5e5 #e5e5e5 #eee;
+    border-style: solid;
+    border-width: 1px;
+}
+
+/** focus mode */
+.on-focus-mode blockquote {
+    border-left-color: rgba(85, 85, 85, 0.12);
+}
+
+header, .context-menu, .megamenu-content, footer{
+    font-family: "Segoe UI", "Arial", sans-serif;
+}
+
+.file-node-content:hover .file-node-icon,
+.file-node-content:hover .file-node-open-state{
+    visibility: visible;
+}
+
+.mac-seamless-mode #typora-sidebar {
+    background-color: #fafafa;
+    background-color: var(--side-bar-bg-color);
+}
+
+.md-lang {
+    color: #b4654d;
+}
+
+/*.html-for-mac {
+    --item-hover-bg-color: #E6F0FE;
+}*/
+
+#md-notification .btn {
+    border: 0;
+}
+
+.dropdown-menu .divider {
+    border-color: #e5e5e5;
+    opacity: 0.4;
+}
+
+.ty-preferences .window-content {
+    background-color: #fafafa;
+}
+
+.ty-preferences .nav-group-item.active {
+    color: white;
+    background: #999;
+}
+
+.menu-item-container a.menu-style-btn {
+    background-color: #f5f8fa;
+    background-image: linear-gradient( 180deg , hsla(0, 0%, 100%, 0.8), hsla(0, 0%, 100%, 0)); 
+}
+
+
+
+mjx-container[jax="SVG"] {
+  direction: ltr;
+}
+
+mjx-container[jax="SVG"] > svg {
+  overflow: visible;
+  min-height: 1px;
+  min-width: 1px;
+}
+
+mjx-container[jax="SVG"] > svg a {
+  fill: blue;
+  stroke: blue;
+}
+
+mjx-assistive-mml {
+  position: absolute !important;
+  top: 0px;
+  left: 0px;
+  clip: rect(1px, 1px, 1px, 1px);
+  padding: 1px 0px 0px 0px !important;
+  border: 0px !important;
+  display: block !important;
+  width: auto !important;
+  overflow: hidden !important;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  -khtml-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+
+mjx-assistive-mml[display="block"] {
+  width: 100% !important;
+}
+
+mjx-container[jax="SVG"][display="true"] {
+  display: block;
+  text-align: center;
+  margin: 1em 0;
+}
+
+mjx-container[jax="SVG"][display="true"][width="full"] {
+  display: flex;
+}
+
+mjx-container[jax="SVG"][justify="left"] {
+  text-align: left;
+}
+
+mjx-container[jax="SVG"][justify="right"] {
+  text-align: right;
+}
+
+g[data-mml-node="merror"] > g {
+  fill: red;
+  stroke: red;
+}
+
+g[data-mml-node="merror"] > rect[data-background] {
+  fill: yellow;
+  stroke: none;
+}
+
+g[data-mml-node="mtable"] > line[data-line], svg[data-table] > g > line[data-line] {
+  stroke-width: 70px;
+  fill: none;
+}
+
+g[data-mml-node="mtable"] > rect[data-frame], svg[data-table] > g > rect[data-frame] {
+  stroke-width: 70px;
+  fill: none;
+}
+
+g[data-mml-node="mtable"] > .mjx-dashed, svg[data-table] > g > .mjx-dashed {
+  stroke-dasharray: 140;
+}
+
+g[data-mml-node="mtable"] > .mjx-dotted, svg[data-table] > g > .mjx-dotted {
+  stroke-linecap: round;
+  stroke-dasharray: 0,140;
+}
+
+g[data-mml-node="mtable"] > g > svg {
+  overflow: visible;
+}
+
+[jax="SVG"] mjx-tool {
+  display: inline-block;
+  position: relative;
+  width: 0;
+  height: 0;
+}
+
+[jax="SVG"] mjx-tool > mjx-tip {
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
+mjx-tool > mjx-tip {
+  display: inline-block;
+  padding: .2em;
+  border: 1px solid #888;
+  font-size: 70%;
+  background-color: #F8F8F8;
+  color: black;
+  box-shadow: 2px 2px 5px #AAAAAA;
+}
+
+g[data-mml-node="maction"][data-toggle] {
+  cursor: pointer;
+}
+
+mjx-status {
+  display: block;
+  position: fixed;
+  left: 1em;
+  bottom: 1em;
+  min-width: 25%;
+  padding: .2em .4em;
+  border: 1px solid #888;
+  font-size: 90%;
+  background-color: #F8F8F8;
+  color: black;
+}
+
+foreignObject[data-mjx-xml] {
+  font-family: initial;
+  line-height: normal;
+  overflow: visible;
+}
+
+mjx-container[jax="SVG"] path[data-c], mjx-container[jax="SVG"] use[data-c] {
+  stroke-width: 3;
+}
+
+g[data-mml-node="xypic"] path {
+  stroke-width: inherit;
+}
+
+.MathJax g[data-mml-node="xypic"] path {
+  stroke-width: inherit;
+}
+mjx-container[jax="SVG"] path[data-c], mjx-container[jax="SVG"] use[data-c] {
+							stroke-width: 0;
+						}
+</style><title>wollmann_toyama_keisemi</title>
+</head>
+<body class='typora-export os-windows'><div class='typora-export-content'>
+<div id='write'  class=''><h1 id='新製品の導入・撤退を通じた市場競争の実証分析'><span>新製品の導入・撤退を通じた市場競争の実証分析</span></h1><p><span> 2021年9月11日</span></p><div class='md-toc' mdtype='toc'><p class="md-toc-content" role="list"><span role="listitem" class="md-toc-item md-toc-h1" data-ref="n0"><a class="md-toc-inner" href="#新製品の導入・撤退を通じた市場競争の実証分析">新製品の導入・撤退を通じた市場競争の実証分析</a></span><span role="listitem" class="md-toc-item md-toc-h2" data-ref="n11"><a class="md-toc-inner" href="#はじめに">はじめに</a></span><span role="listitem" class="md-toc-item md-toc-h2" data-ref="n17"><a class="md-toc-inner" href="#企業の競争モデル">企業の競争モデル</a></span><span role="listitem" class="md-toc-item md-toc-h2" data-ref="n28"><a class="md-toc-inner" href="#データおよびモデルの推定">データおよびモデルの推定</a></span><span role="listitem" class="md-toc-item md-toc-h2" data-ref="n35"><a class="md-toc-inner" href="#シミュレーションgm-とクライスラーの救済をめぐって">シミュレーション：GM とクライスラーの救済をめぐって</a></span><span role="listitem" class="md-toc-item md-toc-h2" data-ref="n46"><a class="md-toc-inner" href="#表1シミュレーション結果">表1　シミュレーション結果</a></span><span role="listitem" class="md-toc-item md-toc-h2" data-ref="n90"><a class="md-toc-inner" href="#参考文献">参考文献</a></span></p></div><blockquote><p><span>本資料は、『経済セミナー』2015年12月・2016年1月号掲載の同名記事（「</span><a href='https://www.web-nippyo.jp/17675/'><span>海外論文SURVEY</span></a><span>」）を2020年7月に改訂した記事の転載です。</span></p><p><span>以下の論文のエッセンスを解説しています：</span></p><p><strong><span>Wollmann, T. (2018) “</span><a href='https://www.aeaweb.org/articles?id=10.1257/aer.20160863'><span>Trucks without Bailouts: Equilibrium Product Characteristics for Commercial Vehicles</span></a><span>,” </span><em><span>American Economic Review</span></em><span>, 108 (6): 1364-1406.</span></strong></p></blockquote><p><span> </span></p><p><strong><a href='https://yutatoyama.github.io/japanese/'><span>遠山祐太</span></a></strong><span>／早稲田大学政治経済学術院准教授 </span></p><p><span> </span></p><h2 id='はじめに'><span>はじめに</span></h2><p><span>昨今の産業において多く見られる競争パターンの1つは、「少数の企業が、多種多様な製品を開発・生産し、販売している」というものである。例えば乗用車市場においては、長年にわたって企業の新規参入・撤退はほとんど起きていない一方で、自動車メーカーはモデルチェンジを通じて毎年のように新商品を投入しつつ、古いモデルは撤退させるなど、製品レベルでの参入・退出が非常に盛んである。したがって、個々の製品の価格付けに加えて、商品ラインナップについても、市場競争における戦略として重要となる。</span></p><p><span>ところが、製品レベルの参入・退出を通じた競争は、これまで産業組織論の実証研究において十分に扱われてこなかったトピックの一つである。これは、企業の新製品投入や撤退をどのようにモデル化するか、また新製品投入に伴う費用(例えば開発費用や市場に売り出す際の広告費用)をどのように推定するかなど、分析上難しい課題があったためである。したがって、上述したような市場・産業における実証研究では、製品ラインナップについては所与とした、価格を通じてのみの競争モデルを用いるのが主流であった。</span></p><p><span>しかしながら、このようなモデルを用いて政策評価を行うことで、誤った帰結を導いてしまう可能性もある。例として、ある市場において企業Aが破綻しかけており、それを救済すべく他の企業Bが買収・吸収合併するという状況を考えよう。仮に企業Aと企業Bが、同じ商品セグメントにおいて販売活動をしていた場合、そのセグメントでは寡占度が高まり、合併企業は以前よりも高い価格を付け利潤を上げることが可能となる。ただし、これは価格の変化のみを考慮した短期的な効果の予測であり、ここに商品投入という要素を加味すると話は違ってくる。もしその商品セグメントにおける利潤が高まるのであれば、ライバル企業Cがそのセグメントに製品を投入するインセンティブが発生する。結果として、合併企業は当初想定以上の利潤を上げることはできず、また製品価格の上昇にも歯止めがかかることとなる。</span></p><p><span>今回紹介する Wollmann (2018) では、分析上の課題をうまく克服するアプローチを提示するとともに、米国の商用トラック市場に着目して実証分析を行っている。特に、2008年の金融危機後に発生したゼネラルモーターズ(以下 GM)とクライスラーの救済事例に着目し、「仮にGMとクライスラーが救済されなかった場合」に何が起き得たか、という仮想状況について、製品の参入・退出を考慮したシミュレーション分析を行っている。</span></p><p><span> </span></p><h2 id='企業の競争モデル'><span>企業の競争モデル</span></h2><p><span>トラック市場における企業の競争モデルとして、以下の2段階モデルを考えよう。</span></p><ul><li><span>ステージ1：販売するトラックのラインナップを決定する。</span></li><li><span>ステージ2：ステージ1で決定したラインナップに基づいて、その販売価格を決定する。</span><span>		</span></li></ul><p><span>ステージ 2 は、各企業が複数製品を販売している状況での差別化財ベルトラン競争モデルと同じである。その際の価格付けは、ライバル企業が販売するトラックとの競合関係を考慮して決定する。そして、ステージ 1 においては、ステージ2での価格競争を考慮した上で、市場に投入する製品を決定する。</span></p><p><span>本研究における最大の課題は、ステージ1をどのようにモデル化するかという点である。各企業は、新製品の投入および既存のトラックの撤退に関する意思決定を行う。当然ながら製品投入には固定費用(サンクコスト)の支払いが伴い、このサンクコストの存在によって、企業の意思決定は動学的なものとなる。すなわち、その年のみならず翌年以降の市場の状況 -- トラックへの需要動向や、ライバル企業の製品ラインナップ -- に対する予想を踏まえての意思決定となる。しかしながら、このような将来の市場状況というものは非常に高次元な情報であり、モデル分析の際に計算が非常に複雑となる。仮にそのような複雑な要素を考慮したモデルを構築し、コンピューターを使ってそれを解くことができたとしても、現実の企業（例えば GM のマーケティング担当者）がそのような意思決定を行っているのか、すなわち現実を近似する方法として有用なのか、が論点として挙がってくる。</span></p><p><span>そこでWollmann (2018) では、モデルを構築するにあたって、自動車メーカーの関係者にインタビューを重ね、彼らが「どのように新製品投入の意思決定を行っているのか？」という点について実地調査を行った。その結果辿り着いたのは、非常にシンプルな「ハードルレート」を用いることによるモデル化である。例えばある年に、新モデルであるトラックAを導入することを検討する。トラックAを導入したことで、その期に得られる追加的な利潤が20万ドルで、固定費用が100万ドルとする（この数字は仮のものである）。この時、新モデル投入によって得られるその期の回収率は 20%（</span><mjx-container class="MathJax" jax="SVG" style="position: relative;"><svg xmlns="http://www.w3.org/2000/svg" width="1.76ex" height="1.505ex" role="img" focusable="false" viewBox="0 -583 778 665" xmlns:xlink="http://www.w3.org/1999/xlink" aria-hidden="true" style="vertical-align: -0.186ex;"><defs><path id="MJX-3-TEX-N-3D" d="M56 347Q56 360 70 367H707Q722 359 722 347Q722 336 708 328L390 327H72Q56 332 56 347ZM56 153Q56 168 72 173H708Q722 163 722 153Q722 140 707 133H70Q56 140 56 153Z"></path></defs><g stroke="currentColor" fill="currentColor" stroke-width="0" transform="scale(1,-1)"><g data-mml-node="math"><g data-mml-node="mo"><use data-c="3D" xlink:href="#MJX-3-TEX-N-3D"></use></g></g></g></svg><mjx-assistive-mml unselectable="on" display="inline"><math xmlns="http://www.w3.org/1998/Math/MathML"><mo>=</mo></math></mjx-assistive-mml></mjx-container><script type="math/tex">=</script><span>20万ドル</span><mjx-container class="MathJax" jax="SVG" style="position: relative;"><svg xmlns="http://www.w3.org/2000/svg" width="1.76ex" height="1.296ex" role="img" focusable="false" viewBox="0 -537 778 573" xmlns:xlink="http://www.w3.org/1999/xlink" aria-hidden="true" style="vertical-align: -0.081ex;"><defs><path id="MJX-4-TEX-I-F7" d="M318 466Q318 500 339 518T386 537Q418 537 438 517T458 466Q458 438 440 417T388 396Q355 396 337 417T318 466ZM56 237T56 250T70 270H706Q721 262 721 250T706 230H70Q56 237 56 250ZM318 34Q318 68 339 86T386 105Q418 105 438 85T458 34Q458 6 440 -15T388 -36Q355 -36 337 -15T318 34Z"></path></defs><g stroke="currentColor" fill="currentColor" stroke-width="0" transform="scale(1,-1)"><g data-mml-node="math"><g data-mml-node="mi"><use data-c="F7" xlink:href="#MJX-4-TEX-I-F7"></use></g></g></g></svg><mjx-assistive-mml unselectable="on" display="inline"><math xmlns="http://www.w3.org/1998/Math/MathML"><mi>÷</mi></math></mjx-assistive-mml></mjx-container><script type="math/tex">÷</script><span>100万ドル）となる。この回収率が、事前に定められたハードルレートを超える限りにおいてその製品を導入する、というのが新製品投入決定のルールとなる。このモデルにおいては、新製品投入によって今期に得られる追加的利潤と、固定費用だけが問題となるため、将来に関する予想といった動学的な要素を捨象することができ、モデルの分析が簡易になる。</span></p><p><span> </span></p><h2 id='データおよびモデルの推定'><span>データおよびモデルの推定</span></h2><p><span>Wollmann (2018) では、1987年から2012年の米国の商用トラック市場のデータを用いている。2012年時点では、トラックメーカーは9社あり、販売されているモデル数は年によって異なるものの約70から100となっている。</span></p><p><span> データから推定するモデルの要素として、トラックの需要関数、費用関数、そして製品投入に伴う固定費用の3つが挙げられる。需要関数については、消費者の離散選択モデルから導かれるランダム係数ロジットモデルに基づいて推定を行っている</span><sup class='md-footnote'><a href='#dfref-footnote-1' name='ref-footnote-1'>1</a></sup><span>。その上で、需要関数の推定値およびステージ 2 における価格競争の均衡条件を用いることで、車種ごとにトラック生産の限界費用が、推定できる。ここまでで得られた情報を用いることで、「企業がある商品ラインナップを決定した場合に得られる利潤」が計算可能となる。</span></p><p><span>新製品投入に伴う固定費用については、先に紹介したハードルレートによる意思決定ルールから得られる不等式制約を用いて、「上限」と「下限」を推定している。例えば、ある新トラックが導入されたというデータがあったとしよう。そこからは、「そのトラックが仮に導入されなかった場合の利潤」と、「導入された場合の実際の利潤」の差にハードルレートをかけたものが、そのトラックの固定費用よりも小さい、ということが示唆される。この点から、固定費用の「上限」が推定される。固定費用の「下限」についても、そのトラックが導入されて</span><strong><span>いない</span></strong><span>期のデータに着目することで、同様のアイデアで推定可能である</span><sup class='md-footnote'><a href='#dfref-footnote-2' name='ref-footnote-2'>2</a></sup><span>。</span></p><p>&nbsp;</p><h2 id='シミュレーションgm-とクライスラーの救済をめぐって'><span>シミュレーション：GM とクライスラーの救済をめぐって</span></h2><p><span>推定したモデルを用いて、Wollmannは GM とクライスラー救済に関する分析を行っている。具体的には、以下に挙げる 3 つのシナリオについてシミュレーションを行い、実際のトラック市場の状況(GM とクライスラーが救済されている)と比較を行っている。</span></p><ol start='' ><li><span>GM およびクライスラーが清算(両社のトラックが市場から完全になくなる)</span></li><li><span>フォードがGMとクライスラーを買収する(フォードが両社の製品を保有する)</span></li><li><span>パッカーが両社を買収する(パッカーが両社の製品を保有する)</span></li></ol><p>&nbsp;</p><hr /><h2 id='表1シミュレーション結果'><span>表1　シミュレーション結果</span></h2><p><span> </span><strong><span>ケース1：価格のみ変化</span></strong></p><figure><table><thead><tr><th style='text-align:center;' >&nbsp;</th><th style='text-align:center;' ><span>マークアップ変化率の最大値</span></th><th style='text-align:center;' ><span>補償変分</span></th></tr></thead><tbody><tr><td style='text-align:center;' ><span>1: フォードが買収</span></td><td style='text-align:center;' ><span>62.1%</span></td><td style='text-align:center;' ><span>119</span></td></tr><tr><td style='text-align:center;' ><span>2: パッカーが買収</span></td><td style='text-align:center;' ><span>23.0%</span></td><td style='text-align:center;' ><span>33</span></td></tr><tr><td style='text-align:center;' ><span>3: 清算（退出）</span></td><td style='text-align:center;' ><span>26.9%</span></td><td style='text-align:center;' ><span>253</span></td></tr></tbody></table></figure><p><span> </span><strong><span>ケース2：価格＋自動車モデルの参入退出</span></strong></p><figure><table><thead><tr><th style='text-align:center;' >&nbsp;</th><th style='text-align:center;' ><span>マークアップ変化率の最大値</span></th><th style='text-align:center;' ><span>補償変分</span></th></tr></thead><tbody><tr><td style='text-align:center;' ><span>1: フォードが買収</span></td><td style='text-align:center;' ><span>16.8%</span></td><td style='text-align:center;' ><span>22</span></td></tr><tr><td style='text-align:center;' ><span>2: パッカーが買収</span></td><td style='text-align:center;' ><span>15.4%</span></td><td style='text-align:center;' ><span>26</span></td></tr><tr><td style='text-align:center;' ><span>3: 清算（退出）</span></td><td style='text-align:center;' ><span>6.2%</span></td><td style='text-align:center;' ><span>28</span></td></tr></tbody></table></figure><p><span>（注）補償変分は、救済合併と比較した場合の、各反実仮想状況において必要な補償額である。 単位は 100 万ドル（2005 年実質化済）。</span></p><hr /><p>&nbsp;</p><p><span>一方でケース2では、各シナリオにおける企業のオーナシップの変化に伴い、各企業の商品ラインナップが内生的に反応することを許してシミュレーションを行っている。すなわち、上述のモデルのステージ 1・2 双方を含めてシミュレーションしている。このケースでは、マークアップの変化率は最大でも フォードが買収した場合の16.8%となっている。補償変分の観点からみても、精算・買収のいずれの場合でも、市場に与えるインパクトは大きく変わらないことが示唆される。精算や買収のケースを考えると、一時的には市場がより寡占的となり価格を上昇させる余地が生まれる。しかしながら、製品ラインナップの内生的な変化を考えると、寡占的になった市場には参入余地が生まれるため、新しいトラック車種の参入が増え、結果として価格の上昇が抑制されるのである。</span></p><p><span>以上のシミュレーション分析結果からは、企業の救済策のような特定の産業・市場に直接影響を与える政策を考える上で、価格のみならず、製品投入を通じた競争についても考慮することの重要性が示唆される。本論文は政策評価にもインプリケーションがある重要なテーマを扱っており、今後の論文のさらなる発展、および関連する研究の登場を期待したい。</span></p><p>&nbsp;</p><hr /><h2 id='参考文献'><span>参考文献</span></h2><p><span>Berry, Steven, James Levinsohn and Ariel Pakes (1995) “</span><a href='https://www.jstor.org/stable/2171802?seq=1#metadata_info_tab_contents'><span>Automobile Prices in Market Equilibrium</span></a><span>,” </span><em><span>Econometrica</span></em><span>, 63(4): 841-890.</span></p><p><span>Pakes, Ariel, Jack Porter, Kate Ho and Joy Ishii (2015) “</span><a href='https://onlinelibrary.wiley.com/doi/abs/10.3982/ECTA6865'><span>Moment Inequalities and Their Application</span></a><span>,” </span><em><span>Econometrica</span></em><span>, 83(1): 315-334.</span></p><p><span>Petrin, Amil (2002) “</span><a href='https://www.journals.uchicago.edu/doi/abs/10.1086/340779'><span>Quantifying the Benefits of New Products: The Case of the Minivan</span></a><span>,” </span><em><span>Journal of Political Economy</span></em><span>, 110(4): 705-729.</span></p><p><span>奥村綱雄 (2018) 『</span><a href='https://www.nippyo.co.jp/shop/book/7854.html'><span>部分識別入門――計量経済学の革新的アプローチ</span></a><span>』日本評論社。</span></p><p>&nbsp;</p><div class='footnotes-area'  ><hr/>
+<div class='footnote-line'><span class='md-fn-count'>1</span> <span>需要モデルについては、Berry, Levinsohn and Pakes (1995) およびPetrin (2002) に基づいている。</span> <a name='dfref-footnote-1' href='#ref-footnote-1' title='文書に戻る' class='reversefootnote' >↩</a></div>
+<div class='footnote-line'><span class='md-fn-count'>2</span> <span>経済学のモデルを推定する際において、多くの場合モデルの要素は「点」推定値として得られる。しかしながら、ここで推定に用いている制約は「不等式」であるため、サンクコストについて「点」推定することができず、「区間」としてその推定値が得られる。このような推定アプローチは部分識別アプローチやモーメント不等式アプローチと呼ばれ、昨今の実証研究で利用が進んでいる。詳細については、本誌連載中の奥村「部分識別入門」および Pakes, Porter, Ho and Ishii (2015) を参照されたい。</span> <a name='dfref-footnote-2' href='#ref-footnote-2' title='文書に戻る' class='reversefootnote' >↩</a></div></div></div></div>
+</body>
+</html>

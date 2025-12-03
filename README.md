@@ -15,31 +15,20 @@
 
 (github pagesで作る！)
 
+# 実行環境について
 
-
-# 計算時間の速度
-
-
-以下の環境。
+コードの大半については、以下の環境(デフォルト環境と呼称)で実行しています。
 
 - デフォルト環境: 
   - MacBook Air M2 2022 (Apple M2, 8コアCPU, メモリ16GB) 
   - Sequioia 15.6
   - R 4.4.3
 
+一部の計算負荷が高いコードについては、以下の環境(ワークステーション環境)で実行しています。
+
 - ワークステーション環境: 
   - Mac Studio 2025 Apple M4 Max CPU 16 コア CPU メモリ 128GB 
   - Sequioia 15.6
   - R 4.4.3
 
-
-
-- Chapter 2: おおよそ100分
-- Chapter 3
-- Chapter 4:
-- Chapter 5:
-- Chapter 6:
-- Chapter 7:
-- Chapter 8:
-- Chapter 9:
-- Chapter 10:
+おおよその計算時間については、各フォルダのREADME.mdに記載しています。
