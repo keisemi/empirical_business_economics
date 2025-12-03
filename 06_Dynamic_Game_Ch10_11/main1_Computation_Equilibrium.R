@@ -7,16 +7,9 @@ rm(list = ls())
 gc()
 
 # 必要なパッケージの読み込み
-
-# pacman パッケージを使って読み込みを行う。要インストール
-# if (!require("pacman")) install.packages("pacman")
-
-pacman::p_load(
-  # 必要となるパッケージ名
-  matlib, # 逆行列の作成に用いる
-  pracma, # matlabと同じ原理での最適化に用いる
-  here
-)
+library(matlib) # 逆行列の作成に用いる
+library(pracma) # matlabと同じ原理での最適化に用いる
+library(here)
 
 # 必要な関数の読み込み
 functionlt <- list.files("06_Dynamic_Game_Ch10_11/functions_R/",
