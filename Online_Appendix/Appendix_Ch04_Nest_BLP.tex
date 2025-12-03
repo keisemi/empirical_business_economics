@@ -93,8 +93,7 @@ s_{bluebus}=s_{redbus}=s_{car}=\frac{1}{3}
 
 \section{入れ子型ロジットモデルの導出の詳細}
 
-ここでは、入れ子型ロジットモデルにおける導出の詳細について説明する。 より厳密な導出方法については、Berry (1994) およびCardell
-(1997)を参照されたい。
+ここでは、入れ子型ロジットモデルにおける導出の詳細について説明する。 より厳密な導出方法については、Berry (1994) およびCardell (1997)を参照されたい。
 
 \subsection{選択確率}
 
@@ -117,18 +116,18 @@ I_{g}=\text{log}\left\lbrack \sum_{k\in\mathcal{G}_{g}}\exp\left(\frac{\delta_{k
 
 この包括的価値を利用することで、グループ$g$を選択する確率を以下のように求めることができる。 
 \[
-{\rm Pr}(group\ g)=\frac{\exp((1-\sigma)I_{g})}{\sum_{g=0}^{G}\exp((1-\sigma)I_{g})}=\frac{D_{g}^{(1-\sigma)}}{\sum_{g=0}^{G}D_{g}^{(1-\sigma)}}.
+\Pr(group\ g)=\frac{\exp((1-\sigma)I_{g})}{\sum_{g=0}^{G}\exp((1-\sigma)I_{g})}=\frac{D_{g}^{(1-\sigma)}}{\sum_{g=0}^{G}D_{g}^{(1-\sigma)}}.
 \]
 ここで、 $D_{g}=\sum_{k\in\mathcal{G}_{g}}\exp(\frac{\delta_{k}}{1-\sigma})$となる。
 
 これらをまとめることで、製品$j$を購入する確率は 
 \begin{align*}
-{\rm Pr}(choose\ j) & =Pr(group\ g)\times Pr(choose\ j\mid group\ g)\\
+\Pr(choose\ j) & =\Pr(group\ g)\times \Pr(choose\ j\mid group\ g)\\
  & =\frac{D_{g}^{(1-\sigma)}}{\sum_{g=0}^{G}D_{g}^{(1-\sigma)}}\times\frac{\exp\left(\frac{\delta_{j}}{1-\sigma}\right)}{D_{g}}
 \end{align*}
 となる。なお、アウトサイドグッズ($j=0$)を選択する確率は、 
 \[
-{\rm Pr}(outside\ good)=\frac{1}{\sum_{k}D_{k}^{(1-\sigma)}}
+\Pr(outside\ good)=\frac{1}{\sum_{k}D_{k}^{(1-\sigma)}}
 \]
 として与えられる。
 
@@ -171,8 +170,8 @@ U_{ijt}=\beta_{0}+(\beta_{1}+\pi_{1}y_{it}+\sigma_{1}\nu_{it})x_{jt}+\xi_{jt}+\e
 $\theta_{1}=(\beta_{0},\beta_{1})$、非線形パラメタは $\theta_{2}=(\pi_{1},\sigma_{1})$
 と整理できる。
 
-この効用関数のもとで導出される需要関数について、Salani\'{e} and Wolak (2022) のアイデアに基づき、$\pi_{1}=\sigma_{1}=0$
-の周りで二次のテイラー展開を行った次の近似式を考える。\footnote{Salani\'{e} and Wolak (2022) は、この近似式を用いて推定を行う FRAC（Fast, Robust, Approximately
+この効用関数のもとで導出される需要関数について、Salani\'{e} and Wolak (2019) のアイデアに基づき、$\pi_{1}=\sigma_{1}=0$
+の周りで二次のテイラー展開を行った次の近似式を考える。\footnote{Salani\'{e} and Wolak (2019) は、この近似式を用いて推定を行う FRAC（Fast, Robust, Approximately
 Correct）推定法を提案している。}
 \begin{equation}
 \log\frac{s_{jt}}{s_{0t}}\approx\beta_{0}+\beta_{1}x_{jt}+\sigma_{1}^{2}a_{jt}+\pi_{1}m_{t}^{y}x_{jt}+\pi_{1}^{2}v_{t}^{y}a_{jt}+\xi_{jt}\label{eq:SalanieWolak}
@@ -206,9 +205,9 @@ $a_{jt}$ と $x_{jt}$ の間に共線性が生じてしまう。その結果、�
 
 市場間での製品集合の違いは、より技術的には除外制約（exclusion restriction）として理解できる。特定のモデルが市場に存在しないという事実は、他の製品の直接効用には影響を与えない。しかし、選択可能な製品集合が異なることによって、消費者の選択確率には間接的な影響が生じる。このようなモデルの不在に伴う代替行動が、どの製品間で効用差がどの程度縮まるかを反映し、それが標準偏差パラメタの識別に利用されるのである。\footnote{ただし、市場間の製品集合の違いが常に外生的であるとは限らない点には注意を要する。短期的には、価格設定などと比較して製品集合が固定的であるとみなせる状況も多いが、中長期的には新製品の投入や市場からの退出など企業の戦略的行動が関与するため、製品集合自体が内生的に決まる可能性がある。このような内生性の問題をどのように扱うかについては、より発展的な議論が必要であり、これは参入・退出を扱う章で取り上げることとする。}
 
-これらの考え方は、BLP (1995) の操作変数や、Gandhi and Houde (2020) が提案した差別化操作変数にも明確に反映されている。これらの操作変数は、市場においてどの程度「似通った製品」が利用可能であるかという構造的な情報を利用し、それによって選好の異質性に関するパラメタを識別するという発想に基づいている。
+これらの考え方は、BLP (1995) の操作変数や、Gandhi and Houde (2019) が提案した差別化操作変数にも明確に反映されている。これらの操作変数は、市場においてどの程度「似通った製品」が利用可能であるかという構造的な情報を利用し、それによって選好の異質性に関するパラメタを識別するという発想に基づいている。
 
-具体的には、Gandhi and Houde (2020) の差別化操作変数$Z_{jt}$は以下のように与えられる。
+具体的には、Gandhi and Houde (2019) の差別化操作変数$Z_{jt}$は以下のように与えられる。
 
 \[
 Z_{jt}=\begin{cases}
@@ -414,64 +413,36 @@ Logit Models of Demand\textquotedblright{} -- Estimation: The Nitty-Gritty
 
 \subsection*{参考文献}
 
-\noindent\hang{末}石直也 (2015)『計量経済学：ミクロデータ分析へのいざない』日本評論社。
+\noindent\hang{末}石直也 (2015) 『計量経済学―\hspace{-0.15zw}―ミクロデータ分析へのいざない』日本評論社。
 
-\noindent\hang{H}ayashi, F (2000) \textit{Econometrics}, Princeton
-University Prress.
+\noindent\hang{H}ayashi, F (2000) \textit{Econometrics}, Princeton University Prress.
 
-\noindent\hang{B}erry, S. (1994)``Estimating Discrete-Choice Models
-of Product Differentiation,"\textit{Rand Journal of Economics}, 25(2):
-242--262.
+\noindent\hang{B}erry, S. (1994) ``Estimating Discrete-Choice Models of Product Differentiation,"\textit{Rand Journal of Economics}, 25(2): 242--262.
 
-\noindent\hang{B}erry, S., Levinsohn, J., and Pakes, A. (1995)``Automobile
-Prices in Market Equilibrium,"\textit{Econometrica}, 63(4): 841--890.
+\noindent\hang{B}erry, S., Levinsohn, J., and Pakes, A. (1995) ``Automobile Prices in Market Equilibrium,"\textit{Econometrica}, 63(4): 841--890.
 
-\noindent\hang{B}erry, S., Levinsohn, J., and Pakes, A. (2004)``Differentiated
-Products Demand Systems from a Combination of Micro and Macro Data:
-The New Car Market,"\textit{Journal of Political Economy}, 112(1):
-68--105.
+\noindent\hang{B}erry, S., Levinsohn, J., and Pakes, A. (2004) ``Differentiated Products Demand Systems from a Combination of Micro and Macro Data: The New Car Market,"\textit{Journal of Political Economy}, 112(1): 68--105.
 
-\noindent\hang{C}ardell, N. S. (1997)``Variance Components Structures
-for the Extreme-Value and Logistic Distributions with Application
-to Models of Heterogeneity,"\textit{Econometric Theory}, 13(2): 185--213.
+\noindent\hang{C}ardell, N. S. (1997) ``Variance Components Structures for the Extreme-Value and Logistic Distributions with Application to Models of Heterogeneity,"\textit{Econometric Theory}, 13(2): 185--213.
 
-\noindent\hang{C}hamberlain, G. (1987)``Asymptotic Efficiency
-in Estimation with Conditional Moment Restrictions,"\textit{Journal
-of Econometrics}, 34(3): 305--334.
+\noindent\hang{C}hamberlain, G. (1987) ``Asymptotic Efficiency in Estimation with Conditional Moment Restrictions,"\textit{Journal of Econometrics}, 34(3): 305--334.
 
-\noindent\hang{C}onlon, C. and Gortmaker, J. (2020)``Best Practices
-for Differentiated Products Demand Estimation with PyBLP,"\textit{RAND
-Journal of Economics}, 51(4): 1108--1161.
+\noindent\hang{C}onlon, C. and Gortmaker, J. (2020)``Best Practices for Differentiated Products Demand Estimation with PyBLP,"\textit{RAND Journal of Economics}, 51(4): 1108--1161.
 
-\noindent\hang{C}onlon, C. and Gortmaker, J. (2025)``Incorporating
-Micro Data into Differentiated Products Demand Estimation with PyBLP,"\textit{Journal
-of Econometrics}, forthcoming.
+\noindent\hang{C}onlon, C. and Gortmaker, J. (2025) ``Incorporating Micro Data into Differentiated Products Demand Estimation with PyBLP,"\textit{Journal of Econometrics}, 105926.
 
-\noindent\hang{G}andhi, A. and Houde, J.-F. (2020)``Measuring
-Substitution Patterns in Differentiated-Products Industries," NBER
-Working Paper, No.26375.
+\noindent\hang{G}andhi, A. and Houde, J.-F. (2019) ``Measuring Substitution Patterns in Differentiated-Products Industries," NBER Working Paper, No. 26375.
 
-\noindent\hang{G}oolsbee, A. and Petrin, A. (2004)``The Value
-of Information in Central Place: Evidence from Real-Estate Transactions,"\textit{Quarterly
-Journal of Economics}, 119(2): 713--751.
+\noindent\hang{G}oolsbee, A. and Petrin, A. (2004) ``The Consumer Gains from Direct Broadcast Satellites and the Competition with Cable TV," \textit{Econometrica}, 72(2): 351--381.
 
-\noindent\hang{G}rieco, P., Murry, C., Pinkse, J., and Sagl, S.
-(2025)``Conformant and Efficient Estimation of Discrete Choice Demand
-Models,"\textit{Review of Economic Studies}, forthcoming.
+\noindent\hang{G}rieco, P., Murry, C., Pinkse, J., and Sagl, S. (2025) ``Conformant and Efficient Estimation of Discrete Choice Demand Models,"\textit{Review of Economic Studies}, forthcoming.
 
-\noindent\hang{N}evo, A. (2000)``A Practitioner's Guide to Estimation
-of Random-Coefficients Logit Models of Demand,"\textit{Journal of
-Economics \& Management Strategy}, 9(4): 513--548.
+\noindent\hang{N}evo, A. (2000) ``A Practitioner's Guide to Estimation of Random-Coefficients Logit Models of Demand,"\textit{Journal of Economics \& Management Strategy}, 9(4): 513--548.
 
-\noindent\hang{P}etrin, A. (2002)``Quantifying the Benefits of
-New Products: The Case of the Minivan,"\textit{Journal of Political
-Economy}, 110(4): 705--729.
+\noindent\hang{P}etrin, A. (2002) ``Quantifying the Benefits of New Products: The Case of the Minivan,"\textit{Journal of Political Economy}, 110(4): 705--729.
 
-\noindent\hang{R}eynaert, M. and Verboven, F. (2014)``Improving
-the Performance of Random Coefficients Demand Models: The Role of
-Optimal Instruments,"\textit{Journal of Econometrics}, 179(1): 83--98.
+\noindent\hang{R}eynaert, M. and Verboven, F. (2014) ``Improving the Performance of Random Coefficients Demand Models: The Role of Optimal Instruments,"\textit{Journal of Econometrics}, 179(1): 83--98.
 
-\noindent\hang{S}alani\'{e}, B. and Wolak, F. (2022)``Fast, 'Robust',
-and Approximately Correct: Estimating Mixed Demand Systems,"\textit{NBER
-Working Paper}, No. 30219.
+\noindent\hang{S}alani\'{e}, B. and Wolak, F. (2019)  ``Fast, `Robust', and Approximately Correct: Estimating Mixed Demand Systems," NBER Working Paper, No. 25726.
+
 \end{document}
