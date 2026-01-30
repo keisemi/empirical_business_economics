@@ -41,7 +41,7 @@
 
 # 正誤情報のお知らせ
 
-- 本書の「**訂正情報**」を公開しています。御詫びして訂正いたします。詳細はリンク先をご覧ください。【 **[リンク](https://github.com/keisemi/empirical_business_economics/tree/main/errata)** 】
+- 本書の「**訂正情報**」を公開しています。詳細はリンク先をご覧ください。【 **[リンク](https://github.com/keisemi/empirical_business_economics/tree/main/errata)** 】
 
 
 
