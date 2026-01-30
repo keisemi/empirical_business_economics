@@ -5,7 +5,7 @@
   <img src=".\src\09633.jpg" width="250">
 </p>
 
-
+---
 
 # 書籍情報
 - **経済理論とデータの力で、ビジネスはもっと強くなる！**
@@ -17,8 +17,23 @@
 
 - サポート情報のご案内【 **[リンク](https://keisemi.github.io/empirical_business_economics/)** 】
 
+---
 
+# ReHacQで上武先生が解説、実証ビジネス・エコノミクス！
 
+「ReHacQリベラルアーツ」のコーナーで、上武康亮先生が本書『実証ビジネス・エコノミクス』の内容を、いろんな事例やエピソードを挙げながら解説しています。動画でおもしろい＆わかりやすいので、ぜひご視聴ください！
+
+<p align="center">
+  <a href="https://www.youtube.com/watch?v=2lO-Mpi5QaQ" target="_blank" rel="noopener noreferrer">
+    <img src="https://img.youtube.com/vi/2lO-Mpi5QaQ/hqdefault.jpg" width="720" alt="ReHacQリベラルアーツ（YouTubeサムネイル）">
+  </a>
+</p>
+
+<p align="center">
+  ▶ YouTube: <a href="https://www.youtube.com/watch?v=2lO-Mpi5QaQ" target="_blank" rel="noopener noreferrer">https://www.youtube.com/watch?v=2lO-Mpi5QaQ</a>
+</p>
+
+---
 
 
 # 実行環境について
@@ -39,11 +54,13 @@
 
 おおよその計算時間については、各フォルダに置かれた README.md に記載しています。
 
+---
+
 # 正誤情報のお知らせ
 
 - 本書の「**訂正情報**」を公開しています。詳細はリンク先をご覧ください。【 **[リンク](https://github.com/keisemi/empirical_business_economics/tree/main/errata)** 】
 
-
+---
 
 # ご利用に際してのお断り
 
