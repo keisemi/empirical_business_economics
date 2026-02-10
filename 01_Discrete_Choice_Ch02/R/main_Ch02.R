@@ -7,7 +7,7 @@ library("stargazer") # 推定結果の表作成のためのパッケージ
 library("optimx") # 最適化のためのパッケージ
 library("here") 
 
-source(here("01_Discrete_Choice_Ch02/function.R"))
+source(here("01_Discrete_Choice_Ch02/R/function.R"))
 
 KT_2024 <- read_csv(here("01_Discrete_Choice_Ch02/data/KinokoTakenokoSurvey_raw.csv"))
 
