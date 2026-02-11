@@ -23,11 +23,11 @@ sapply(functionlt, source)
 
 # 2. 均衡計算を行う
 # "main1_Computation_Equilibrium.R"の前半部分が"sub_1_prepare.R"に入っている。
-source("06_Dynamic_Game_Ch10_11/sub_1_prepare.R", echo = TRUE)
+source("06_Dynamic_Game_Ch10_11/R/sub_1_prepare.R", echo = TRUE)
 
 # 3. 疑似データの生成----
 # "main1_Computation_Equilibrium.R"の後半部分が"sub_2_DGP.R"に入っている。
-source("06_Dynamic_Game_Ch10_11/sub_2_DGP.R", echo = TRUE)
+source("06_Dynamic_Game_Ch10_11/R/sub_2_DGP.R", echo = TRUE)
 
 # 4. Aguirregabiria and Mira (2007)の方法によるパラメターの推定----
 

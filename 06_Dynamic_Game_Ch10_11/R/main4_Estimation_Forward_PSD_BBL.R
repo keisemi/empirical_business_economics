@@ -67,11 +67,11 @@ functionlt <- list.files("06_Dynamic_Game_Ch10_11/functions_R",
 sapply(functionlt, source)
 
 # 1. 下準備のコード。均衡計算を行う。
-source(here("06_Dynamic_Game_Ch10_11/sub_1_prepare.R"))
+source(here("06_Dynamic_Game_Ch10_11/R/sub_1_prepare.R"))
 
 # 2. 疑似データの作成 ----
 # 疑似データ作成のコード。第11回と同じ。
-source(here("06_Dynamic_Game_Ch10_11/sub_2_DGP.R"))
+source(here("06_Dynamic_Game_Ch10_11/R/sub_2_DGP.R"))
 
 # Matlabの再現: Fakedata 読み込み
 if (isUseMatlabData == 1) {
@@ -248,7 +248,7 @@ res <- optim(par = initial, fn = obj_forward_PSD)
 # 以下のスクリプトを実行する。Bootstrapするので多少時間かかる。
 # 並列計算推奨
 tic()
-source(here("06_Dynamic_Game_Ch10_11/sub_5_Bootstrap_PSD_forward.R"))
+source(here("06_Dynamic_Game_Ch10_11/R/sub_5_Bootstrap_PSD_forward.R"))
 toc()
 
 # 6. Estimation by BBL Inequality----

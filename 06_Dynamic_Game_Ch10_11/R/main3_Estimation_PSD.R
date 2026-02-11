@@ -21,11 +21,11 @@ sapply(functionlt, source)
 
 
 # 1. 下準備のコード。均衡計算を行う。
-source(here("06_Dynamic_Game_Ch10_11/sub_1_prepare.R"))
+source(here("06_Dynamic_Game_Ch10_11/R/sub_1_prepare.R"))
 
 # 2. 疑似データの作成 ----
 # 疑似データ作成のコード。第11回と同じ。
-source(here("06_Dynamic_Game_Ch10_11/sub_2_DGP.R"))
+source(here("06_Dynamic_Game_Ch10_11/R/sub_2_DGP.R"))
 
 # 2. パラメタの推定----
 
