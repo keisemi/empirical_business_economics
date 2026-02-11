@@ -1,10 +1,2 @@
-
-> print(result)
-$maximum
-[1] 1.813709
-
-$objective
-[1] 144273.8
-
-
-> sink()
+Optimal price: 1.813709
+Maximum revenue: 144273.836130

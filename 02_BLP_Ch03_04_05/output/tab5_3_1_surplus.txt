@@ -1,6 +1,3 @@
-
-
-Measure             Nippyo and Brand A   Nippyo and Brand B
------------------  -------------------  -------------------
-Consumer surplus             -12527.56            -5106.182
-Total Welfare                -11170.69            -4497.038
+         Measure  Nippyo and Brand A  Nippyo and Brand B
+Consumer surplus        34883.230151        49480.087528
+   Total Welfare        33861.310017        46519.215669

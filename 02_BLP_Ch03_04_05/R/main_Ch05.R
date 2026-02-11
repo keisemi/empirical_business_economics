@@ -9,7 +9,7 @@ library(tictoc) #時間計測に用いるパッケージ
 library(here)
 library(showtext)
 
-source(here("02_BLP_CH03_04_05/function_Ch05.R"))
+source(here("02_BLP_Ch03_04_05/R/function_Ch05.R"))
 
 # 時間計測開始
 tictoc::tic()

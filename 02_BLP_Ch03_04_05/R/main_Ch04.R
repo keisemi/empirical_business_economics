@@ -10,7 +10,7 @@ library(here)
 library(showtext)
 library(tictoc)
 
-source(here("02_BLP_CH03_04_05/function_Ch03_04.R"))
+source(here("02_BLP_Ch03_04_05/R/function_Ch03_04.R"))
 
 # 日本語のPDF出力
 showtext_auto()
