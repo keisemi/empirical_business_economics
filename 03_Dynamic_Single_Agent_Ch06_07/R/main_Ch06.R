@@ -21,7 +21,7 @@ showtext_auto()
 library(plot3D)
 
 # 自作関数の読み込み
-source(here("03_Dynamic_Single_Agent_Ch06_07/function.R"))
+source(here("03_Dynamic_Single_Agent_Ch06_07/R/function.R"))
 
 
 # パラメータの設定 ----
