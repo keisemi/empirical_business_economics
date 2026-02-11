@@ -10,7 +10,7 @@ library(nleqslv)
 library(showtext)
 library(knitr)
 
-source(here("05_Static_Game_Airline_Ch09/function.R"))
+source(here("05_Static_Game_Airline_Ch09/R/function.R"))
 
 # 日本語文字
 showtext.auto()
