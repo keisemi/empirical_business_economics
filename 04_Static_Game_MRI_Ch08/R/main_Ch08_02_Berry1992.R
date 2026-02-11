@@ -23,7 +23,7 @@ library(doRNG)
 library(here)
 
 # 自作関数を読み込む
-source("04_Static_Game_MRI_Ch08/function_Berry1992.R")
+source(here("04_Static_Game_MRI_Ch08/R/function_Berry1992.R"))
 
 # Boostrapをするかしないかのオプション
 # Boostrapにかかる計算時間が比較的長いので、Bootstrapを行う場合はTRUE,
